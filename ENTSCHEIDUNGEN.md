@@ -42,3 +42,12 @@ Die Artikel aus dem Wochenplan werden nicht gespeichert, sondern bei jedem Öffn
 ## E14 – Rundung (22.10.2026)
 Erst wird zusammengezählt, dann einmal aufgerundet: Stk., Dose, Pck., Bund und Prise auf ganze Zahlen; g und ml auf 10 (unter 10 auf 1); kg und l auf 0.1; EL und TL auf 0.5.
 
+## E15 – Artikel von Hand und wiederkehrende Artikel (22.10.2026)
+Artikel, die du von Hand erfasst, gehören zur angezeigten Woche. Wiederkehrende Artikel gelten ab der Woche, in der sie erfasst wurden, und erscheinen jede n-te Woche. Alle Quellen werden zusammengezählt, wenn Produkt und Einheit gleich sind. 1 l Milch von Hand plus 0.5 l aus dem Plan ergibt also 1.5 l. Die Liste ist alphabetisch sortiert, so fallen Doppelte mit verschiedener Einheit auf. Reine Hand-Artikel haben ein ✕ zum Löschen statt 🏠.
+
+## E16 – Vorschläge beim Tippen (22.10.2026)
+Jeder von Hand erfasste Artikel wird als Vorschlag gemerkt, mit der zuletzt verwendeten Menge, Einheit und Sparte. Beim Tippen erscheinen passende Vorschläge: zuerst die, die mit dem Getippten beginnen, dann die meistgenutzten. Mit ✕ wird ein Vorschlag gelöscht. Erfasst man das Produkt später wieder von Hand, wird es erneut als Vorschlag gemerkt.
+
+## E17 – Erledigte ausblenden (22.10.2026)
+«Erledigte ausblenden» blendet abgehakte Artikel dieser Woche aus. Artikel aus Plan und Wiederholung bleiben gespeichert, nur ausgeblendet; mit «Ausgeblendete wieder anzeigen» kommen sie zurück. Hand-Artikel werden dabei gelöscht.
+

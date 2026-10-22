@@ -219,3 +219,21 @@ button, input { font: inherit; color: inherit; }
 .shop-item.home { padding: 8px 8px 8px 14px; gap: 8px; justify-content: space-between; }
 .undo-btn { min-height: 44px; font-size: 14px; padding: 0 12px; white-space: nowrap; }
 .sec-toggle { width: 100%; text-align: left; border: 0; background: none; padding: 8px 0; font-size: 15px; font-weight: 700; color: var(--muted); cursor: pointer; }
+
+/* --- Artikel erfassen (Schritt 5) --- */
+.add-open { margin-bottom: 14px; }
+.add-box { display: grid; gap: 8px; padding: 12px; margin-bottom: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.add-box .search { margin-bottom: 0; background: var(--bg); }
+.add-box .ing-bottom input { min-height: 48px; padding: 0 12px; border-radius: 10px; min-width: 0; width: 100%; border: 1px solid var(--border); background: var(--bg); }
+.add-box .select.interval { width: 100%; background: var(--bg); }
+.add-actions { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.suggest-wrap { position: relative; }
+.suggest {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 15; list-style: none; margin: 0; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.suggest li { display: flex; align-items: center; }
+.suggest-pick { flex: 1; min-height: 48px; padding: 0 12px; text-align: left; border: 0; background: none; font-size: 17px; cursor: pointer; border-radius: 8px; }
+.suggest-pick:active { background: var(--primary-soft); }
+.suggest-del { width: 48px; min-height: 48px; border: 0; background: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+.search:focus, .ing input:focus, .add-box input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
