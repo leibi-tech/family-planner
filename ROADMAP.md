@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 22.10.2026 · Version 0.6.0
+Stand: 22.10.2026 · Version 0.7.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -29,12 +29,15 @@ Synchronisation über Supabase oder Firebase. Vorbereitet ist schon: Jeder Eintr
 Die PWA wird als Android-App verpackt (TWA oder Capacitor).
 
 ## Nächster Schritt
-Entscheid von Tobias (22.10.2026): keine separate Datensicherung jetzt, die Cloud-Synchronisation in Phase 2 übernimmt das. Ein einfacher Export-Knopf (Schutz gegen versehentliches Löschen) kommt in die Detail-Anpassungen.
-Entscheid: Kopieren von Tagen/Wochen zuerst, danach Phase 2.
+**Phase 2 (Supabase, Zürich)**
+1. ✅ Supabase eingerichtet (Projekt hkakelobqtbyliszrils, Region Zürich, «Confirm email» aus, schema.sql ausgeführt).
+2. ✅ v0.7.0 gebaut: Konto (E-Mail + Passwort), Haushalt erstellen / mit Code beitreten, automatischer Abgleich (offline-fähig). Getestet mit einem Supabase-Nachbau und zwei simulierten Handys.
+3. ⏳ Tobias: hochladen, Konto + Haushalt erstellen, Partnerin einladen, testen.
+4. Danach: Wunschliste (Export-Knopf u.a.), später E-Mail-Dienst für «Passwort vergessen» (vor Play Store).
 
 ## Wunschliste Detail-Anpassungen (Schritt 7)
-- [x] Tagesplanung kopieren: einzelne Tage (auf mehrere Tage, auch in andere Wochen) und ganze Wochen (beliebige Woche), jeweils «Kopieren nach …» oder «Übernehmen von …» (v0.6.0, Handy-Test offen)
-- [x] Einkaufsliste getrennt nach «Lebensmittel» und «Anderes» mit Umschalter oben; neue Artikel gehen in die gewählte Sparte (v0.6.0, Handy-Test offen)
+- [x] Tagesplanung kopieren: einzelne Tage (auf mehrere Tage, auch in andere Wochen) und ganze Wochen (beliebige Woche), jeweils «Kopieren nach …» oder «Übernehmen von …» (v0.6.0, auf dem Handy getestet ✅)
+- [x] Einkaufsliste getrennt nach «Lebensmittel» und «Anderes» mit Umschalter oben; neue Artikel gehen in die gewählte Sparte (v0.6.0, auf dem Handy getestet ✅)
 - [ ] Export-Knopf: Sicherungsdatei aller Daten erstellen und wieder einlesen
 
 ## Ideen für später (noch nicht entschieden)
@@ -52,3 +55,5 @@ Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie a
 - **22.10.2026 (4)**: Schritt 4 Einkaufsliste gebaut: Zeitraum ist die angezeigte Woche (Mo–So). Rundung: Stk./Dose/Pck./Bund/Prise auf ganze Zahl, g/ml auf 10 (unter 10 auf 1), kg/l auf 0.1, EL/TL auf 0.5. Vorrats-Check (🏠) und Abhaken vorgezogen. Datenbank Version 4.
 - **22.10.2026 (5)**: Schritt 5 gebaut: Artikel von Hand erfassen (Menge, Einheit optional, Sparte), alphabetisch sortiert, Vorschläge beim Tippen aus früheren Einträgen (mit ✕ dauerhaft löschbar), wiederkehrende Artikel mit Wochen-Intervall, «Erledigte ausblenden» (wieder einblendbar). Datenbank Version 5.
 - **22.10.2026 (6)**: Detail-Anpassungen: Tage und Wochen kopieren / übernehmen; Einkaufsliste mit Umschalter Lebensmittel / Anderes (getrennt, weil man im Laden nacheinander einkauft).
+- **22.10.2026 (7)**: Phase 2 beschlossen: Supabase. Datenbank-Aufbau (supabase/schema.sql) erstellt und lokal mit PostgreSQL getestet: Sicherheitsregeln (fremde Konten sehen nichts), Beitritt per Code, neuere Änderung gewinnt.
+- **22.10.2026 (8)**: Phase 2 umgesetzt (v0.7.0): Anmeldung, Haushalt mit Einladungscode, Abgleich. Secret key wurde versehentlich im Chat geteilt – Tobias soll ihn in Supabase löschen/ersetzen.

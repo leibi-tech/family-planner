@@ -60,3 +60,18 @@ Ab Phase 2 liegen die Daten zusätzlich in der Cloud. Eine Synchronisation schü
 ## E20 – Einkaufsliste nach Sparte getrennt (22.10.2026)
 Oben in «Einkauf» schaltet man zwischen «Lebensmittel» und «Anderes» um. Die Zahl zeigt, wie viele Artikel dort noch offen sind. So kauft man im Laden nacheinander ein. Neue Artikel kommen automatisch in die gewählte Sparte. Die App merkt sich die zuletzt gewählte Sparte auf dem Gerät.
 
+## E21 – Cloud: Supabase, mehrfamilienfähig von Anfang an (22.10.2026)
+- **Dienst:** Supabase, Server in der Schweiz (Zürich), wegen Schweizer Datenschutzgesetz und DSGVO.
+- **Haushalte:** Jede Familie ist ein «Haushalt». Beitreten geht nur mit einem 6-stelligen Einladungscode. Sicherheitsregeln in der Datenbank (Row Level Security) sorgen dafür, dass jedes Konto nur die Daten seines Haushalts sieht. Damit ist die App ohne Umbau bereit für den Play Store.
+- **Eine Tabelle für alles:** Alle App-Daten liegen in einer einzigen Tabelle `records` (Haushalt, Art, ID, Inhalt, Änderungszeit, Löschmarke). So kommen neue Funktionen wie Kalender oder Aufgaben ohne Änderung an der Datenbank dazu.
+- **Konflikte:** Die neuere Änderung gewinnt. Das prüft die Datenbank selbst, eine ältere Änderung überschreibt nie eine neuere.
+- **Anmeldung:** Mit E-Mail und Passwort, ohne Bestätigungsmail («Confirm email» ausgeschaltet). Geändert am 22.10.2026: Ursprünglich war ein Code per E-Mail geplant. Supabase erlaubt eigene E-Mail-Vorlagen aber nur mit einem eigenen E-Mail-Dienst (SMTP), und der eingebaute Dienst verschickt nur wenige Mails und nur an Projekt-Mitglieder. Für die Veröffentlichung im Play Store wird später ein E-Mail-Dienst eingerichtet (z.B. Brevo, gratis), dann gibt es auch «Passwort vergessen» und Bestätigungsmails.
+- **Ohne Zusatzpakete:** Die App spricht direkt mit der Supabase-Schnittstelle, ohne Supabase-Bibliothek. In der Claude-Umgebung lassen sich keine Pakete laden (siehe E2).
+
+## E22 – So funktioniert der Abgleich (22.10.2026)
+- Jede lokale Änderung wird als «noch hochzuladen» markiert. Beim Abgleich wird zuerst hochgeladen, dann werden die Änderungen der anderen geholt. Geholt wird nur, was seit dem letzten Abgleich auf dem Server geändert wurde.
+- Abgeglichen wird automatisch: 1.5 Sekunden nach jeder Änderung, beim Öffnen der App, wenn das Internet zurückkommt und alle 30 Sekunden, solange die App offen ist. Echtzeit, also sofort ohne Warten, kann später dazukommen.
+- Gibt es zwei Änderungen am selben Eintrag, gewinnt die neuere. Ein Plan-Tag zählt dabei als ein Eintrag.
+- Beim **Erstellen** eines Haushalts werden die Daten des Handys hochgeladen. Beim **Beitreten** werden die Daten des Handys durch die des Haushalts ersetzt, damit keine doppelten Personen entstehen.
+- Abmelden lässt die Daten auf dem Handy, beendet aber den Abgleich.
+

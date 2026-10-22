@@ -7,6 +7,7 @@ export interface BaseRecord {
   id: string;
   updatedAt: number;
   deleted: boolean;
+  dirty?: boolean; // lokal geändert, noch nicht in die Cloud übertragen
 }
 
 export interface Person extends BaseRecord {
@@ -95,7 +96,8 @@ export async function getAll<T extends BaseRecord>(store: StoreName): Promise<T[
 
 export async function put<T extends BaseRecord>(store: StoreName, record: T): Promise<void> {
   const db = await openDb();
-  const rec = { ...record, updatedAt: Date.now() };
+  // Zeitstempel immer grösser als der bisherige (falls die Uhr eines Geräts nachgeht)
+  const rec = { ...record, updatedAt: Math.max(Date.now(), (record.updatedAt || 0) + 1), dirty: true };
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(store, 'readwrite');
     tx.objectStore(store).put(rec);
@@ -103,6 +105,65 @@ export async function put<T extends BaseRecord>(store: StoreName, record: T): Pr
     tx.onerror = () => reject(tx.error);
   });
   changes.dispatchEvent(new Event(store));
+  localChanges.dispatchEvent(new Event('change'));
+}
+
+/** Meldet jede lokale Änderung (für den automatischen Abgleich). */
+export const localChanges = new EventTarget();
+
+// ---------- Rohzugriff für den Abgleich (inkl. gelöschter Einträge) ----------
+
+function req<T>(r: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+export async function getAllRaw<T extends BaseRecord>(store: StoreName): Promise<T[]> {
+  const db = await openDb();
+  return req(db.transaction(store, 'readonly').objectStore(store).getAll()) as Promise<T[]>;
+}
+
+/** Schreibt mehrere Einträge unverändert (Zeitstempel bleibt), z.B. Daten aus der Cloud. */
+export async function putRaw(store: StoreName, records: BaseRecord[]): Promise<void> {
+  if (!records.length) return;
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const os = tx.objectStore(store);
+    for (const r of records) os.put(r);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  changes.dispatchEvent(new Event(store));
+}
+
+export async function clearStore(store: StoreName): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  changes.dispatchEvent(new Event(store));
+}
+
+export async function getMeta<T>(key: string): Promise<T | undefined> {
+  const db = await openDb();
+  return req(db.transaction('meta', 'readonly').objectStore('meta').get(key)) as Promise<T | undefined>;
+}
+
+export async function setMeta(key: string, value: unknown): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction('meta', 'readwrite');
+    if (value === undefined) tx.objectStore('meta').delete(key);
+    else tx.objectStore('meta').put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 /** Löschen = Löschmarke setzen (für spätere Synchronisation). */

@@ -257,3 +257,19 @@ button, input { font: inherit; color: inherit; }
 .cat-tabs button { min-height: 52px; font-size: 16px; }
 .tab-count { display: inline-block; min-width: 24px; padding: 0 7px; margin-left: 4px; border-radius: 99px; font-size: 13px; line-height: 22px; background: var(--border); color: var(--text); }
 .cat-tabs button.on .tab-count { background: rgba(255,255,255,0.25); color: inherit; }
+
+/* --- Gemeinsam nutzen (Phase 2) --- */
+.cloud-card { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 14px; text-align: left; cursor: pointer; background: var(--surface); border: 1px dashed var(--border); border-radius: 14px; }
+.cloud-card.on { border-style: solid; border-color: var(--primary); }
+.cloud-icon { font-size: 26px; }
+.cloud-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.cloud-text .muted, .cloud-text .err { font-size: 13.5px; }
+.err { color: var(--danger); }
+.chev { font-size: 24px; color: var(--muted); }
+.box-section { padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.box-section h3.sec { margin-top: 0; }
+.box-section .field input { background: var(--bg); }
+.code-input { font-size: 24px !important; letter-spacing: 0.3em; text-transform: uppercase; text-align: center; font-weight: 700; }
+.invite { display: grid; gap: 8px; justify-items: center; padding: 14px; margin-bottom: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.invite-code { font-size: 34px; letter-spacing: 0.25em; font-variant-numeric: tabular-nums; }
+.pill-cloud { border: 0; cursor: pointer; font-size: 16px; padding: 4px 12px; background: var(--primary-soft); color: var(--primary); }

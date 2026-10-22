@@ -1,8 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles.css';
+import { startSync } from './sync';
 
 createRoot(document.getElementById('root')!).render(<App />);
+startSync();
 
 // Offline-Fähigkeit: Service Worker registrieren (nur auf https / installierter App).
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

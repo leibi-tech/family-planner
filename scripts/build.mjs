@@ -7,13 +7,19 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = join(root, 'docs');
+
 const pub = join(root, 'public');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 
 const stamp = new Date().toLocaleString('de-CH', { timeZone: 'Europe/Zurich', dateStyle: 'short', timeStyle: 'short' });
 const version = `${pkg.version} (${stamp})`;
 
+// Supabase (öffentliche Angaben). Für Tests per Umgebungsvariable überschreibbar.
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hkakelobqtbyliszrils.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_QK644i7NFGRpi_ZIVs0uaQ_D-7-IbKD';
+const outDir = process.env.OUT_DIR || 'docs';
+
+const out = join(root, outDir);
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
@@ -26,7 +32,7 @@ const result = await build({
   jsx: 'automatic',
   outdir: out,
   entryNames: 'app',
-  define: { 'process.env.NODE_ENV': '"production"', __APP_VERSION__: JSON.stringify(version) },
+  define: { 'process.env.NODE_ENV': '"production"', __APP_VERSION__: JSON.stringify(version), __SUPABASE_URL__: JSON.stringify(SUPABASE_URL), __SUPABASE_KEY__: JSON.stringify(SUPABASE_KEY) },
   metafile: true,
   logLevel: 'warning',
 });

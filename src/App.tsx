@@ -3,6 +3,7 @@ import { requestPersistentStorage } from './db';
 import { FamilyPage } from './pages/FamilyPage';
 import { MenusPage } from './pages/MenusPage';
 import { PlanPage } from './pages/PlanPage';
+import { useSync } from './components/CloudCard';
 import { ShoppingPage } from './pages/ShoppingPage';
 
 type Tab = 'familie' | 'menues' | 'plan' | 'einkauf';
@@ -32,6 +33,7 @@ export function App() {
     } catch {}
   };
   const [persistent, setPersistent] = useState<boolean | null>(null);
+  const sync = useSync();
   const [online, setOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -52,7 +54,13 @@ export function App() {
     <div className="app">
       <header className="topbar">
         <h1>{current.label}</h1>
-        {!online && <span className="pill">offline</span>}
+        {!online ? (
+          <span className="pill">offline</span>
+        ) : sync.household ? (
+          <button className="pill pill-cloud" onClick={() => setTab('familie')} title="Abgleich">
+            {sync.status === 'läuft' ? '⟳' : sync.status === 'fehler' ? '⚠︎' : '☁︎'}
+          </button>
+        ) : null}
       </header>
 
       <main className="content">

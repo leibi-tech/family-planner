@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
+import { CloudCard } from '../components/CloudCard';
 
 const MIN = 0.1;
 const MAX = 3.0;
@@ -25,6 +26,7 @@ export function FamilyPage() {
 
   return (
     <section>
+      <CloudCard />
       <p className="hint">
         Der <b>Portionenfaktor</b> sagt, wie viel jemand im Vergleich zu Tobias (1.0) isst. Daraus berechnet die App
         später die Einkaufsmengen.
