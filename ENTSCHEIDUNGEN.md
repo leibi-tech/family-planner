@@ -27,3 +27,12 @@ Jedes Menü merkt sich die eingegebenen Mengen und dazu den «Bezugsfaktor»: en
 ## E9 – Menge darf leer bleiben (22.10.2026)
 Zutaten ohne Menge (z.B. Salz, Pfeffer) sind erlaubt und gelten als «nach Bedarf». In der Einkaufsliste erscheinen sie später ohne Mengenangabe.
 
+## E10 – Wochenplan: ein Datensatz pro Tag (22.10.2026)
+Jeder geplante Tag wird als eigener Eintrag gespeichert (ID = Datum, z.B. 2026-10-19). Darin stehen die Mahlzeiten mit Gerichten, ob sie entfallen und wer nicht mitisst. Tage ohne Einträge werden nicht gespeichert und zeigen einfach die 3 Standard-Mahlzeiten. Gespeichert wird, wer **nicht** mitisst. So isst eine neu erfasste Person automatisch überall mit.
+
+## E11 – Zwischenmahlzeiten und mehrere Gerichte (22.10.2026)
+Mit «+ Mahlzeit» kommt eine zusätzliche Mahlzeit mit eigenem Namen dazu. Znüni wird nach dem Frühstück eingereiht, Zvieri nach dem Mittagessen, alles andere am Ende. Eine Mahlzeit kann mehrere Gerichte haben (z.B. Salat und Hauptgang). Entfällt eine Mahlzeit, bleiben ihre Gerichte gemerkt, zählen aber nicht für den Einkauf.
+
+## E12 – Woche kopieren (22.10.2026)
+Eine Woche kann in eine der nächsten 4 Wochen kopiert werden. Hat die Zielwoche schon Einträge, warnt die App und überschreibt erst nach Bestätigung.
+

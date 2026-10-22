@@ -16,8 +16,8 @@ export interface Person extends BaseRecord {
 }
 
 const DB_NAME = 'family-planner';
-const DB_VERSION = 2;
-export const STORES = ['persons', 'menus'] as const;
+const DB_VERSION = 3;
+export const STORES = ['persons', 'menus', 'days'] as const;
 export type StoreName = (typeof STORES)[number];
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -43,6 +43,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains('menus')) {
         db.createObjectStore('menus', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('days')) {
+        db.createObjectStore('days', { keyPath: 'id' });
       }
       if (!db.objectStoreNames.contains('meta')) {
         db.createObjectStore('meta');

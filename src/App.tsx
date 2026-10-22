@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { requestPersistentStorage } from './db';
 import { FamilyPage } from './pages/FamilyPage';
 import { MenusPage } from './pages/MenusPage';
+import { PlanPage } from './pages/PlanPage';
 
 type Tab = 'familie' | 'menues' | 'plan' | 'einkauf';
 
 const TABS: Array<{ id: Tab; label: string; icon: string; ready: boolean }> = [
-  { id: 'plan', label: 'Wochenplan', icon: '📅', ready: false },
+  { id: 'plan', label: 'Wochenplan', icon: '📅', ready: true },
   { id: 'einkauf', label: 'Einkauf', icon: '🛒', ready: false },
   { id: 'menues', label: 'Menüs', icon: '🍲', ready: true },
   { id: 'familie', label: 'Familie', icon: '👪', ready: true },
@@ -20,7 +21,7 @@ export function App() {
       const t = localStorage.getItem('fp-tab') as Tab | null;
       if (t && TABS.some((x) => x.id === t)) return t;
     } catch {}
-    return 'menues';
+    return 'plan';
   });
   const setTab = (t: Tab) => {
     setTabState(t);
@@ -58,6 +59,8 @@ export function App() {
           <FamilyPage />
         ) : tab === 'menues' ? (
           <MenusPage />
+        ) : tab === 'plan' ? (
+          <PlanPage />
         ) : (
           <div className="soon">
             <div className="soon-icon">{current.icon}</div>

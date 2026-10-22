@@ -162,3 +162,40 @@ button, input { font: inherit; color: inherit; }
 .ing-bottom { display: grid; grid-template-columns: 1fr 1fr 118px; gap: 8px; }
 .ing-bottom .select { width: 100%; min-width: 0; background: var(--bg); }
 .icon-btn { min-height: 48px; border: 0; background: none; font-size: 20px; color: var(--muted); cursor: pointer; }
+
+/* --- Wochenplan (Schritt 3) --- */
+.weeknav { display: grid; grid-template-columns: 56px 1fr 56px; gap: 10px; align-items: center; margin-bottom: 10px; }
+.weeknav-title { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+.weeknav-title b { font-size: 19px; }
+.weektools { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+.weektools .btn { min-height: 44px; font-size: 15px; }
+.day { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
+.day.today { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.day-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px 6px; font-size: 17px; }
+.pill-today { background: var(--primary); color: var(--primary-text); margin-left: auto; }
+.slot {
+  width: 100%; display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: start;
+  min-height: 52px; padding: 10px 14px; text-align: left; cursor: pointer;
+  border: 0; border-top: 1px solid var(--border); background: none;
+}
+.slot:active { background: var(--primary-soft); }
+.slot-label { font-size: 14px; font-weight: 600; color: var(--muted); padding-top: 2px; overflow: hidden; text-overflow: ellipsis; }
+.slot-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.slot-dish { font-weight: 600; }
+.slot-empty { color: var(--primary); font-weight: 600; }
+.slot-absent { font-size: 13px; color: var(--muted); }
+.slot-off { min-height: 38px; padding: 6px 14px; opacity: 0.55; }
+.slot-off .slot-body { font-size: 13px; color: var(--muted); padding-top: 2px; }
+.day-add {
+  width: 100%; min-height: 44px; border: 0; border-top: 1px dashed var(--border);
+  background: none; color: var(--muted); font-weight: 600; cursor: pointer;
+}
+.dish-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 4px 14px; min-height: 52px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; font-weight: 600; }
+.sheet-tall { max-height: 88vh; }
+.sheet h3.sec { font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 16px 0 8px; }
+.search {
+  width: 100%; min-height: 50px; padding: 0 14px; margin-bottom: 10px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface);
+}
+.warn { background: #fbe9e7; color: #8a2a1d; padding: 10px 12px; border-radius: 10px; }
+@media (prefers-color-scheme: dark) { .warn { background: #4a2620; color: #f6c9c0; } }

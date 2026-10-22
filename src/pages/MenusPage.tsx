@@ -14,6 +14,21 @@ import {
   type Menu,
 } from '../model';
 
+export function emptyMenu(familyFactor: number, mealTypes: MealType[] = []): Menu {
+  return {
+    id: newId(),
+    name: '',
+    mealTypes,
+    basis: { kind: 'family', baseFactor: familyFactor },
+    ingredients: [],
+    note: '',
+    updatedAt: 0,
+    deleted: false,
+  };
+}
+
+export const familyFactorOf = (persons: Person[]) => Math.round(persons.reduce((s, p) => s + p.factor, 0) * 10) / 10;
+
 export function MenusPage() {
   const menus = useRecords<Menu>('menus');
   const persons = useRecords<Person>('persons');
@@ -22,19 +37,8 @@ export function MenusPage() {
   if (!menus || !persons) return <p className="muted center">Lade …</p>;
 
   const sorted = [...menus].sort((a, b) => a.name.localeCompare(b.name, 'de-CH'));
-  const familyFactor = Math.round(persons.reduce((s, p) => s + p.factor, 0) * 10) / 10;
-
-  const newMenu = () =>
-    setEditing({
-      id: newId(),
-      name: '',
-      mealTypes: [],
-      basis: { kind: 'family', baseFactor: familyFactor },
-      ingredients: [],
-      note: '',
-      updatedAt: 0,
-      deleted: false,
-    });
+  const familyFactor = familyFactorOf(persons);
+  const newMenu = () => setEditing(emptyMenu(familyFactor));
 
   return (
     <section>
@@ -91,18 +95,20 @@ interface IngRow {
   category: Category;
 }
 
-function MenuEditor({
+export function MenuEditor({
   menu,
   isNew,
   persons,
   familyFactor,
   onClose,
+  onSaved,
 }: {
   menu: Menu;
   isNew: boolean;
   persons: Person[];
   familyFactor: number;
   onClose: () => void;
+  onSaved?: (menu: Menu) => void;
 }) {
   const [name, setName] = useState(menu.name);
   const [mealTypes, setMealTypes] = useState<MealType[]>(menu.mealTypes);
@@ -155,7 +161,9 @@ function MenuEditor({
         unit: r.unit,
         category: r.category,
       }));
-    await put<Menu>('menus', { ...menu, name: name.trim(), mealTypes, basis, ingredients, note: note.trim() });
+    const saved: Menu = { ...menu, name: name.trim(), mealTypes, basis, ingredients, note: note.trim() };
+    await put<Menu>('menus', saved);
+    onSaved?.(saved);
     onClose();
   };
 

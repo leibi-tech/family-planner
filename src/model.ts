@@ -61,3 +61,63 @@ export function basisLabel(b: Basis): string {
     ? `ganze Familie (Faktor ${b.baseFactor.toFixed(1)})`
     : `1 Portion von ${b.personName} (Faktor ${b.baseFactor.toFixed(1)})`;
 }
+
+// ---------------- Wochenplan (Schritt 3) ----------------
+
+export type SlotKind = MealType | 'extra';
+
+export interface Dish {
+  id: string;
+  menuId: string;
+}
+
+export interface Slot {
+  id: string;
+  kind: SlotKind;
+  label: string; // Anzeigename, z.B. «Mittagessen» oder «Zvieri»
+  active: boolean; // false = entfällt (ausgegraut)
+  dishes: Dish[];
+  absent: string[]; // Personen-IDs, die NICHT mitessen (leer = alle)
+}
+
+/** Ein Tag im Plan. id = Datum «JJJJ-MM-TT». */
+export interface PlanDay extends BaseRecord {
+  slots: Slot[];
+}
+
+/** Standard-Mahlzeiten eines Tages. Feste IDs pro Datum, damit ein noch leerer Tag stabil bleibt. */
+export function defaultSlots(dayKey: string): Slot[] {
+  return MEAL_TYPES.map((t) => ({ id: `${dayKey}-${t.id}`, kind: t.id, label: t.label, active: true, dishes: [], absent: [] }));
+}
+
+// --- Datum-Hilfen (immer lokale Zeit, Woche beginnt am Montag) ---
+export const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+export function dateKey(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+export function mondayOf(d: Date): Date {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const wd = (x.getDay() + 6) % 7; // Mo=0 … So=6
+  x.setDate(x.getDate() - wd);
+  return x;
+}
+
+export function addDays(d: Date, n: number): Date {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+/** Kalenderwoche nach ISO 8601. */
+export function isoWeek(d: Date): number {
+  const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = x.getUTCDay() || 7;
+  x.setUTCDate(x.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(x.getUTCFullYear(), 0, 1));
+  return Math.ceil(((x.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+export const fmtDay = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}.`;
