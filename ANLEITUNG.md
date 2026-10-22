@@ -2,16 +2,16 @@
 
 App-Adresse: **https://leibi-tech.github.io/family-planner/**
 
-## A) Einmalig: Git auf dem PC installieren
-1. Gehe auf **git-scm.com** und klicke auf **Download for Windows**. Wähle dort «64-bit Git for Windows Setup».
-2. Starte die heruntergeladene Datei und klicke überall auf **Next** bzw. **Install**. Die Standardeinstellungen passen.
-3. Fertig. Es gibt kein Programm, das du öffnen musst.
+## A) Einmalig: GitHub Desktop installieren
+1. Gehe auf **desktop.github.com**, lade das Programm herunter, installiere es und melde dich mit deinem GitHub-Konto (leibi-tech) an.
 
-## B) Einmalig: Erstes Hochladen
-1. Öffne im Explorer den Ordner `C:\Users\tleibacher\Claude\Family-Planner`.
-2. Doppelklicke auf **`hochladen.bat`**.
-3. Beim ersten Mal öffnet sich ein GitHub-Anmeldefenster. Wähle **Sign in with your browser** und melde dich mit deinem GitHub-Konto (leibi-tech) an. Danach wählst du **Authorize**.
-4. Im schwarzen Fenster erscheint «Fertig!». Drücke eine Taste, dann schliesst es sich.
+## B) Einmalig: Ordner mit GitHub verbinden
+1. Klicke in GitHub Desktop auf **Add an Existing Repository from your local drive…**.
+2. Wähle mit **Choose…** den Ordner `C:\Users\tleibacher\Claude\Family-Planner` und klicke auf **Add Repository**.
+3. Es erscheint der Hinweis «This directory does not appear to be a Git repository». Klicke dort auf den blauen Link **create a repository**.
+4. Lass alles wie es ist («Git ignore: None», «License: None») und klicke auf **Create repository**.
+5. Die Verbindung zu GitHub (Remote `https://github.com/leibi-tech/family-planner.git`) einrichten, unter **Repository** und dann **Repository settings…**. *(Erledigt am 22.10.2026.)*
+6. Klicke oben auf **Publish branch**. Nicht auf «Publish repository» klicken.
 
 ## C) Einmalig: GitHub Pages einschalten
 1. Öffne **github.com/leibi-tech/family-planner**.
@@ -26,9 +26,10 @@ App-Adresse: **https://leibi-tech.github.io/family-planner/**
 3. Ab jetzt startest du die App über das Symbol auf dem Startbildschirm.
 
 ## E) Updates
-- Wenn Claude etwas Neues gebaut hat, doppelklickst du auf **`hochladen.bat`**.
-- Auf dem Handy öffnest du die App mit Internet. Nach kurzer Zeit lädt sie neu, und unten steht die neue Version mit Datum.
-- Falls das nicht passiert: App ganz schliessen und neu öffnen.
+1. Öffne **GitHub Desktop**. Links siehst du die geänderten Dateien von Claude.
+2. Schreibe unten links bei «Summary» z.B. `Update` und klicke auf **Commit to main**.
+3. Klicke oben auf **Push origin**.
+4. Öffne nach 1–2 Minuten die App auf dem Handy mit Internet. Nach kurzer Zeit lädt sie neu, und unten steht die neue Version mit Datum. Falls nicht: App ganz schliessen und neu öffnen.
 
 ## F) Meine Daten
 - Die Daten liegen **nur auf deinem Handy**, nicht auf GitHub und nicht in der Cloud.

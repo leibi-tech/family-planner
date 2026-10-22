@@ -12,11 +12,18 @@ Gespeichert wird wie geplant in IndexedDB, direkt über eine kleine eigene Schic
 ## E4 – Fertige App liegt im Ordner `docs/` (22.10.2026)
 Claude baut die App und legt das Ergebnis in `docs/`. GitHub Pages zeigt diesen Ordner direkt an. Es braucht keinen Bau-Prozess auf GitHub, und was Claude getestet hat, ist genau das, was online geht.
 
-## E5 – Hochladen per Doppelklick (`hochladen.bat`) (22.10.2026)
-Claude kann aus Sicherheitsgründen nicht direkt auf GitHub schreiben. Tobias lädt darum mit einem Doppelklick auf `hochladen.bat` hoch. Auf dem PC braucht es dafür nur Git.
+## E5 – Hochladen mit GitHub Desktop (22.10.2026)
+Claude kann aus Sicherheitsgründen nicht direkt auf GitHub schreiben. Tobias lädt darum mit **GitHub Desktop** hoch: «Commit to main» und dann «Push origin». Das ist ein Programm mit Knöpfen statt Befehlen. Die Datei `hochladen.bat` ist nur noch eine Reserve und funktioniert nur, wenn zusätzlich Git installiert ist.
 
 ## E6 – Daten dauerhaft speichern (22.10.2026)
 Die App bittet den Browser beim Start, die Daten nicht automatisch zu löschen, wenn der Speicher knapp wird (`navigator.storage.persist`). Die installierte App bekommt das unter Android in der Regel. Eine Sicherung per Export kommt trotzdem noch (Roadmap Schritt 6).
 
 ## E7 – Offline-Verhalten (22.10.2026)
 Ein Service Worker speichert alle App-Dateien. Ist das Handy online, wird die neuste Version geladen. Ist es offline, wird die gespeicherte Version verwendet. Nach einem Update lädt die App einmal neu.
+
+## E8 – Menü-Mengen werden so gespeichert, wie sie eingegeben wurden (22.10.2026)
+Jedes Menü merkt sich die eingegebenen Mengen und dazu den «Bezugsfaktor»: entweder die Summe der Familienfaktoren beim Erstellen (z.B. 2.6) oder den Faktor der gewählten Person (z.B. 0.8). Die Menge pro Faktor 1.0 wird daraus berechnet (Menge ÷ Bezugsfaktor). Vorteil: Beim Bearbeiten siehst du wieder genau deine Zahlen. Ändern sich später die Faktoren in der Familie, bleibt das Rezept trotzdem richtig.
+
+## E9 – Menge darf leer bleiben (22.10.2026)
+Zutaten ohne Menge (z.B. Salz, Pfeffer) sind erlaubt und gelten als «nach Bedarf». In der Einkaufsliste erscheinen sie später ohne Mengenangabe.
+

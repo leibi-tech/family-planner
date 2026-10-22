@@ -25,7 +25,7 @@ const result = await build({
   target: ['es2020', 'chrome90'],
   jsx: 'automatic',
   outdir: out,
-  entryNames: 'app-[hash]',
+  entryNames: 'app',
   define: { 'process.env.NODE_ENV': '"production"', __APP_VERSION__: JSON.stringify(version) },
   metafile: true,
   logLevel: 'warning',
@@ -35,7 +35,11 @@ const files = Object.keys(result.metafile.outputs).map((p) => p.split('/').pop()
 const js = files.find((f) => f.endsWith('.js'));
 const css = files.find((f) => f.endsWith('.css'));
 
-const html = readFileSync(join(pub, 'index.html'), 'utf8').replace('%JS%', js).replace('%CSS%', css);
+// Feste Dateinamen (app.js/app.css) + Versionskennung, damit keine alten Dateien liegen bleiben.
+const fileHash = (f) => createHash('sha1').update(readFileSync(join(out, f))).digest('hex').slice(0, 8);
+const jsRef = `${js}?v=${fileHash(js)}`;
+const cssRef = `${css}?v=${fileHash(css)}`;
+const html = readFileSync(join(pub, 'index.html'), 'utf8').replace('%JS%', jsRef).replace('%CSS%', cssRef);
 writeFileSync(join(out, 'index.html'), html);
 
 for (const f of readdirSync(pub)) {
@@ -44,7 +48,15 @@ for (const f of readdirSync(pub)) {
 }
 writeFileSync(join(out, '.nojekyll'), '');
 
-const assets = ['./', './index.html', ...readdirSync(out).filter((f) => !f.startsWith('.') && f !== 'index.html' && f !== 'sw.js').map((f) => './' + f)];
+const assets = [
+  './',
+  './index.html',
+  './' + jsRef,
+  './' + cssRef,
+  ...readdirSync(out)
+    .filter((f) => !f.startsWith('.') && !['index.html', 'sw.js', js, css].includes(f))
+    .map((f) => './' + f),
+];
 const hash = createHash('sha1').update(assets.join() + version).digest('hex').slice(0, 10);
 const sw = readFileSync(join(pub, 'sw.template.js'), 'utf8')
   .replaceAll('%VERSION%', hash)

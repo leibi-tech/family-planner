@@ -1,20 +1,34 @@
 import { useEffect, useState } from 'react';
 import { requestPersistentStorage } from './db';
 import { FamilyPage } from './pages/FamilyPage';
+import { MenusPage } from './pages/MenusPage';
 
 type Tab = 'familie' | 'menues' | 'plan' | 'einkauf';
 
 const TABS: Array<{ id: Tab; label: string; icon: string; ready: boolean }> = [
   { id: 'plan', label: 'Wochenplan', icon: '📅', ready: false },
   { id: 'einkauf', label: 'Einkauf', icon: '🛒', ready: false },
-  { id: 'menues', label: 'Menüs', icon: '🍲', ready: false },
+  { id: 'menues', label: 'Menüs', icon: '🍲', ready: true },
   { id: 'familie', label: 'Familie', icon: '👪', ready: true },
 ];
 
 declare const __APP_VERSION__: string;
 
 export function App() {
-  const [tab, setTab] = useState<Tab>('familie');
+  const [tab, setTabState] = useState<Tab>(() => {
+    try {
+      const t = localStorage.getItem('fp-tab') as Tab | null;
+      if (t && TABS.some((x) => x.id === t)) return t;
+    } catch {}
+    return 'menues';
+  });
+  const setTab = (t: Tab) => {
+    setTabState(t);
+    window.scrollTo(0, 0);
+    try {
+      localStorage.setItem('fp-tab', t);
+    } catch {}
+  };
   const [persistent, setPersistent] = useState<boolean | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
 
@@ -42,6 +56,8 @@ export function App() {
       <main className="content">
         {tab === 'familie' ? (
           <FamilyPage />
+        ) : tab === 'menues' ? (
+          <MenusPage />
         ) : (
           <div className="soon">
             <div className="soon-icon">{current.icon}</div>

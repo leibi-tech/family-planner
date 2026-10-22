@@ -16,8 +16,8 @@ export interface Person extends BaseRecord {
 }
 
 const DB_NAME = 'family-planner';
-const DB_VERSION = 1;
-export const STORES = ['persons'] as const;
+const DB_VERSION = 2;
+export const STORES = ['persons', 'menus'] as const;
 export type StoreName = (typeof STORES)[number];
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -41,11 +41,22 @@ function openDb(): Promise<IDBDatabase> {
           store.put({ id: newId(), name, factor, sort: i, updatedAt: now, deleted: false } satisfies Person),
         );
       }
+      if (!db.objectStoreNames.contains('menus')) {
+        db.createObjectStore('menus', { keyPath: 'id' });
+      }
       if (!db.objectStoreNames.contains('meta')) {
         db.createObjectStore('meta');
       }
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      // Neue App-Version will die Datenbank erweitern → alte Verbindung schliessen.
+      db.onversionchange = () => {
+        db.close();
+        location.reload();
+      };
+      resolve(db);
+    };
     req.onerror = () => reject(req.error);
   });
   return dbPromise;
