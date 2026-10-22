@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
 import {
@@ -42,6 +42,19 @@ export function ShoppingPage() {
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
   const [showHome, setShowHome] = useState(false);
   const [showRecurring, setShowRecurring] = useState(false);
+  const [cat, setCatState] = useState<Category>(() => {
+    try {
+      return localStorage.getItem('fp-shop-cat') === 'anderes' ? 'anderes' : 'lebensmittel';
+    } catch {
+      return 'lebensmittel';
+    }
+  });
+  const setCat = (c: Category) => {
+    setCatState(c);
+    try {
+      localStorage.setItem('fp-shop-cat', c);
+    } catch {}
+  };
 
   const wid = shopWeekId(monday);
   const weekManual = useMemo(() => (manual ?? []).filter((m) => m.week === wid), [manual, wid]);
@@ -78,7 +91,10 @@ export function ShoppingPage() {
   const save = (patch: Partial<ShopWeek>) => put<ShopWeek>('shopping', { ...week, ...patch });
   const toggleIn = (list: string[], key: string) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
 
-  const visible = items.filter((i) => !hidden.includes(i.key));
+  const allVisible = items.filter((i) => !hidden.includes(i.key));
+  const openCount = (c: Category) =>
+    allVisible.filter((i) => i.category === c && !week.removed.includes(i.key) && !week.checked.includes(i.key)).length;
+  const visible = allVisible.filter((i) => i.category === cat);
   const atHome = visible.filter((i) => week.removed.includes(i.key));
   const toBuy = visible.filter((i) => !week.removed.includes(i.key));
   const done = toBuy.filter((i) => week.checked.includes(i.key));
@@ -144,12 +160,21 @@ export function ShoppingPage() {
         </div>
       )}
 
-      <AddItem suggestions={suggestions} onAdd={addItem} />
+      <div className="seg cat-tabs">
+        {CATEGORIES.map((c) => (
+          <button key={c.id} className={cat === c.id ? 'on' : ''} onClick={() => setCat(c.id)}>
+            {c.label} <span className="tab-count">{openCount(c.id)}</span>
+          </button>
+        ))}
+      </div>
+
+      <AddItem suggestions={suggestions} defaultCategory={cat} onAdd={addItem} />
 
       {visible.length === 0 ? (
         <p className="hint center">
-          Für diese Woche ist die Liste leer. Sie füllt sich automatisch aus dem Wochenplan, oder du erfasst oben Artikel
-          von Hand.
+          {allVisible.length === 0
+            ? 'Für diese Woche ist die Liste leer. Sie füllt sich automatisch aus dem Wochenplan, oder du erfasst oben Artikel von Hand.'
+            : `Unter «${CATEGORIES.find((c) => c.id === cat)!.label}» ist diese Woche nichts zu kaufen.`}
         </p>
       ) : (
         <>
@@ -159,7 +184,7 @@ export function ShoppingPage() {
           </div>
           <p className="hint small-hint">Antippen = im Laden abhaken · 🏠 = habe ich schon zu Hause (Vorrats-Check)</p>
 
-          {CATEGORIES.map((cat) => {
+          {CATEGORIES.filter((c) => c.id === cat).map((cat) => {
             const list = toBuy.filter((i) => i.category === cat.id);
             if (!list.length) return null;
             const open = list.filter((i) => !week.checked.includes(i.key)).sort(byName);
@@ -291,16 +316,19 @@ const INTERVALS = [
 
 function AddItem({
   suggestions,
+  defaultCategory,
   onAdd,
 }: {
   suggestions: Suggestion[];
+  defaultCategory: Category;
   onAdd: (x: { product: string; qty: number | null; unit: string; category: Category; interval: number }) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [product, setProduct] = useState('');
   const [qtyText, setQtyText] = useState('');
   const [unit, setUnit] = useState('');
-  const [category, setCategory] = useState<Category>('lebensmittel');
+  const [category, setCategory] = useState<Category>(defaultCategory);
+  useEffect(() => setCategory(defaultCategory), [defaultCategory]);
   const [interval, setIntervalWeeks] = useState(0);
   const [focus, setFocus] = useState(false);
 
@@ -323,7 +351,7 @@ function AddItem({
     setProduct('');
     setQtyText('');
     setUnit('');
-    setCategory('lebensmittel');
+    setCategory(defaultCategory);
     setIntervalWeeks(0);
   };
 

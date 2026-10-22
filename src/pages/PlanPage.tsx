@@ -32,6 +32,7 @@ export function PlanPage() {
   const [picker, setPicker] = useState<Sel>(null); // Menü auswählen
   const [addSlotFor, setAddSlotFor] = useState<string | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [copyDay, setCopyDay] = useState<string | null>(null);
 
   const dayMap = useMemo(() => new Map((days ?? []).map((d) => [d.id, d])), [days]);
   const menuMap = useMemo(() => new Map((menus ?? []).map((m) => [m.id, m])), [menus]);
@@ -55,6 +56,32 @@ export function PlanPage() {
   const selSlot = selDay?.slots.find((s) => s.id === sel!.slotId) ?? null;
   const pickDay = picker ? getDay(picker.dayKey) : null;
   const pickSlot = pickDay?.slots.find((s) => s.id === picker!.slotId) ?? null;
+
+  /** Kurzbeschreibung eines Tages für die Auswahl, z.B. «Birchermüesli, Spaghetti». */
+  const daySummary = (key: string) => {
+    const names = getDay(key)
+      .slots.filter((s) => s.active)
+      .flatMap((s) => s.dishes.map((d) => menuMap.get(d.menuId)?.name ?? '?'));
+    return names.length ? names.join(', ') : '';
+  };
+  const hasDishes = (key: string) => getDay(key).slots.some((s) => s.dishes.length > 0);
+
+  /** Kopiert die ganze Planung eines Tages (Mahlzeiten, Gerichte, wer mitisst) auf einen anderen Tag. */
+  const copyDayInto = (srcKey: string, targetKey: string) => {
+    const src = getDay(srcKey);
+    const existing = dayMap.get(targetKey);
+    return saveDay({
+      id: targetKey,
+      updatedAt: existing?.updatedAt ?? 0,
+      deleted: false,
+      slots: src.slots.map((sl) => ({
+        ...sl,
+        id: newId(),
+        dishes: sl.dishes.map((d) => ({ ...d, id: newId() })),
+        absent: [...sl.absent],
+      })),
+    });
+  };
 
   const addDish = (target: NonNullable<Sel>, menuId: string) =>
     updateSlot(target.dayKey, target.slotId, (s) => ({ ...s, dishes: [...s.dishes, { id: newId(), menuId }] }));
@@ -83,7 +110,7 @@ export function PlanPage() {
           </button>
         )}
         <button className="btn" onClick={() => setCopyOpen(true)}>
-          Woche kopieren
+          ⧉ Woche kopieren
         </button>
       </div>
 
@@ -95,6 +122,9 @@ export function PlanPage() {
             <div className="day-head">
               <b>{WEEKDAYS[i]}</b> <span className="muted">{fmtDay(d)}</span>
               {key === todayKey && <span className="pill pill-today">heute</span>}
+              <button className="day-copy" aria-label={`${WEEKDAYS[i]} kopieren`} onClick={() => setCopyDay(key)}>
+                ⧉ Kopieren
+              </button>
             </div>
             {day.slots.map((s) =>
               s.active ? (
@@ -181,31 +211,28 @@ export function PlanPage() {
       )}
 
       {copyOpen && (
-        <CopyWeekSheet
+        <WeekCopySheet
           monday={monday}
-          hasPlan={(m) => WEEKDAYS.some((_, i) => dayMap.get(dateKey(addDays(m, i)))?.slots.some((s) => s.dishes.length))}
-          onCopy={async (target) => {
-            for (let i = 0; i < 7; i++) {
-              const src = getDay(dateKey(addDays(monday, i)));
-              const key = dateKey(addDays(target, i));
-              const existing = dayMap.get(key);
-              await saveDay({
-                id: key,
-                updatedAt: 0,
-                deleted: false,
-                ...(existing ? { updatedAt: existing.updatedAt } : {}),
-                slots: src.slots.map((s) => ({
-                  ...s,
-                  id: newId(),
-                  dishes: s.dishes.map((d) => ({ ...d, id: newId() })),
-                  absent: [...s.absent],
-                })),
-              });
-            }
+          weekHasPlan={(m) => WEEKDAYS.some((_, i) => hasDishes(dateKey(addDays(m, i))))}
+          onCopy={async (from, to) => {
+            for (let i = 0; i < 7; i++) await copyDayInto(dateKey(addDays(from, i)), dateKey(addDays(to, i)));
             setCopyOpen(false);
-            setMonday(target);
+            setMonday(to);
           }}
           onClose={() => setCopyOpen(false)}
+        />
+      )}
+
+      {copyDay && (
+        <DayCopySheet
+          dayKey={copyDay}
+          summary={daySummary}
+          hasDishes={hasDishes}
+          onCopy={async (pairs) => {
+            for (const [from, to] of pairs) await copyDayInto(from, to);
+            setCopyDay(null);
+          }}
+          onClose={() => setCopyDay(null)}
         />
       )}
     </section>
@@ -430,39 +457,206 @@ function AddSlotSheet({ onAdd, onClose }: { onAdd: (label: string) => void; onCl
   );
 }
 
-function CopyWeekSheet({
+const keyToDate = (k: string) => new Date(k + 'T12:00');
+const dayLabel = (k: string) => {
+  const d = keyToDate(k);
+  return `${WEEKDAYS[(d.getDay() + 6) % 7]} ${fmtDay(d)}`;
+};
+
+/** Mini-Wochenansicht zum Auswählen von Tagen (einer oder mehrere). */
+function DayPicker({
+  startMonday,
+  selected,
+  disabled,
+  multi,
+  summary,
+  onToggle,
+}: {
+  startMonday: Date;
+  selected: string[];
+  disabled: string;
+  multi: boolean;
+  summary: (key: string) => string;
+  onToggle: (key: string) => void;
+}) {
+  const [mon, setMon] = useState(startMonday);
+  return (
+    <div className="daypicker">
+      <div className="weeknav small">
+        <button className="btn step" aria-label="Vorherige Woche" onClick={() => setMon(addDays(mon, -7))}>
+          ‹
+        </button>
+        <div className="weeknav-title">
+          <b>KW {isoWeek(mon)}</b>
+          <span className="muted">
+            {fmtDay(mon)} – {fmtDay(addDays(mon, 6))}
+          </span>
+        </div>
+        <button className="btn step" aria-label="Nächste Woche" onClick={() => setMon(addDays(mon, 7))}>
+          ›
+        </button>
+      </div>
+      <ul className="pick-list">
+        {WEEKDAYS.map((_, i) => {
+          const k = dateKey(addDays(mon, i));
+          const isSel = selected.includes(k);
+          const sum = summary(k);
+          return (
+            <li key={k}>
+              <button
+                className={'pick-day' + (isSel ? ' on' : '')}
+                disabled={k === disabled}
+                onClick={() => onToggle(k)}
+              >
+                <span className={multi ? 'box' : 'radio'} aria-hidden>
+                  {isSel ? '✓' : ''}
+                </span>
+                <span className="pick-text">
+                  <b>{dayLabel(k)}</b>
+                  <span className="muted">{k === disabled ? 'dieser Tag' : sum || 'noch leer'}</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function DayCopySheet({
+  dayKey,
+  summary,
+  hasDishes,
+  onCopy,
+  onClose,
+}: {
+  dayKey: string;
+  summary: (key: string) => string;
+  hasDishes: (key: string) => boolean;
+  onCopy: (pairs: Array<[string, string]>) => void;
+  onClose: () => void;
+}) {
+  const [mode, setMode] = useState<'to' | 'from'>(hasDishes(dayKey) ? 'to' : 'from');
+  const [targets, setTargets] = useState<string[]>([]);
+  const [source, setSource] = useState<string | null>(null);
+  const start = mondayOf(keyToDate(dayKey));
+
+  const overwritten = mode === 'to' ? targets.filter(hasDishes) : source && hasDishes(dayKey) ? [dayKey] : [];
+  const ready = mode === 'to' ? targets.length > 0 : !!source;
+  const go = () =>
+    onCopy(mode === 'to' ? [...targets].sort().map((t) => [dayKey, t] as [string, string]) : [[source!, dayKey]]);
+
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet sheet-tall" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <h2>{dayLabel(dayKey)}</h2>
+        <div className="seg" style={{ marginBottom: 12 }}>
+          <button className={mode === 'to' ? 'on' : ''} onClick={() => setMode('to')}>
+            Kopieren nach …
+          </button>
+          <button className={mode === 'from' ? 'on' : ''} onClick={() => setMode('from')}>
+            Übernehmen von …
+          </button>
+        </div>
+        <p className="hint small-hint">
+          {mode === 'to'
+            ? 'Wähle einen oder mehrere Tage, auf die dieser Tag kopiert wird.'
+            : 'Wähle den Tag, dessen Planung auf diesen Tag übernommen wird.'}
+        </p>
+        <DayPicker
+          key={mode}
+          startMonday={start}
+          selected={mode === 'to' ? targets : source ? [source] : []}
+          disabled={dayKey}
+          multi={mode === 'to'}
+          summary={summary}
+          onToggle={(k) =>
+            mode === 'to'
+              ? setTargets((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]))
+              : setSource((s) => (s === k ? null : k))
+          }
+        />
+        {overwritten.length > 0 && (
+          <p className="warn">
+            {overwritten.map(dayLabel).join(', ')} {overwritten.length === 1 ? 'hat' : 'haben'} schon Einträge. Sie
+            werden überschrieben.
+          </p>
+        )}
+        <div className="sheet-actions">
+          <button
+            className={'btn btn-block ' + (overwritten.length ? 'btn-danger' : 'btn-primary')}
+            disabled={!ready}
+            onClick={go}
+          >
+            {mode === 'to'
+              ? targets.length > 1
+                ? `Auf ${targets.length} Tage kopieren`
+                : 'Kopieren'
+              : 'Übernehmen'}
+          </button>
+          <button className="btn btn-block" onClick={onClose}>
+            Abbrechen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WeekCopySheet({
   monday,
-  hasPlan,
+  weekHasPlan,
   onCopy,
   onClose,
 }: {
   monday: Date;
-  hasPlan: (m: Date) => boolean | undefined;
-  onCopy: (target: Date) => void;
+  weekHasPlan: (m: Date) => boolean;
+  onCopy: (from: Date, to: Date) => void;
   onClose: () => void;
 }) {
-  const options = [1, 2, 3, 4].map((n) => addDays(monday, 7 * n));
-  const [target, setTarget] = useState(options[0]);
-  const overwrite = hasPlan(target);
+  const [mode, setMode] = useState<'to' | 'from'>(weekHasPlan(monday) ? 'to' : 'from');
+  const [other, setOther] = useState(() => addDays(monday, weekHasPlan(monday) ? 7 : -7));
+  const same = dateKey(other) === dateKey(monday);
+  const target = mode === 'to' ? other : monday;
+  const overwrite = !same && weekHasPlan(target);
+
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h2>KW {isoWeek(monday)} kopieren nach …</h2>
-        <div className="chips" style={{ marginBottom: 12 }}>
-          {options.map((o) => (
-            <button
-              key={dateKey(o)}
-              className={'chip' + (dateKey(o) === dateKey(target) ? ' on' : '')}
-              onClick={() => setTarget(o)}
-            >
-              KW {isoWeek(o)} ({fmtDay(o)})
-            </button>
-          ))}
+        <h2>KW {isoWeek(monday)}</h2>
+        <div className="seg" style={{ marginBottom: 12 }}>
+          <button className={mode === 'to' ? 'on' : ''} onClick={() => setMode('to')}>
+            Kopieren nach …
+          </button>
+          <button className={mode === 'from' ? 'on' : ''} onClick={() => setMode('from')}>
+            Übernehmen von …
+          </button>
         </div>
+        <div className="weeknav small">
+          <button className="btn step" aria-label="Vorherige Woche" onClick={() => setOther(addDays(other, -7))}>
+            ‹
+          </button>
+          <div className="weeknav-title">
+            <b>KW {isoWeek(other)}</b>
+            <span className="muted">
+              {fmtDay(other)} – {fmtDay(addDays(other, 6))}
+              {mode === 'from' && !weekHasPlan(other) && ' · leer'}
+            </span>
+          </div>
+          <button className="btn step" aria-label="Nächste Woche" onClick={() => setOther(addDays(other, 7))}>
+            ›
+          </button>
+        </div>
+        {same && <p className="hint">Das ist die gleiche Woche – bitte eine andere wählen.</p>}
         {overwrite && <p className="warn">KW {isoWeek(target)} hat schon Einträge. Sie werden überschrieben.</p>}
         <div className="sheet-actions">
-          <button className={'btn btn-block ' + (overwrite ? 'btn-danger' : 'btn-primary')} onClick={() => onCopy(target)}>
-            {overwrite ? 'Überschreiben und kopieren' : 'Kopieren'}
+          <button
+            className={'btn btn-block ' + (overwrite ? 'btn-danger' : 'btn-primary')}
+            disabled={same}
+            onClick={() => (mode === 'to' ? onCopy(monday, other) : onCopy(other, monday))}
+          >
+            {mode === 'to' ? `Nach KW ${isoWeek(other)} kopieren` : `Von KW ${isoWeek(other)} übernehmen`}
           </button>
           <button className="btn btn-block" onClick={onClose}>
             Abbrechen

@@ -33,8 +33,8 @@ Jeder geplante Tag wird als eigener Eintrag gespeichert (ID = Datum, z.B. 2026-1
 ## E11 – Zwischenmahlzeiten und mehrere Gerichte (22.10.2026)
 Mit «+ Mahlzeit» kommt eine zusätzliche Mahlzeit mit eigenem Namen dazu. Znüni wird nach dem Frühstück eingereiht, Zvieri nach dem Mittagessen, alles andere am Ende. Eine Mahlzeit kann mehrere Gerichte haben (z.B. Salat und Hauptgang). Entfällt eine Mahlzeit, bleiben ihre Gerichte gemerkt, zählen aber nicht für den Einkauf.
 
-## E12 – Woche kopieren (22.10.2026)
-Eine Woche kann in eine der nächsten 4 Wochen kopiert werden. Hat die Zielwoche schon Einträge, warnt die App und überschreibt erst nach Bestätigung.
+## E12 – Tage und Wochen kopieren (22.10.2026, erweitert in v0.6.0)
+Beim Tag gibt es «⧉ Kopieren»: «Kopieren nach …» auf einen oder mehrere Tage, auch in anderen Wochen, oder «Übernehmen von …» einem anderen Tag. Ganze Wochen gehen in jede beliebige Woche, nach vorne oder hinten. Kopiert wird alles: Mahlzeiten, Gerichte, wer mitisst und was entfällt. Hat das Ziel schon Einträge, warnt die App (roter Knopf) und überschreibt erst nach Bestätigung.
 
 ## E13 – Einkaufsliste wird immer frisch berechnet (22.10.2026)
 Die Artikel aus dem Wochenplan werden nicht gespeichert, sondern bei jedem Öffnen neu berechnet: Menge pro Faktor 1.0 × Summe der Faktoren der Mitessenden, für alle aktiven Mahlzeiten der Woche. Gespeichert werden nur deine Entscheide pro Woche und Artikel: «zu Hause vorhanden» und «abgehakt». Darum aktualisiert sich die Liste bei jeder Planänderung, und deine Entscheide bleiben trotzdem erhalten. Ein Artikel ist eindeutig durch Produktname (Gross-/Kleinschreibung egal) und Einheit. «500 g Mehl» und «1 kg Mehl» erscheinen darum getrennt.
@@ -50,4 +50,13 @@ Jeder von Hand erfasste Artikel wird als Vorschlag gemerkt, mit der zuletzt verw
 
 ## E17 – Erledigte ausblenden (22.10.2026)
 «Erledigte ausblenden» blendet abgehakte Artikel dieser Woche aus. Artikel aus Plan und Wiederholung bleiben gespeichert, nur ausgeblendet; mit «Ausgeblendete wieder anzeigen» kommen sie zurück. Hand-Artikel werden dabei gelöscht.
+
+## E18 – Widgets bedeuten: Phase 3 mit Capacitor statt TWA (22.10.2026, Vorentscheid)
+Eine Web-App (PWA) kann unter Android keine Startbildschirm-Widgets anzeigen. Widgets sind nur mit einer echten Android-App möglich. Darum soll die App in Phase 3 mit **Capacitor** verpackt werden, nicht als TWA: Capacitor erlaubt es, zusätzlich ein kleines natives Widget zu bauen, das die Daten aus der Cloud (Phase 2) liest. Am bisherigen Aufbau muss dafür nichts geändert werden.
+
+## E19 – Keine separate Datensicherung vor Phase 2 (22.10.2026)
+Ab Phase 2 liegen die Daten zusätzlich in der Cloud. Eine Synchronisation schützt aber nicht vor versehentlichem Löschen. Darum kommt später ein einfacher Export-Knopf dazu (Wunschliste Schritt 7).
+
+## E20 – Einkaufsliste nach Sparte getrennt (22.10.2026)
+Oben in «Einkauf» schaltet man zwischen «Lebensmittel» und «Anderes» um. Die Zahl zeigt, wie viele Artikel dort noch offen sind. So kauft man im Laden nacheinander ein. Neue Artikel kommen automatisch in die gewählte Sparte. Die App merkt sich die zuletzt gewählte Sparte auf dem Gerät.
 
