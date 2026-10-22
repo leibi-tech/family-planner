@@ -273,3 +273,6 @@ button, input { font: inherit; color: inherit; }
 .invite { display: grid; gap: 8px; justify-items: center; padding: 14px; margin-bottom: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); text-align: center; }
 .invite-code { font-size: 34px; letter-spacing: 0.25em; font-variant-numeric: tabular-nums; }
 .pill-cloud { border: 0; cursor: pointer; font-size: 16px; padding: 4px 12px; background: var(--primary-soft); color: var(--primary); }
+.shop-more { font-size: 12.5px; font-weight: 700; color: #b26b00; }
+@media (prefers-color-scheme: dark) { .shop-more { color: #f0b45a; } }
+.shop-item.extra { box-shadow: inset 4px 0 0 #e0a030; }

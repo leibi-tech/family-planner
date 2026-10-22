@@ -16,6 +16,7 @@ import {
 } from '../model';
 import {
   buildShoppingList,
+  roundQty,
   fmtQty,
   fmtSources,
   intervalLabel,
@@ -91,13 +92,41 @@ export function ShoppingPage() {
   const save = (patch: Partial<ShopWeek>) => put<ShopWeek>('shopping', { ...week, ...patch });
   const toggleIn = (list: string[], key: string) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
 
-  const allVisible = items.filter((i) => !hidden.includes(i.key));
+  // Nachkauf: Wurde ein Artikel schon gekauft (abgehakt/ausgeblendet) und braucht es inzwischen mehr,
+  // erscheint nur die zusätzliche Menge wieder als offener Artikel.
+  const bought = week.bought ?? {};
+  type Row = ShopItem & { extra?: number | null; fullQty?: number | null };
+  const rows: Row[] = items.map((i) => {
+    const b = bought[i.key];
+    const wasDone = week.checked.includes(i.key) || hidden.includes(i.key);
+    if (wasDone && i.qty != null && b != null && i.qty > b + 1e-9)
+      return { ...i, qty: roundQty(i.qty - b, i.unit), extra: b, fullQty: i.qty };
+    return { ...i, fullQty: i.qty };
+  });
+  const isChecked = (i: Row) => week.checked.includes(i.key) && i.extra === undefined;
+  const isHidden = (i: Row) => hidden.includes(i.key) && i.extra === undefined;
+
+  const toggleCheck = (i: Row) => {
+    const nb = { ...bought };
+    if (isChecked(i)) {
+      delete nb[i.key];
+      return save({ checked: week.checked.filter((k) => k !== i.key), bought: nb });
+    }
+    nb[i.key] = i.fullQty ?? null;
+    return save({
+      checked: week.checked.includes(i.key) ? week.checked : [...week.checked, i.key],
+      hidden: hidden.filter((h) => h !== i.key),
+      bought: nb,
+    });
+  };
+
+  const allVisible = rows.filter((i) => !isHidden(i));
   const openCount = (c: Category) =>
-    allVisible.filter((i) => i.category === c && !week.removed.includes(i.key) && !week.checked.includes(i.key)).length;
+    allVisible.filter((i) => i.category === c && !week.removed.includes(i.key) && !isChecked(i)).length;
   const visible = allVisible.filter((i) => i.category === cat);
   const atHome = visible.filter((i) => week.removed.includes(i.key));
   const toBuy = visible.filter((i) => !week.removed.includes(i.key));
-  const done = toBuy.filter((i) => week.checked.includes(i.key));
+  const done = toBuy.filter((i) => isChecked(i));
   const isThisWeek = shopWeekId(mondayOf(new Date())) === wid;
   const manualOnly = (i: ShopItem) => i.sources.every((s) => s.kind === 'manual');
 
@@ -120,13 +149,16 @@ export function ShoppingPage() {
     } else {
       await put<ManualItem>('manual', { ...base, id: newId(), week: wid });
     }
-    // Falls der Artikel vorher ausgeblendet/abgehakt/zu Hause war: wieder sichtbar machen
+    // War der Artikel als «zu Hause» markiert: wieder auf die Liste.
+    // (Schon gekaufte Artikel erscheinen automatisch mit der zusätzlichen Menge.)
     const k = itemKey(x.product, x.unit);
-    if (hidden.includes(k) || week.checked.includes(k) || week.removed.includes(k)) {
+    const isDone = week.checked.includes(k) || hidden.includes(k);
+    if (week.removed.includes(k) || (isDone && (x.qty == null || bought[k] == null))) {
       await save({
-        hidden: hidden.filter((h) => h !== k),
-        checked: week.checked.filter((h) => h !== k),
         removed: week.removed.filter((h) => h !== k),
+        ...(isDone && (x.qty == null || bought[k] == null)
+          ? { hidden: hidden.filter((h) => h !== k), checked: week.checked.filter((h) => h !== k) }
+          : {}),
       });
     }
     // Vorschlag merken
@@ -187,8 +219,8 @@ export function ShoppingPage() {
           {CATEGORIES.filter((c) => c.id === cat).map((cat) => {
             const list = toBuy.filter((i) => i.category === cat.id);
             if (!list.length) return null;
-            const open = list.filter((i) => !week.checked.includes(i.key)).sort(byName);
-            const checkedList = list.filter((i) => week.checked.includes(i.key)).sort(byName);
+            const open = list.filter((i) => !isChecked(i)).sort(byName);
+            const checkedList = list.filter((i) => isChecked(i)).sort(byName);
             return (
               <div key={cat.id} className="shop-cat">
                 <h3 className="sec">
@@ -196,17 +228,26 @@ export function ShoppingPage() {
                 </h3>
                 <ul className="shop-list">
                   {[...open, ...checkedList].map((item) => {
-                    const checked = week.checked.includes(item.key);
+                    const checked = isChecked(item);
                     return (
-                      <li key={item.key} className={'shop-item' + (checked ? ' checked' : '')}>
-                        <button className="shop-main" onClick={() => save({ checked: toggleIn(week.checked, item.key) })}>
+                      <li key={item.key} className={'shop-item' + (checked ? ' checked' : '') + (item.extra !== undefined ? ' extra' : '')}>
+                        <button className="shop-main" onClick={() => toggleCheck(item)}>
                           <span className="box" aria-hidden>
                             {checked ? '✓' : ''}
                           </span>
                           <span className="shop-text">
                             <span className="shop-name">
-                              <b>{item.product}</b> <span className="shop-qty">{fmtQty(item)}</span>
+                              <b>{item.product}</b>{' '}
+                              <span className="shop-qty">
+                                {item.extra !== undefined ? '+ ' : ''}
+                                {fmtQty(item)}
+                              </span>
                             </span>
+                            {item.extra !== undefined && (
+                              <span className="shop-more">
+                                Nachkauf · {fmtQty({ qty: item.extra, unit: item.unit })} schon gekauft
+                              </span>
+                            )}
                             <span className="shop-src">{fmtSources(item.sources)}</span>
                           </span>
                         </button>
@@ -264,9 +305,9 @@ export function ShoppingPage() {
         </>
       )}
 
-      {hidden.length > 0 && (
+      {rows.some(isHidden) && (
         <button className="sec-toggle" onClick={() => save({ hidden: [] })}>
-          ↩ Ausgeblendete wieder anzeigen ({hidden.filter((h) => items.some((i) => i.key === h)).length})
+          ↩ Ausgeblendete wieder anzeigen ({rows.filter(isHidden).length})
         </button>
       )}
 

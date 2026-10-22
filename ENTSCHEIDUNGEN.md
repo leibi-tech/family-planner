@@ -75,3 +75,6 @@ Oben in «Einkauf» schaltet man zwischen «Lebensmittel» und «Anderes» um. D
 - Beim **Erstellen** eines Haushalts werden die Daten des Handys hochgeladen. Beim **Beitreten** werden die Daten des Handys durch die des Haushalts ersetzt, damit keine doppelten Personen entstehen.
 - Abmelden lässt die Daten auf dem Handy, beendet aber den Abgleich.
 
+## E23 – Nachkauf in der Einkaufsliste (22.10.2026)
+Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später mehr, z.B. weil am Donnerstag nochmals Beeren eingeplant werden, erscheint der Artikel wieder offen, aber nur mit der **zusätzlichen** Menge («+ 200 g») und dem Hinweis «Nachkauf · 200 g schon gekauft». Das gilt auch für ausgeblendete Artikel. Beim erneuten Abhaken wird die neue Gesamtmenge als gekauft gemerkt.
+

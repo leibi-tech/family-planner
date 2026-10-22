@@ -25,6 +25,7 @@ export interface ShopWeek extends BaseRecord {
   removed: string[]; // Vorrats-Check: zu Hause vorhanden
   checked: string[]; // im Laden abgehakt
   hidden?: string[]; // erledigt und ausgeblendet
+  bought?: Record<string, number | null>; // gekaufte Menge beim Abhaken (für Nachkäufe)
 }
 
 /** Von Hand erfasster Artikel, gilt für eine Woche. */
