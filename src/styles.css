@@ -199,3 +199,23 @@ button, input { font: inherit; color: inherit; }
 }
 .warn { background: #fbe9e7; color: #8a2a1d; padding: 10px 12px; border-radius: 10px; }
 @media (prefers-color-scheme: dark) { .warn { background: #4a2620; color: #f6c9c0; } }
+
+/* --- Einkaufsliste (Schritt 4) --- */
+.small-hint { font-size: 13px; margin-top: -6px; }
+.shop-cat { margin-bottom: 14px; }
+.shop-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.shop-item { display: flex; align-items: center; border-top: 1px solid var(--border); }
+.shop-item:first-child { border-top: 0; }
+.shop-main { flex: 1; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 12px; border: 0; background: none; text-align: left; cursor: pointer; min-width: 0; }
+.box { width: 28px; height: 28px; flex: none; border-radius: 8px; border: 2px solid var(--border); display: grid; place-items: center; font-weight: 800; color: var(--primary-text); }
+.shop-text { display: flex; flex-direction: column; min-width: 0; }
+.shop-name { font-size: 17px; }
+.shop-qty { color: var(--primary); font-weight: 700; white-space: nowrap; }
+.shop-src { font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+.shop-item.checked .box { background: var(--primary); border-color: var(--primary); }
+.shop-item.checked .shop-name, .shop-item.checked .shop-qty { text-decoration: line-through; color: var(--muted); }
+.shop-item.checked { background: var(--bg); }
+.home-btn { width: 56px; flex: none; font-size: 22px; opacity: 0.8; }
+.shop-item.home { padding: 8px 8px 8px 14px; gap: 8px; justify-content: space-between; }
+.undo-btn { min-height: 44px; font-size: 14px; padding: 0 12px; white-space: nowrap; }
+.sec-toggle { width: 100%; text-align: left; border: 0; background: none; padding: 8px 0; font-size: 15px; font-weight: 700; color: var(--muted); cursor: pointer; }

@@ -3,12 +3,13 @@ import { requestPersistentStorage } from './db';
 import { FamilyPage } from './pages/FamilyPage';
 import { MenusPage } from './pages/MenusPage';
 import { PlanPage } from './pages/PlanPage';
+import { ShoppingPage } from './pages/ShoppingPage';
 
 type Tab = 'familie' | 'menues' | 'plan' | 'einkauf';
 
 const TABS: Array<{ id: Tab; label: string; icon: string; ready: boolean }> = [
   { id: 'plan', label: 'Wochenplan', icon: '📅', ready: true },
-  { id: 'einkauf', label: 'Einkauf', icon: '🛒', ready: false },
+  { id: 'einkauf', label: 'Einkauf', icon: '🛒', ready: true },
   { id: 'menues', label: 'Menüs', icon: '🍲', ready: true },
   { id: 'familie', label: 'Familie', icon: '👪', ready: true },
 ];
@@ -61,6 +62,8 @@ export function App() {
           <MenusPage />
         ) : tab === 'plan' ? (
           <PlanPage />
+        ) : tab === 'einkauf' ? (
+          <ShoppingPage />
         ) : (
           <div className="soon">
             <div className="soon-icon">{current.icon}</div>
