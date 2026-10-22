@@ -77,6 +77,23 @@ export function ShoppingPage() {
     );
   }, [days, menus, persons, recurring, weekManual, monday]);
 
+  // Übergang: Artikel, die vor Version 0.7.2 abgehakt wurden, haben noch keine «gekaufte Menge».
+  // Diese wird einmalig mit der aktuellen Menge nachgetragen, damit Nachkäufe ab jetzt erkannt werden.
+  useEffect(() => {
+    if (!weeks || !items.length) return;
+    const w = weeks.find((x) => x.id === wid);
+    if (!w) return;
+    const b = { ...(w.bought ?? {}) };
+    let changed = false;
+    for (const i of items) {
+      if ((w.checked.includes(i.key) || (w.hidden ?? []).includes(i.key)) && !(i.key in b)) {
+        b[i.key] = i.qty;
+        changed = true;
+      }
+    }
+    if (changed) put<ShopWeek>('shopping', { ...w, bought: b });
+  }, [weeks, items, wid]);
+
   if (!days || !menus || !persons || !weeks || !manual || !recurring || !suggestions)
     return <p className="muted center">Lade …</p>;
 

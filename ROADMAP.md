@@ -42,6 +42,16 @@ Die PWA wird als Android-App verpackt (TWA oder Capacitor).
 
 - [x] Nachkauf: Wird nach dem Einkauf im Plan mehr gebraucht, erscheint nur die zusätzliche Menge als offener Artikel («+ 200 g, Nachkauf · 200 g schon gekauft») (v0.7.1)
 
+## Kalender – Konzept in Abklärung (22.10.2026)
+Ihr nutzt **Google Kalender** und **Outlook/Microsoft**. Tobias möchte noch überlegen, was gebraucht wird und was sinnvoll ist. Eigener Tab «Kalender» ist gewünscht.
+- **Bausteine:**
+  - A) Private Kalender lesend einblenden (Google: geheimer iCal-Link; Outlook: Kalender veröffentlichen, evtl. nur «verfügbar/beschäftigt»)
+  - B) Familien-Termine direkt in der App («betrifft auch», «isst nicht mit»)
+  - C) Familienkalender als Abo in Google/Outlook anzeigen
+  - D) Vorschlag im Wochenplan bei Abendterminen («Abendessen ohne Tobias?»)
+- **Technik:** Für A und C braucht es eine kleine Server-Funktion bei Supabase (Edge Function), weil die App fremde Kalender nicht direkt abrufen darf. In Google/Outlook direkt schreiben (Einladungen verschicken) wäre deutlich aufwendiger (Google-/Microsoft-Freigaben, beim Geschäftskonto evtl. IT-Bewilligung) und ist vorerst nicht geplant.
+- **Offene Fragen an Tobias und Thadea:** Wo erfasst ihr Termine heute, und soll das so bleiben? Was nervt heute am meisten? Braucht es Termine der Kinder? Braucht es Erinnerungen/Benachrichtigungen? Darf der Geschäftskalender rein, ganz oder nur «beschäftigt»?
+
 ## Ideen für später (noch nicht entschieden)
 - **Kalender-Integration**: Google-Kalender in der App anzeigen und/oder Menüplan als abonnierbaren Kalender. Braucht Phase 2 (Cloud) bzw. ein Google-Login.
 - **Familienkalender** in der App (stand schon im Auftrag unter «Später»).
