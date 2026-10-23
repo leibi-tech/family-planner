@@ -29,6 +29,12 @@ export function emptyMenu(familyFactor: number, mealTypes: MealType[] = []): Men
   };
 }
 
+/** Portionsmenge lesbar: g/ml ab 10 ganze Zahl, sonst 2 Stellen. */
+export function fmtPortion(x: number, unit: string): string {
+  if ((unit === 'g' || unit === 'ml') && x >= 10) return String(Math.round(x));
+  return fmtAmount(x);
+}
+
 export const familyFactorOf = (persons: Person[]) => Math.round(persons.reduce((s, p) => s + p.factor, 0) * 10) / 10;
 
 export function MenusPage() {
@@ -162,9 +168,16 @@ export function MenuEditor({
   heading?: string;
   sources?: Record<string, { text: string; unsure: boolean }>;
 }) {
+  const myId = useSync().membership?.person_id;
+  const scale = persons.find((p) => p.id === myId)?.factor || 1; // eigener Faktor
   const [name, setName] = useState(menu.name);
   const [mealTypes, setMealTypes] = useState<MealType[]>(menu.mealTypes);
-  const [basis, setBasis] = useState<Basis>(menu.basis);
+  // Portionen gelten aus Sicht der Person, die erfasst: «4 Portionen» = 4 × eigener Faktor.
+  // Ein frisch importiertes Menü bringt nur die Portionenzahl aus dem Rezept mit.
+  const [basis, setBasis] = useState<Basis>(() =>
+    menu.basis.kind === 'portions' && sources ? { ...menu.basis, baseFactor: menu.basis.portions * scale } : menu.basis,
+  );
+  const [portionEdit, setPortionEdit] = useState<{ id: string; text: string } | null>(null);
   const [rows, setRows] = useState<IngRow[]>(() =>
     menu.ingredients.map((i) => ({ ...i, amountText: fmtAmount(i.amount) })),
   );
@@ -180,18 +193,33 @@ export function MenuEditor({
   }, [rows.length]);
 
   const sortedPersons = [...persons].sort((a, b) => a.sort - b.sort);
-  const myId = useSync().membership?.person_id;
-  const scale = persons.find((p) => p.id === myId)?.factor || 1;
   const valid = name.trim().length > 0;
 
   const toggleMeal = (t: MealType) =>
     setMealTypes((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
 
-  const [portionsText, setPortionsText] = useState(menu.basis.kind === 'portions' ? String(menu.basis.portions) : '4');
+  const [portionsText, setPortionsText] = useState(() => (basis.kind === 'portions' ? fmtAmount(basis.baseFactor / scale) : '4'));
   const setPortions = (text: string) => {
     setPortionsText(text);
     const n = parseAmount(text);
-    if (n) setBasis({ kind: 'portions', portions: n, baseFactor: n });
+    if (n) setBasis({ kind: 'portions', portions: n, baseFactor: n * scale });
+  };
+  /** Menge einer Zutat für «meine Portion». */
+  const myPortion = (r: IngRow): number | null => {
+    const a = parseAmount(r.amountText);
+    return basis.kind === 'portions' && a != null && basis.baseFactor > 0 ? (a * scale) / basis.baseFactor : null;
+  };
+  // Hauptzutat = oberste Zutat mit Menge (z.B. Spaghetti). Daran wird «Meine Portion» gezeigt.
+  const mainRow = rows.find((r) => r.product.trim() && myPortion(r) != null);
+  /** «Meine Portion: 150 g» → Portionenzahl neu berechnen, alle Zutaten passen sich an. */
+  const applyPortion = (r: IngRow, text: string) => {
+    const a = parseAmount(r.amountText);
+    const want = parseAmount(text);
+    setPortionEdit(null);
+    if (a == null || want == null) return;
+    const n = a / want;
+    setPortionsText(fmtAmount(n));
+    setBasis({ kind: 'portions', portions: n, baseFactor: n * scale });
   };
 
   const setFamily = () =>
@@ -307,8 +335,35 @@ export function MenuEditor({
                 onChange={(e) => setPortions(e.target.value)}
                 aria-label="Anzahl Portionen"
               />
-              Portionen à Faktor 1.0
+              Portionen à meine Portion
             </label>
+          )}
+          {basis.kind === 'portions' && mainRow && (
+            portionEdit ? (
+              <div className="my-portion-edit">
+                Meine Portion {mainRow.product.trim()}:
+                <input
+                  className="amount"
+                  inputMode="decimal"
+                  autoFocus
+                  value={portionEdit.text}
+                  onChange={(e) => setPortionEdit({ id: mainRow.id, text: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && applyPortion(mainRow, portionEdit.text)}
+                  aria-label="Meine Portion"
+                />
+                {mainRow.unit}
+                <button className="btn btn-primary small-btn" onClick={() => applyPortion(mainRow, portionEdit.text)}>
+                  OK
+                </button>
+              </div>
+            ) : (
+              <button
+                className="my-portion"
+                onClick={() => setPortionEdit({ id: mainRow.id, text: fmtPortion(myPortion(mainRow)!, mainRow.unit) })}
+              >
+                Meine Portion {mainRow.product.trim()}: {fmtPortion(myPortion(mainRow)!, mainRow.unit)} {mainRow.unit} ✎
+              </button>
+            )
           )}
           <small className="muted">Mengen gelten für: {basisLabel(basis, scale)}</small>
         </div>

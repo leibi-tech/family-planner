@@ -299,3 +299,7 @@ button, input { font: inherit; color: inherit; }
 .import-text { font-size: 15px; }
 .import-paste { margin-bottom: 14px; }
 .seg.seg-3 { grid-template-columns: 1fr 1fr 1fr; }
+.my-portion { justify-self: start; border: 0; background: var(--primary-soft); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; padding: 6px 10px; border-radius: 999px; cursor: pointer; }
+.my-portion-edit { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.my-portion-edit .amount { width: 80px; min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--primary); background: var(--surface); color: var(--text); font-size: 16px; }
+.small-btn { min-height: 40px; padding: 0 14px; }

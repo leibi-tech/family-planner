@@ -72,6 +72,8 @@ Der Import aus **Text** funktioniert sofort. Für den Import per **Link** brauch
 1. **Menüs** → **⤓ Importieren**.
 2. Einen **Link** zu einem Rezept einfügen (z.B. in Chrome bei Fooby: Teilen → Link kopieren) oder den **Rezepttext** kopieren und einfügen. Mit **📋 Aus Zwischenablage einfügen** geht das mit einem Tipp.
 3. **Weiter zum Prüfen**: Namen, Mahlzeit, Portionen und Zutaten kontrollieren. Unter jeder Zutat steht die Originalzeile, ⚠️ heisst «genau anschauen».
+   - **Meine Portion:** Unter der Portionenzahl steht z.B. «Meine Portion Spaghetti: 125 g ✎». Antippen, die gewünschte Menge eingeben (z.B. 150) und **OK**: Die App rechnet alles um. Massgebend ist die oberste Zutat mit Menge, darum die Hauptzutat zuoberst lassen.
+   - Eine Portion gilt immer für die Person, die erfasst. Thadea gibt also ein, was für sie stimmt.
 4. Erst **Speichern** legt das Menü an. **Abbrechen** führt zurück zum eingefügten Text.
 - **Rezept auf Papier oder Foto:** Mit **Google Lens** (Kamera-App oder Google-App) den Text markieren, «Kopieren» und in der App einfügen.
 - **Link geht nicht?** Manche Seiten enthalten keine lesbaren Rezeptangaben. Dann Zutaten und Zubereitung auf der Seite markieren, kopieren und als Text einfügen.

@@ -28,7 +28,7 @@ export interface Ingredient {
 export type Basis =
   | { kind: 'family'; baseFactor: number } // Summe der Faktoren beim Erstellen
   | { kind: 'person'; baseFactor: number; personId: string; personName: string }
-  | { kind: 'portions'; baseFactor: number; portions: number }; // importiertes Rezept: n Portionen à Faktor 1.0
+  | { kind: 'portions'; baseFactor: number; portions: number }; // importiertes Rezept: n Portionen aus Sicht der erfassenden Person (baseFactor = n × deren Faktor)
 
 export interface Menu extends BaseRecord {
   name: string;
@@ -60,7 +60,10 @@ export function fmtAmount(n: number | null): string {
 /** scale = eigener Faktor, damit Faktoren «aus eigener Sicht» angezeigt werden (ich = 1.0). */
 export function basisLabel(b: Basis, scale = 1): string {
   const f = (b.baseFactor / scale).toFixed(2).replace(/(\.\d)0$/, '$1');
-  if (b.kind === 'portions') return `${b.portions} ${b.portions === 1 ? 'Portion' : 'Portionen'} (Faktor ${f})`;
+  if (b.kind === 'portions') {
+    const n = Math.round((b.baseFactor / scale) * 100) / 100;
+    return `${n} ${n === 1 ? 'Portion' : 'Portionen'} à meine Portion`;
+  }
   return b.kind === 'family' ? `ganze Familie (Faktor ${f})` : `1 Portion von ${b.personName} (Faktor ${f})`;
 }
 
