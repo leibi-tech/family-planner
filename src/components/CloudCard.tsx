@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
+import type { Person } from '../db';
+import { useRecords } from '../hooks';
 import {
   CloudError,
+  assignPerson,
   createHousehold,
+  getInviteCode,
   getSession,
+  householdMembers,
   joinHousehold,
   myHouseholds,
+  newInviteCode,
+  removeMember,
+  setMemberRole,
+  claimPerson,
+  type Member,
   onSessionChange,
   signIn,
   signOut,
@@ -16,7 +26,9 @@ import {
   connectHousehold,
   disconnect,
   getSyncState,
+  isAdmin,
   onSyncChange,
+  refreshMembership,
   resumeHousehold,
   storedHouseholdId,
   syncNow,
@@ -84,6 +96,9 @@ export function CloudCard() {
 }
 
 function CloudSheet({ session, sync, onClose }: { session: Session | null; sync: SyncState; onClose: () => void }) {
+  useEffect(() => {
+    refreshMembership();
+  }, []);
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet sheet-tall" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
@@ -170,6 +185,7 @@ function HouseholdSetup({ session }: { session: Session }) {
   const [list, setList] = useState<Household[] | null>(null);
   const [name, setName] = useState('Familie');
   const [code, setCode] = useState('');
+  const [joinName, setJoinName] = useState('');
   const [confirmJoin, setConfirmJoin] = useState(false);
   const { busy, error, run } = useBusy();
 
@@ -236,14 +252,20 @@ function HouseholdSetup({ session }: { session: Session }) {
                 }}
               />
             </label>
+            <label className="field">
+              <span>Dein Vorname (so wie ihn der Admin erfasst hat)</span>
+              <input value={joinName} onChange={(e) => setJoinName(e.target.value)} autoComplete="given-name" />
+            </label>
             {confirmJoin && (
               <p className="warn">Die Daten, die bisher auf diesem Handy waren, werden durch die des Haushalts ersetzt.</p>
             )}
             <button
               className={'btn btn-block ' + (confirmJoin ? 'btn-danger' : 'btn-primary')}
-              disabled={busy || code.length !== 6}
+              disabled={busy || code.length !== 6 || !joinName.trim()}
               onClick={() =>
-                confirmJoin ? run(async () => connectHousehold(await joinHousehold(code), 'replace')) : setConfirmJoin(true)
+                confirmJoin
+                  ? run(async () => connectHousehold(await joinHousehold(code, joinName.trim()), 'replace'))
+                  : setConfirmJoin(true)
               }
             >
               {confirmJoin ? 'Ja, beitreten' : 'Beitreten'}
@@ -260,39 +282,31 @@ function HouseholdSetup({ session }: { session: Session }) {
   );
 }
 
+const roleLabel = (r: string) => (r === 'owner' ? 'Ersteller · Admin' : r === 'admin' ? 'Admin' : 'Mitglied');
+
 function Connected({ session, sync }: { session: Session; sync: SyncState }) {
   const hh = sync.household!;
-  const [copied, setCopied] = useState(false);
+  const admin = isAdmin(sync);
+  const persons = useRecords<Person>('persons') ?? [];
+  const me = persons.find((p) => p.id === sync.membership?.person_id);
   const [confirmOut, setConfirmOut] = useState(false);
-
-  const share = async () => {
-    const text = `Komm in unseren Family-Planner! App: https://leibi-tech.github.io/family-planner/ – Einladungscode: ${hh.invite_code}`;
-    try {
-      if (navigator.share) await navigator.share({ text });
-      else {
-        await navigator.clipboard.writeText(text);
-        setCopied(true);
-      }
-    } catch {
-      /* abgebrochen */
-    }
-  };
 
   return (
     <>
       <h2>{hh.name}</h2>
-      <p className="muted small-hint">Angemeldet als {session.user.email}</p>
+      <p className="muted small-hint">
+        Angemeldet als {session.user.email}
+        <br />
+        Du bist: <b>{me?.name ?? 'noch nicht zugeordnet'}</b>
+        {sync.membership && <> · {roleLabel(sync.membership.role)}</>}
+      </p>
 
-      <div className="invite">
-        <span className="muted">Einladungscode</span>
-        <b className="invite-code">{hh.invite_code}</b>
-        <button className="btn btn-block" onClick={share}>
-          {copied ? 'Kopiert ✓' : 'Code teilen'}
-        </button>
-        <small className="muted">
-          So kommt deine Partnerin dazu: App öffnen → Familie → «Gemeinsam nutzen» → eigenes Konto erstellen → Code eingeben.
-        </small>
-      </div>
+      {admin && <InviteBox householdId={hh.id} />}
+      {admin ? (
+        <MembersAdmin key={sync.membership?.person_id ?? '-'} householdId={hh.id} myUserId={session.user.id} persons={persons} />
+      ) : (
+        <p className="hint small-hint">Personen, Faktoren und Einladungen verwaltet der Admin eurer Familie.</p>
+      )}
 
       <div className="total">
         {sync.status === 'läuft'
@@ -321,5 +335,198 @@ function Connected({ session, sync }: { session: Session; sync: SyncState }) {
         {confirmOut ? 'Wirklich abmelden? (Daten bleiben auf dem Handy)' : 'Abmelden'}
       </button>
     </>
+  );
+}
+
+function InviteBox({ householdId }: { householdId: string }) {
+  const [code, setCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const { busy, error, run } = useBusy();
+  useEffect(() => {
+    run(async () => setCode(await getInviteCode(householdId)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [householdId]);
+
+  const share = async () => {
+    const text = `Komm in unseren Family-Planner! App: https://leibi-tech.github.io/family-planner/ – Einladungscode: ${code} (zusammen mit deinem Vornamen eingeben)`;
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+      }
+    } catch {
+      /* abgebrochen */
+    }
+  };
+
+  return (
+    <div className="invite">
+      <span className="muted">Einladungscode</span>
+      <b className="invite-code">{code ?? '······'}</b>
+      <button className="btn btn-block" disabled={!code} onClick={share}>
+        {copied ? 'Kopiert ✓' : 'Code teilen'}
+      </button>
+      <button
+        className="btn btn-block btn-ghost-danger"
+        disabled={busy}
+        onClick={() => run(async () => setCode(await newInviteCode(householdId)))}
+      >
+        Neuen Code erzeugen
+      </button>
+      {error && <p className="warn">{error}</p>}
+      <small className="muted">
+        Beitreten geht nur mit Code <b>und</b> dem Vornamen einer Person, die unter «Familie» erfasst und noch keinem Konto
+        zugeordnet ist.
+      </small>
+    </div>
+  );
+}
+
+function MembersAdmin({ householdId, myUserId, persons }: { householdId: string; myUserId: string; persons: Person[] }) {
+  const [members, setMembers] = useState<Member[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const { busy, error, run } = useBusy();
+  const load = () => run(async () => setMembers(await householdMembers(householdId)));
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [householdId]);
+
+  const nameOf = (pid: string | null) => persons.find((p) => p.id === pid)?.name ?? 'nicht zugeordnet';
+  const act = (fn: () => Promise<unknown>) =>
+    run(async () => {
+      await fn();
+      setMembers(await householdMembers(householdId));
+      await refreshMembership();
+    });
+
+  return (
+    <div className="field">
+      <span>Mitglieder ({members?.length ?? '…'})</span>
+      <ul className="list">
+        {(members ?? []).map((m) => (
+          <li key={m.user_id} className="member">
+            <button className="member-head" onClick={() => setOpen(open === m.user_id ? null : m.user_id)}>
+              <span className="member-text">
+                <b>
+                  {nameOf(m.person_id)}
+                  {m.user_id === myUserId && ' (du)'}
+                </b>
+                <span className="muted">{m.email}</span>
+              </span>
+              <span className={'role-badge ' + m.role}>{roleLabel(m.role)}</span>
+            </button>
+            {open === m.user_id && (
+              <div className="member-actions">
+                <label className="field">
+                  <span>Person</span>
+                  <select
+                    className="select"
+                    value={m.person_id ?? ''}
+                    disabled={busy}
+                    onChange={(e) => e.target.value && act(() => assignPerson(householdId, m.user_id, e.target.value))}
+                  >
+                    <option value="">– wählen –</option>
+                    {[...persons]
+                      .sort((a, b) => a.sort - b.sort)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                {m.role !== 'owner' && (
+                  <>
+                    <button
+                      className="btn btn-block"
+                      disabled={busy}
+                      onClick={() => act(() => setMemberRole(householdId, m.user_id, m.role === 'admin' ? 'member' : 'admin'))}
+                    >
+                      {m.role === 'admin' ? 'Admin-Rechte entziehen' : 'Zum Admin machen'}
+                    </button>
+                    {m.user_id !== myUserId && (
+                      <RemoveButton disabled={busy} onRemove={() => act(() => removeMember(householdId, m.user_id))} />
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {error && <p className="warn">{error}</p>}
+    </div>
+  );
+}
+
+function RemoveButton({ disabled, onRemove }: { disabled: boolean; onRemove: () => void }) {
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <button
+      className={'btn btn-block ' + (confirm ? 'btn-danger' : 'btn-ghost-danger')}
+      disabled={disabled}
+      onClick={() => (confirm ? onRemove() : setConfirm(true))}
+    >
+      {confirm ? 'Wirklich aus der Familie entfernen?' : 'Aus der Familie entfernen'}
+    </button>
+  );
+}
+
+/** Fragt nach, wer man ist, solange das eigene Konto keiner Person zugeordnet ist. */
+export function WhoAmIPrompt() {
+  const sync = useSync();
+  const persons = useRecords<Person>('persons');
+  const [taken, setTaken] = useState<string[] | null>(null);
+  const [later, setLater] = useState(false);
+  const { busy, error, run } = useBusy();
+  const hh = sync.household;
+  const need = !!hh && !!sync.membership && !sync.membership.person_id && !later;
+
+  useEffect(() => {
+    if (!need || !hh) return;
+    run(async () => setTaken((await householdMembers(hh.id)).map((m) => m.person_id).filter((x): x is string => !!x)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [need, hh?.id]);
+
+  if (!need || !persons || !taken) return null;
+  const free = [...persons].sort((a, b) => a.sort - b.sort).filter((p) => !taken.includes(p.id));
+
+  return (
+    <div className="sheet-backdrop">
+      <div className="sheet" role="dialog" aria-modal="true">
+        <h2>Wer bist du?</h2>
+        <p className="hint">
+          Damit die App weiss, wer du in der Familie «{hh!.name}» bist, wähle deinen Namen. Das geht nur einmal; ändern
+          kann es danach nur der Admin.
+        </p>
+        <div className="list">
+          {free.map((p) => (
+            <button
+              key={p.id}
+              className="row"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  await claimPerson(hh!.id, p.id);
+                  await refreshMembership();
+                })
+              }
+            >
+              <span className="avatar" aria-hidden>
+                {p.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="row-main">{p.name}</span>
+            </button>
+          ))}
+        </div>
+        {free.length === 0 && <p className="warn">Alle Personen sind schon zugeordnet. Bitte den Admin, dich zu erfassen.</p>}
+        {error && <p className="warn">{error}</p>}
+        <button className="btn btn-block" style={{ marginTop: 10 }} onClick={() => setLater(true)}>
+          Später
+        </button>
+      </div>
+    </div>
   );
 }

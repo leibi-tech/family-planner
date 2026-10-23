@@ -3,7 +3,7 @@ import { requestPersistentStorage } from './db';
 import { FamilyPage } from './pages/FamilyPage';
 import { MenusPage } from './pages/MenusPage';
 import { PlanPage } from './pages/PlanPage';
-import { useSync } from './components/CloudCard';
+import { useSync, WhoAmIPrompt } from './components/CloudCard';
 import { ShoppingPage } from './pages/ShoppingPage';
 
 type Tab = 'familie' | 'menues' | 'plan' | 'einkauf';
@@ -88,6 +88,8 @@ export function App() {
           {persistent === false && 'Daten auf diesem Gerät gespeichert'}
         </footer>
       </main>
+
+      <WhoAmIPrompt />
 
       <nav className="tabbar">
         {TABS.map((t) => (

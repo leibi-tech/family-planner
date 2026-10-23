@@ -2,16 +2,31 @@
 // Ablauf: 1) lokale Änderungen hochladen (dirty), 2) Änderungen der anderen herunterladen.
 // Bei Konflikten gewinnt die neuere Änderung (updatedAt) – lokal wie auf dem Server.
 import { STORES, clearStore, getAllRaw, getMeta, localChanges, putRaw, setMeta, type BaseRecord, type StoreName } from './db';
-import { CloudError, getSession, onSessionChange, pullRecords, pushRecords, type CloudRecord, type Household } from './cloud';
+import {
+  CloudError,
+  getSession,
+  myMembership,
+  onSessionChange,
+  pullRecords,
+  pushRecords,
+  type CloudRecord,
+  type Household,
+  type Membership,
+} from './cloud';
 
 export interface SyncState {
   household: Household | null;
   status: 'aus' | 'bereit' | 'läuft' | 'fehler' | 'offline';
   lastSync: number | null;
   error: string | null;
+  membership: Membership | null; // eigene Rolle und Person im Haushalt
 }
 
-let state: SyncState = { household: null, status: 'aus', lastSync: null, error: null };
+let state: SyncState = { household: null, status: 'aus', lastSync: null, error: null, membership: null };
+
+/** Darf dieses Gerät Personen/Faktoren ändern? Ohne Haushalt: ja (nur lokal). */
+export const isAdmin = (s: SyncState = state) =>
+  !s.household || !s.membership || s.membership.role === 'owner' || s.membership.role === 'admin';
 const events = new EventTarget();
 const emit = (patch: Partial<SyncState>) => {
   state = { ...state, ...patch };
@@ -56,6 +71,7 @@ async function syncOnce() {
     const rows: CloudRecord[] = [];
     const dirtyByStore = new Map<StoreName, BaseRecord[]>();
     for (const store of STORES) {
+      if (store === 'persons' && !isAdmin()) continue; // Personen ändert nur der Admin
       const dirty = (await getAllRaw(store)).filter((r) => r.dirty);
       if (!dirty.length) continue;
       dirtyByStore.set(store, dirty);
@@ -101,6 +117,35 @@ async function syncOnce() {
   }
 }
 
+/** Eigene Rolle/Person vom Server holen (und offline merken). */
+export async function refreshMembership(): Promise<void> {
+  const hh = state.household;
+  if (!hh || !navigator.onLine) return;
+  try {
+    const m = await myMembership(hh.id);
+    if (!m) {
+      // nicht mehr Mitglied (vom Admin entfernt)
+      await disconnect();
+      emit({ error: 'Du bist nicht mehr Mitglied dieses Haushalts.' });
+      return;
+    }
+    await setMeta('membership:' + hh.id, m);
+    const wasAdmin = isAdmin();
+    emit({ membership: m });
+    if (!isAdmin()) {
+      // Lokale Personen-Änderungen verwerfen und Personen frisch vom Server holen
+      const persons = await getAllRaw('persons');
+      if (persons.some((p) => p.dirty) || wasAdmin) {
+        await putRaw('persons', persons.map((p) => ({ ...p, dirty: false, updatedAt: 0 })));
+        await setMeta('lastPull:' + hh.id, undefined);
+        syncNow();
+      }
+    }
+  } catch {
+    /* offline – später nochmals */
+  }
+}
+
 /** Haushalt merken und Abgleich starten. mode: 'upload' = lokale Daten hochladen, 'replace' = lokale Daten ersetzen. */
 export async function connectHousehold(hh: Household, mode: 'upload' | 'replace') {
   if (mode === 'replace') {
@@ -114,13 +159,14 @@ export async function connectHousehold(hh: Household, mode: 'upload' | 'replace'
   }
   await setMeta('lastPull:' + hh.id, undefined);
   await setMeta('household', hh);
-  emit({ household: hh, status: 'bereit', error: null });
+  emit({ household: hh, status: 'bereit', error: null, membership: null });
+  await refreshMembership();
   await syncNow();
 }
 
 export async function disconnect() {
   await setMeta('household', undefined);
-  emit({ household: null, status: 'aus', lastSync: null, error: null });
+  emit({ household: null, status: 'aus', lastSync: null, error: null, membership: null });
 }
 
 let timer: number | undefined;
@@ -133,22 +179,32 @@ const soon = (ms = 1500) => {
 export async function startSync() {
   const hh = (await getMeta<Household>('household')) ?? null;
   const s = await getSession();
-  emit({ household: s ? hh : null, status: s && hh ? 'bereit' : 'aus' });
+  const mem = hh ? ((await getMeta<Membership>('membership:' + hh.id)) ?? null) : null;
+  emit({ household: s ? hh : null, status: s && hh ? 'bereit' : 'aus', membership: mem });
   localChanges.addEventListener('change', () => soon());
   window.addEventListener('online', () => soon(200));
   window.addEventListener('offline', () => state.household && emit({ status: 'offline' }));
-  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && soon(200));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    soon(200);
+    refreshMembership();
+  });
   window.setInterval(() => document.visibilityState === 'visible' && syncNow(), 30000);
   onSessionChange(async () => {
     if (!(await getSession())) emit({ household: null, status: 'aus' });
   });
-  if (s && hh) syncNow();
+  if (s && hh) {
+    refreshMembership();
+    syncNow();
+  }
+  window.setInterval(() => document.visibilityState === 'visible' && refreshMembership(), 120000);
 }
 
 /** Bereits verbundenen Haushalt nach erneuter Anmeldung weiterverwenden (Daten bleiben). */
 export async function resumeHousehold(hh: Household) {
   await setMeta('household', hh);
-  emit({ household: hh, status: 'bereit', error: null });
+  emit({ household: hh, status: 'bereit', error: null, membership: (await getMeta<Membership>('membership:' + hh.id)) ?? null });
+  await refreshMembership();
   await syncNow();
 }
 

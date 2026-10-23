@@ -1,46 +1,58 @@
 import { useState } from 'react';
 import { newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
-import { CloudCard } from '../components/CloudCard';
+import { CloudCard, useSync } from '../components/CloudCard';
+import { isAdmin } from '../sync';
 
 const MIN = 0.1;
 const MAX = 3.0;
 const STEP = 0.1;
 
-export const fmtFactor = (f: number) => f.toFixed(1);
-const clamp = (f: number) => Math.min(MAX, Math.max(MIN, Math.round(f * 10) / 10));
+/** 1 → «1.0», 1.25 → «1.25», 0.5 → «0.5» */
+export const fmtFactor = (f: number) => f.toFixed(2).replace(/(\.\d)0$/, '$1');
+const clamp = (f: number) => Math.min(MAX, Math.max(MIN, Math.round(f * 100) / 100));
 
 export function FamilyPage() {
   const persons = useRecords<Person>('persons');
+  const sync = useSync();
   const [editing, setEditing] = useState<Person | null>(null);
 
   if (!persons) return <p className="muted center">Lade …</p>;
 
+  const admin = isAdmin(sync);
+  const myId = sync.membership?.person_id ?? null;
+  const me = persons.find((p) => p.id === myId);
+  // Faktoren aus eigener Sicht: ich selbst = 1.0, die anderen im Verhältnis dazu
+  const scale = me && me.factor > 0 ? me.factor : 1;
   const sorted = [...persons].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name));
-  const total = sorted.reduce((s, p) => s + p.factor, 0);
+  const total = sorted.reduce((s, p) => s + p.factor, 0) / scale;
 
   const addPerson = () => {
     const maxSort = sorted.reduce((m, p) => Math.max(m, p.sort), -1);
-    setEditing({ id: newId(), name: '', factor: 1.0, sort: maxSort + 1, updatedAt: 0, deleted: false });
+    setEditing({ id: newId(), name: '', factor: scale, sort: maxSort + 1, updatedAt: 0, deleted: false });
   };
 
   return (
     <section>
       <CloudCard />
       <p className="hint">
-        Der <b>Portionenfaktor</b> sagt, wie viel jemand im Vergleich zu Tobias (1.0) isst. Daraus berechnet die App
-        später die Einkaufsmengen.
+        Der <b>Portionenfaktor</b> sagt, wie viel jemand im Vergleich zu {me ? 'dir' : 'einer normalen Portion'} (1.0) isst.
+        Daraus berechnet die App die Einkaufsmengen.
+        {!admin && ' Personen und Faktoren kann nur der Admin eurer Familie ändern.'}
       </p>
 
       <ul className="list">
         {sorted.map((p) => (
           <li key={p.id}>
-            <button className="row" onClick={() => setEditing(p)}>
+            <button className={'row' + (admin ? '' : ' readonly')} onClick={() => admin && setEditing(p)}>
               <span className="avatar" aria-hidden>
                 {p.name.trim().charAt(0).toUpperCase() || '?'}
               </span>
-              <span className="row-main">{p.name}</span>
-              <span className="badge">× {fmtFactor(p.factor)}</span>
+              <span className="row-main">
+                {p.name}
+                {p.id === myId && <span className="row-sub">du</span>}
+              </span>
+              <span className="badge">× {fmtFactor(p.factor / scale)}</span>
             </button>
           </li>
         ))}
@@ -52,14 +64,18 @@ export function FamilyPage() {
         Ganze Familie: <b>Faktor {fmtFactor(total)}</b>
       </div>
 
-      <button className="btn btn-primary btn-block" onClick={addPerson}>
-        + Person hinzufügen
-      </button>
+      {admin && (
+        <button className="btn btn-primary btn-block" onClick={addPerson}>
+          + Person hinzufügen
+        </button>
+      )}
 
       {editing && (
         <PersonSheet
           person={editing}
           isNew={!persons.some((p) => p.id === editing.id)}
+          scale={scale}
+          meName={me?.name}
           onClose={() => setEditing(null)}
         />
       )}
@@ -67,15 +83,27 @@ export function FamilyPage() {
   );
 }
 
-function PersonSheet({ person, isNew, onClose }: { person: Person; isNew: boolean; onClose: () => void }) {
+function PersonSheet({
+  person,
+  isNew,
+  scale,
+  meName,
+  onClose,
+}: {
+  person: Person;
+  isNew: boolean;
+  scale: number;
+  meName?: string;
+  onClose: () => void;
+}) {
   const [name, setName] = useState(person.name);
-  const [factor, setFactor] = useState(person.factor);
+  const [factor, setFactor] = useState(clamp(person.factor / scale)); // aus eigener Sicht
   const [confirmDelete, setConfirmDelete] = useState(false);
   const valid = name.trim().length > 0;
 
   const save = async () => {
     if (!valid) return;
-    await put<Person>('persons', { ...person, name: name.trim(), factor: clamp(factor) });
+    await put<Person>('persons', { ...person, name: name.trim(), factor: Math.round(clamp(factor) * scale * 1000) / 1000 });
     onClose();
   };
 
@@ -115,7 +143,7 @@ function PersonSheet({ person, isNew, onClose }: { person: Person; isNew: boolea
               +
             </button>
           </div>
-          <small className="muted">1.0 = eine Portion wie Tobias · 0.5 = halbe Portion</small>
+          <small className="muted">1.0 = {meName ? `eine Portion wie ${meName}` : 'eine normale Portion'} · 0.5 = halbe Portion</small>
         </div>
 
         <div className="sheet-actions">

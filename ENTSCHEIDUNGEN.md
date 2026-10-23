@@ -78,3 +78,10 @@ Oben in «Einkauf» schaltet man zwischen «Lebensmittel» und «Anderes» um. D
 ## E23 – Nachkauf in der Einkaufsliste (22.10.2026)
 Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später mehr, z.B. weil am Donnerstag nochmals Beeren eingeplant werden, erscheint der Artikel wieder offen, aber nur mit der **zusätzlichen** Menge («+ 200 g») und dem Hinweis «Nachkauf · 200 g schon gekauft». Das gilt auch für ausgeblendete Artikel. Beim erneuten Abhaken wird die neue Gesamtmenge als gekauft gemerkt.
 
+## E24 – Rollen, Personen und Beitritt (v0.8.0, 23.10.2026)
+- **Konto und Person:** Jedes Konto ist genau einer Person der Familie zugeordnet («Wer bist du?»). Eine Person kann nur zu einem Konto gehören.
+- **Beitritt:** Nur mit Einladungscode **und** dem Vornamen einer erfassten, noch freien Person. Bei einem Fehler erscheint immer «Code oder Name falsch», damit niemand herausfinden kann, welcher Teil falsch war.
+- **Rollen:** Der Ersteller ist Admin und bleibt es immer. Er kann weitere Admins ernennen. Nur Admins dürfen Personen und Faktoren ändern, den Einladungscode sehen oder neu erzeugen, Mitglieder mit E-Mail sehen, Personen zuordnen und Mitglieder entfernen. Das wird in der Datenbank erzwungen (Sicherheitsregeln und Funktionen), nicht nur in der App.
+- **Faktoren aus eigener Sicht:** Gespeichert wird wie bisher ein Faktor pro Person. Angezeigt wird er geteilt durch den eigenen Faktor, so ist man selbst immer 1.0. Beispiel aus Thadeas Sicht: Tobias 1.25, Thadea 1.0, Kinder 0.5. An den Einkaufsmengen ändert das nichts, weil nur die Verhältnisse zählen.
+- **Datenbank-Update:** `supabase/update-0.8.sql`, ist auch in `schema.sql` enthalten.
+

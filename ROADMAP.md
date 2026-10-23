@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 22.10.2026 · Version 0.7.1
+Stand: 23.10.2026 · Version 0.8.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -42,6 +42,11 @@ Die PWA wird als Android-App verpackt (TWA oder Capacitor).
 
 - [x] Nachkauf: Wird nach dem Einkauf im Plan mehr gebraucht, erscheint nur die zusätzliche Menge als offener Artikel («+ 200 g, Nachkauf · 200 g schon gekauft») (v0.7.1)
 
+## Als Nächstes
+- ⏳ v0.8.0 (Rollen & Personen) einspielen: zuerst `supabase/update-0.8.sql` in Supabase ausführen, dann hochladen, dann beide «Wer bist du?» beantworten.
+- Danach: **Menü-Import Stufe 1** (Zutaten aus Text einfügen; Foto via Google Lens). Stufe 2 (Foto mit KI) später nach Bedarf.
+- Danach: Kalender (Konzept unten).
+
 ## Kalender – Konzept in Abklärung (22.10.2026)
 Ihr nutzt **Google Kalender** und **Outlook/Microsoft**. Tobias möchte noch überlegen, was gebraucht wird und was sinnvoll ist. Eigener Tab «Kalender» ist gewünscht.
 - **Bausteine:**
@@ -70,3 +75,5 @@ Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie a
 - **22.10.2026 (7)**: Phase 2 beschlossen: Supabase. Datenbank-Aufbau (supabase/schema.sql) erstellt und lokal mit PostgreSQL getestet: Sicherheitsregeln (fremde Konten sehen nichts), Beitritt per Code, neuere Änderung gewinnt.
 - **22.10.2026 (8)**: Phase 2 umgesetzt (v0.7.0): Anmeldung, Haushalt mit Einladungscode, Abgleich. Secret key wurde versehentlich im Chat geteilt – Tobias soll ihn in Supabase löschen/ersetzen.
 - **22.10.2026 (9)**: Familie nutzt die App gemeinsam. v0.7.1: Nachkauf-Logik in der Einkaufsliste. Nächstes Thema: Familienkalender (Konzept in Abklärung).
+- **22.10.2026 (10)**: v0.7.2: Nachkauf funktionierte nicht für Artikel, die noch mit v0.7.0 abgehakt wurden (keine gespeicherte Kaufmenge). Jetzt wird diese beim ersten Öffnen nachgetragen.
+- **23.10.2026**: v0.8.0 Rollen & Personen: Beitritt nur mit Code + Vorname, «Wer bist du?», Admin/Mitglied, Admin sieht Mitglieder mit E-Mail und verwaltet sie, Faktoren aus eigener Sicht. Datenbank-Funktionen lokal mit PostgreSQL getestet, App mit Supabase-Nachbau und zwei simulierten Handys.

@@ -56,10 +56,10 @@ export function fmtAmount(n: number | null): string {
   return String(Math.round(n * 100) / 100);
 }
 
-export function basisLabel(b: Basis): string {
-  return b.kind === 'family'
-    ? `ganze Familie (Faktor ${b.baseFactor.toFixed(1)})`
-    : `1 Portion von ${b.personName} (Faktor ${b.baseFactor.toFixed(1)})`;
+/** scale = eigener Faktor, damit Faktoren «aus eigener Sicht» angezeigt werden (ich = 1.0). */
+export function basisLabel(b: Basis, scale = 1): string {
+  const f = (b.baseFactor / scale).toFixed(2).replace(/(\.\d)0$/, '$1');
+  return b.kind === 'family' ? `ganze Familie (Faktor ${f})` : `1 Portion von ${b.personName} (Faktor ${f})`;
 }
 
 // ---------------- Wochenplan (Schritt 3) ----------------

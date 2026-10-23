@@ -39,17 +39,21 @@ App-Adresse: **https://leibi-tech.github.io/family-planner/**
 5. Unter **Authentication**, dann **URL Configuration**: bei «Site URL» `https://leibi-tech.github.io/family-planner/` eintragen und speichern.
 6. Links unten auf **Project Settings** (Zahnrad), dann **API** bzw. **Data API / API Keys**. Die **Project URL** (`https://….supabase.co`) und den Schlüssel **anon public** (oder «publishable», beginnt mit `eyJ…` oder `sb_publishable_…`) an Claude schicken. Diese zwei Angaben sind für die App gedacht und dürfen öffentlich sein, die Sicherheitsregeln schützen eure Daten. **Nie** den Schlüssel «service_role» oder «secret» weitergeben.
 
-## H) Gemeinsam nutzen (ab Version 0.7.0)
-**Erste Person (Tobias), einmalig:**
-1. App öffnen → **Familie** → oben **«Gemeinsam nutzen»** antippen.
-2. **Neues Konto** wählen, E-Mail und Passwort eingeben → **Konto erstellen**.
-3. Bei «Neuen Haushalt erstellen» einen Namen eingeben (z.B. «Familie Leibacher») → **Haushalt erstellen**. Alle bisherigen Daten werden hochgeladen.
-4. Es erscheint ein **Einladungscode** (6 Zeichen). Mit **Code teilen** per WhatsApp o.ä. an die Partnerin schicken.
+## H) Gemeinsam nutzen (ab Version 0.8.0)
+**Admin (wer die Familie erstellt), einmalig:**
+1. Unter **Familie** alle Personen mit ihrem richtigen Vornamen erfassen (z.B. Tobias, Thadea, …).
+2. Oben **«Gemeinsam nutzen»** → **Neues Konto** → E-Mail + Passwort → **Konto erstellen**.
+3. Haushalt-Namen eingeben → **Haushalt erstellen**. Danach fragt die App **«Wer bist du?»** → eigenen Namen antippen.
+4. Den **Einladungscode** mit **Code teilen** verschicken. Nur Admins sehen den Code.
 
-**Zweite Person (Partnerin):**
-1. Die App-Adresse in Chrome öffnen und die App installieren (Abschnitt D).
-2. **Familie** → **«Gemeinsam nutzen»** → **Neues Konto** → E-Mail + Passwort → **Konto erstellen**.
-3. Bei «mit Einladungscode beitreten» den Code eingeben → **Beitreten** → **Ja, beitreten**. Die Daten auf ihrem Handy werden durch die gemeinsamen ersetzt.
+**Weitere Familienmitglieder:**
+1. App installieren (Abschnitt D) → **Familie** → **«Gemeinsam nutzen»** → **Neues Konto**.
+2. **Code** und **eigenen Vornamen** (so wie ihn der Admin erfasst hat) eingeben → **Beitreten** → **Ja, beitreten**. Stimmt eines davon nicht, erscheint «Code oder Name falsch».
+
+**Rollen:**
+- **Admin:** darf Personen und Faktoren ändern, sieht den Einladungscode und alle Mitglieder mit E-Mail. Er kann Mitglieder zu Admins machen, ihnen eine Person zuordnen oder sie entfernen.
+- **Mitglied:** plant Menüs, Wochenplan und Einkauf, ändert aber keine Personen oder Faktoren.
+- **Faktoren** sieht jede Person aus ihrer eigenen Sicht: man selbst ist immer 1.0.
 
 **Im Alltag:** Änderungen werden automatisch abgeglichen (kurz nach jeder Änderung, beim Öffnen der App und alle 30 Sekunden). Ohne Internet funktioniert alles weiter, abgeglichen wird, sobald wieder Internet da ist. Oben rechts zeigt ☁︎ an, dass die App verbunden ist (⟳ = gleicht gerade ab, ⚠︎ = Problem, antippen für Details).
 

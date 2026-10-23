@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
+import { useSync } from '../components/CloudCard';
 import {
   CATEGORIES,
   MEAL_TYPES,
@@ -128,6 +129,8 @@ export function MenuEditor({
   }, [rows.length]);
 
   const sortedPersons = [...persons].sort((a, b) => a.sort - b.sort);
+  const myId = useSync().membership?.person_id;
+  const scale = persons.find((p) => p.id === myId)?.factor || 1;
   const valid = name.trim().length > 0;
 
   const toggleMeal = (t: MealType) =>
@@ -206,7 +209,7 @@ export function MenuEditor({
             </button>
             <button
               className={basis.kind === 'person' ? 'on' : ''}
-              onClick={() => setPerson(basis.kind === 'person' ? basis.personId : sortedPersons[0]?.id)}
+              onClick={() => setPerson(basis.kind === 'person' ? basis.personId : (myId ?? sortedPersons[0]?.id))}
             >
               1 Portion
             </button>
@@ -220,12 +223,12 @@ export function MenuEditor({
             >
               {sortedPersons.map((p) => (
                 <option key={p.id} value={p.id}>
-                  1 Portion von {p.name} (Faktor {p.factor.toFixed(1)})
+                  1 Portion von {p.name} (Faktor {(p.factor / scale).toFixed(2).replace(/(\.\d)0$/, '$1')})
                 </option>
               ))}
             </select>
           )}
-          <small className="muted">Mengen gelten für: {basisLabel(basis)}</small>
+          <small className="muted">Mengen gelten für: {basisLabel(basis, scale)}</small>
         </div>
 
         <div className="field">

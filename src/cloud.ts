@@ -18,7 +18,20 @@ export interface Session {
 export interface Household {
   id: string;
   name: string;
-  invite_code: string;
+  invite_code?: string | null; // nur für Admins (separat abgefragt)
+}
+
+export type Role = 'owner' | 'admin' | 'member';
+export interface Membership {
+  role: Role;
+  person_id: string | null;
+}
+export interface Member {
+  user_id: string;
+  role: Role;
+  person_id: string | null;
+  email: string | null; // nur für Admins sichtbar
+  joined_at: string;
 }
 
 export class CloudError extends Error {}
@@ -50,7 +63,7 @@ function niceError(status: number, body: any): string {
   if (code === 'weak_password' || /password should be/i.test(msg)) return 'Das Passwort ist zu kurz (mindestens 6, besser 8 Zeichen).';
   if (code === 'email_address_invalid' || /email.*invalid/i.test(msg)) return 'Diese E-Mail-Adresse ist ungültig.';
   if (code === 'email_not_confirmed') return 'Die E-Mail ist noch nicht bestätigt (in Supabase «Confirm email» ausschalten).';
-  if (/Code ungültig/.test(msg)) return 'Dieser Einladungscode ist ungültig.';
+  if (/Code ungültig|Code oder Name falsch/.test(msg)) return 'Code oder Name falsch.';
   if (status === 429) return 'Zu viele Versuche. Bitte kurz warten.';
   return msg || `Fehler ${status}`;
 }
@@ -135,15 +148,32 @@ export async function signOut(): Promise<void> {
 }
 
 export async function myHouseholds(): Promise<Household[]> {
-  return call('/rest/v1/households?select=id,name,invite_code&order=created_at.asc');
+  return call('/rest/v1/households?select=id,name&order=created_at.asc');
 }
+
+const rpc = (fn: string, args: Record<string, unknown>) =>
+  call('/rest/v1/rpc/' + fn, { method: 'POST', body: JSON.stringify(args) });
+
+export async function myMembership(householdId: string): Promise<Membership | null> {
+  const rows: Membership[] = await rpc('my_membership', { p_household: householdId });
+  return rows?.[0] ?? null;
+}
+export const claimPerson = (h: string, personId: string) => rpc('claim_person', { p_household: h, p_person: personId });
+export const householdMembers = (h: string): Promise<Member[]> => rpc('household_members', { p_household: h });
+export const setMemberRole = (h: string, user: string, role: 'admin' | 'member') =>
+  rpc('set_member_role', { p_household: h, p_user: user, p_role: role });
+export const assignPerson = (h: string, user: string, personId: string) =>
+  rpc('assign_person', { p_household: h, p_user: user, p_person: personId });
+export const removeMember = (h: string, user: string) => rpc('remove_member', { p_household: h, p_user: user });
+export const getInviteCode = (h: string): Promise<string> => rpc('get_invite_code', { p_household: h });
+export const newInviteCode = (h: string): Promise<string> => rpc('new_invite_code', { p_household: h });
 
 export async function createHousehold(name: string): Promise<Household> {
   return call('/rest/v1/rpc/create_household', { method: 'POST', body: JSON.stringify({ p_name: name }) });
 }
 
-export async function joinHousehold(code: string): Promise<Household> {
-  return call('/rest/v1/rpc/join_household', { method: 'POST', body: JSON.stringify({ p_code: code }) });
+export async function joinHousehold(code: string, name: string): Promise<Household> {
+  return call('/rest/v1/rpc/join_household', { method: 'POST', body: JSON.stringify({ p_code: code, p_name: name }) });
 }
 
 export interface CloudRecord {
