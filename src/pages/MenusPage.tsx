@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
 import { useSync } from '../components/CloudCard';
+import { ImportSheet, type ImportResult } from '../components/ImportSheet';
 import {
   CATEGORIES,
   MEAL_TYPES,
@@ -34,12 +35,22 @@ export function MenusPage() {
   const menus = useRecords<Menu>('menus');
   const persons = useRecords<Person>('persons');
   const [editing, setEditing] = useState<Menu | null>(null);
+  // Import: Text bleibt erhalten, wenn man aus der Prüfung zurückgeht.
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [imported, setImported] = useState<ImportResult | null>(null);
+  const importSaved = useRef(false);
 
   if (!menus || !persons) return <p className="muted center">Lade …</p>;
 
   const sorted = [...menus].sort((a, b) => a.name.localeCompare(b.name, 'de-CH'));
   const familyFactor = familyFactorOf(persons);
   const newMenu = () => setEditing(emptyMenu(familyFactor));
+
+  const onImported = (r: ImportResult) => {
+    setImportOpen(false);
+    setImported(r);
+  };
 
   return (
     <section>
@@ -70,9 +81,45 @@ export function MenusPage() {
         </ul>
       )}
 
-      <button className="btn btn-primary btn-block" onClick={newMenu}>
-        + Neues Menü
-      </button>
+      <div className="btn-pair">
+        <button className="btn btn-primary btn-block" onClick={newMenu}>
+          + Neues Menü
+        </button>
+        <button className="btn btn-block" onClick={() => setImportOpen(true)}>
+          ⤓ Importieren
+        </button>
+      </div>
+
+      {importOpen && (
+        <ImportSheet
+          text={importText}
+          onText={setImportText}
+          familyFactor={familyFactor}
+          onDone={onImported}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
+
+      {imported && (
+        <MenuEditor
+          menu={imported.menu}
+          isNew
+          persons={persons}
+          familyFactor={familyFactor}
+          heading="Import prüfen"
+          sources={imported.sources}
+          onSaved={() => {
+            importSaved.current = true;
+            setImportText('');
+          }}
+          onClose={() => {
+            setImported(null);
+            // Abbrechen → zurück zum eingefügten Text
+            if (!importSaved.current) setImportOpen(true);
+            importSaved.current = false;
+          }}
+        />
+      )}
 
       {editing && (
         <MenuEditor
@@ -103,6 +150,8 @@ export function MenuEditor({
   familyFactor,
   onClose,
   onSaved,
+  heading,
+  sources,
 }: {
   menu: Menu;
   isNew: boolean;
@@ -110,6 +159,8 @@ export function MenuEditor({
   familyFactor: number;
   onClose: () => void;
   onSaved?: (menu: Menu) => void;
+  heading?: string;
+  sources?: Record<string, { text: string; unsure: boolean }>;
 }) {
   const [name, setName] = useState(menu.name);
   const [mealTypes, setMealTypes] = useState<MealType[]>(menu.mealTypes);
@@ -135,6 +186,13 @@ export function MenuEditor({
 
   const toggleMeal = (t: MealType) =>
     setMealTypes((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+
+  const [portionsText, setPortionsText] = useState(menu.basis.kind === 'portions' ? String(menu.basis.portions) : '4');
+  const setPortions = (text: string) => {
+    setPortionsText(text);
+    const n = parseAmount(text);
+    if (n) setBasis({ kind: 'portions', portions: n, baseFactor: n });
+  };
 
   const setFamily = () =>
     setBasis(menu.basis.kind === 'family' ? menu.basis : { kind: 'family', baseFactor: familyFactor });
@@ -179,7 +237,13 @@ export function MenuEditor({
   return (
     <div className="sheet-backdrop">
       <div className="sheet sheet-full" role="dialog" aria-modal="true">
-        <h2>{isNew ? 'Neues Menü' : 'Menü bearbeiten'}</h2>
+        <h2>{heading ?? (isNew ? 'Neues Menü' : 'Menü bearbeiten')}</h2>
+        {sources && (
+          <p className="import-banner">
+            Bitte prüfen und anpassen. Gespeichert wird erst mit «Speichern». Unter jeder Zutat steht die Originalzeile;
+            ⚠️ heisst: bitte genau anschauen.
+          </p>
+        )}
 
         <label className="field">
           <span>Name</span>
@@ -203,7 +267,12 @@ export function MenuEditor({
 
         <div className="field">
           <span>Die Mengen gelten für …</span>
-          <div className="seg">
+          <div className={'seg' + (menu.basis.kind === 'portions' ? ' seg-3' : '')}>
+            {menu.basis.kind === 'portions' && (
+              <button className={basis.kind === 'portions' ? 'on' : ''} onClick={() => setPortions(portionsText)}>
+                Portionen
+              </button>
+            )}
             <button className={basis.kind === 'family' ? 'on' : ''} onClick={setFamily}>
               Ganze Familie
             </button>
@@ -227,6 +296,19 @@ export function MenuEditor({
                 </option>
               ))}
             </select>
+          )}
+          {basis.kind === 'portions' && (
+            <label className="portions-row">
+              Für
+              <input
+                className="amount"
+                inputMode="decimal"
+                value={portionsText}
+                onChange={(e) => setPortions(e.target.value)}
+                aria-label="Anzahl Portionen"
+              />
+              Portionen à Faktor 1.0
+            </label>
           )}
           <small className="muted">Mengen gelten für: {basisLabel(basis, scale)}</small>
         </div>
@@ -281,6 +363,11 @@ export function MenuEditor({
                     {CATEGORIES.find((c) => c.id === r.category)!.label}
                   </button>
                 </div>
+                {sources?.[r.id] && (
+                  <small className={'ing-src' + (sources[r.id].unsure ? ' unsure' : '')}>
+                    {sources[r.id].unsure ? '⚠️ ' : ''}Original: {sources[r.id].text}
+                  </small>
+                )}
               </div>
             ))}
           </div>

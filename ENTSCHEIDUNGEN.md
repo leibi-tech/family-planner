@@ -78,6 +78,14 @@ Oben in «Einkauf» schaltet man zwischen «Lebensmittel» und «Anderes» um. D
 ## E23 – Nachkauf in der Einkaufsliste (22.10.2026)
 Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später mehr, z.B. weil am Donnerstag nochmals Beeren eingeplant werden, erscheint der Artikel wieder offen, aber nur mit der **zusätzlichen** Menge («+ 200 g») und dem Hinweis «Nachkauf · 200 g schon gekauft». Das gilt auch für ausgeblendete Artikel. Beim erneuten Abhaken wird die neue Gesamtmenge als gekauft gemerkt.
 
+## E25 – Menü-Import aus Text oder Link (v0.9.0, 23.10.2026)
+- **Ablauf:** Bei «Menüs» → «⤓ Importieren» einen Link oder den Rezepttext einfügen. Die App erkennt Titel, Personenzahl, Zutaten und Zubereitung und öffnet «Import prüfen». **Gespeichert wird erst mit «Speichern».** «Abbrechen» führt zurück zum eingefügten Text.
+- **Kontrolle:** Unter jeder Zutat steht die Originalzeile. ⚠️ markiert, was unsicher ist (z.B. «1–2 Knoblauchzehen», «2 Zehen Knoblauch»).
+- **Erkennung:** dl und cl werden in ml umgerechnet. Bei Bereichen («1–2») gilt die obere Zahl, damit es sicher reicht. Mengenwörter wie Zehe, Scheibe, Becher werden zu «Stk.», das Wort bleibt im Produktnamen. «(ca. 400 g)» wird nicht umgerechnet, die Stückzahl gilt. «Salz, Pfeffer» gibt zwei Zutaten ohne Menge. Backpapier, Alufolie, Zahnstocher usw. kommen in die Sparte «Anderes». Der Text wird nur auf dem Handy ausgewertet.
+- **Mengen-Bezug «Portionen»:** Neuer dritter Bezug neben «Ganze Familie» und «1 Portion von …»: «Für n Portionen à Faktor 1.0» (Faktor 1.0 ist die gespeicherte Bezugsgrösse, also Tobias). Ohne Angabe im Rezept gelten 4 Portionen. Der Knopf erscheint nur bei importierten Menüs.
+- **Link-Import:** Die App darf fremde Webseiten nicht selbst abrufen (Browser-Sperre). Darum holt eine kleine Supabase-Funktion (`supabase/functions/rezept-import`) die Seite und liest die maschinenlesbaren Rezeptangaben, die viele Rezeptseiten für Google enthalten (schema.org/Recipe). Nur angemeldete Konten dürfen die Funktion nutzen; die Prüfung macht die Funktion selbst, darum ist «Verify JWT» ausgeschaltet. Findet die Seite kein Rezept, kommt der Hinweis, den Text zu kopieren.
+- **Nicht gemacht:** Keine ganze Rezept-Datenbank herunterladen (keine passende freie Quelle auf Deutsch, Nutzungsbedingungen von Fooby & Co.). Stattdessen später eigene Menü-Vorlagen.
+
 ## E24 – Rollen, Personen und Beitritt (v0.8.0, 23.10.2026)
 - **Konto und Person:** Jedes Konto ist genau einer Person der Familie zugeordnet («Wer bist du?»). Eine Person kann nur zu einem Konto gehören.
 - **Beitritt:** Nur mit Einladungscode **und** dem Vornamen einer erfassten, noch freien Person. Bei einem Fehler erscheint immer «Code oder Name falsch», damit niemand herausfinden kann, welcher Teil falsch war.

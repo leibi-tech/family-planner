@@ -66,6 +66,8 @@ function niceError(status: number, body: any): string {
   if (/Code ungültig|Code oder Name falsch/.test(msg)) return 'Code oder Name falsch.';
   if (/schema cache|Could not find the function/i.test(msg))
     return 'Die Datenbank ist noch nicht auf dem neusten Stand: bitte «update-0.8.sql» in Supabase ausführen.';
+  if (/function was not found|not_found/i.test(msg + code) && status === 404)
+    return 'Der Link-Import ist in Supabase noch nicht eingerichtet (Funktion «rezept-import» fehlt).';
   if (status === 429) return 'Zu viele Versuche. Bitte kurz warten.';
   return msg || `Fehler ${status}`;
 }
@@ -212,4 +214,18 @@ export async function pullRecords(householdId: string, since: string | null): Pr
     cursor = page[page.length - 1].server_updated_at!;
   }
   return out;
+}
+
+// ---------- Menü-Import per Link (Supabase-Funktion «rezept-import») ----------
+export interface WebRecipe {
+  name: string;
+  ingredients: string[];
+  yield: string | null;
+  instructions: string[];
+  url: string;
+}
+
+export async function fetchRecipeFromUrl(url: string): Promise<WebRecipe> {
+  if (!(await getSession())) throw new CloudError('Der Import per Link braucht ein Konto. Melde dich unter «Familie» an oder kopiere den Rezepttext.');
+  return call('/functions/v1/rezept-import', { method: 'POST', body: JSON.stringify({ url }) });
 }

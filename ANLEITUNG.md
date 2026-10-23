@@ -59,6 +59,24 @@ App-Adresse: **https://leibi-tech.github.io/family-planner/**
 
 **Neues Handy:** App installieren → «Gemeinsam nutzen» → **Anmelden** → «auf diesem Handy verwenden».
 
+## I) Einmalig: Link-Import in Supabase einrichten (ab Version 0.9.0)
+Der Import aus **Text** funktioniert sofort. Für den Import per **Link** braucht es eine kleine Funktion in Supabase:
+1. Öffne **supabase.com**, dein Projekt **family-planner**.
+2. Links auf **Edge Functions** klicken, dann **Deploy a new function** und **Via Editor**.
+3. Den Namen oben auf **`rezept-import`** ändern (genau so geschrieben).
+4. Im Ordner die Datei `supabase\functions\rezept-import\index.ts` mit dem Editor öffnen, alles kopieren (Ctrl+A, Ctrl+C), im Supabase-Editor den Beispieltext ganz ersetzen (Ctrl+A, Ctrl+V).
+5. Unten rechts auf **Deploy function** klicken und warten, bis es fertig ist.
+6. In der Funktion auf **Details** bzw. **Settings**: den Schalter **Verify JWT** (oder «Enforce JWT verification») **ausschalten** und speichern. *(Die Funktion prüft selbst, ob jemand angemeldet ist.)*
+
+## J) Menü importieren
+1. **Menüs** → **⤓ Importieren**.
+2. Einen **Link** zu einem Rezept einfügen (z.B. in Chrome bei Fooby: Teilen → Link kopieren) oder den **Rezepttext** kopieren und einfügen. Mit **📋 Aus Zwischenablage einfügen** geht das mit einem Tipp.
+3. **Weiter zum Prüfen**: Namen, Mahlzeit, Portionen und Zutaten kontrollieren. Unter jeder Zutat steht die Originalzeile, ⚠️ heisst «genau anschauen».
+4. Erst **Speichern** legt das Menü an. **Abbrechen** führt zurück zum eingefügten Text.
+- **Rezept auf Papier oder Foto:** Mit **Google Lens** (Kamera-App oder Google-App) den Text markieren, «Kopieren» und in der App einfügen.
+- **Link geht nicht?** Manche Seiten enthalten keine lesbaren Rezeptangaben. Dann Zutaten und Zubereitung auf der Seite markieren, kopieren und als Text einfügen.
+- Der Link-Import braucht Internet und ein Konto («Gemeinsam nutzen»).
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie.
