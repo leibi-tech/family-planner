@@ -64,7 +64,7 @@ Der Import aus **Text** funktioniert sofort. Für den Import per **Link** brauch
 1. Öffne **supabase.com**, dein Projekt **family-planner**.
 2. Links auf **Edge Functions** klicken, dann **Deploy a new function** und **Via Editor**.
 3. Den Namen oben auf **`rezept-import`** ändern (genau so geschrieben).
-4. Im Ordner die Datei `supabase\functions\rezept-import\index.ts` mit dem Editor öffnen, alles kopieren (Ctrl+A, Ctrl+C), im Supabase-Editor den Beispieltext ganz ersetzen (Ctrl+A, Ctrl+V).
+4. Im Ordner die Datei `supabase\functions\rezept-import\index-zum-kopieren.txt` öffnen (Doppelklick; bei `index.ts` hingegen Rechtsklick → «Im Editor bearbeiten», sonst öffnet Windows den Medienplayer), alles kopieren (Ctrl+A, Ctrl+C), im Supabase-Editor den Beispieltext ganz ersetzen (Ctrl+A, Ctrl+V).
 5. Unten rechts auf **Deploy function** klicken und warten, bis es fertig ist.
 6. In der Funktion auf **Details** bzw. **Settings**: den Schalter **Verify JWT** (oder «Enforce JWT verification») **ausschalten** und speichern. *(Die Funktion prüft selbst, ob jemand angemeldet ist.)*
 
