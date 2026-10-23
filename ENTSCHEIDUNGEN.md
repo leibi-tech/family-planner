@@ -78,6 +78,11 @@ Oben in «Einkauf» schaltet man zwischen «Lebensmittel» und «Anderes» um. D
 ## E23 – Nachkauf in der Einkaufsliste (22.10.2026)
 Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später mehr, z.B. weil am Donnerstag nochmals Beeren eingeplant werden, erscheint der Artikel wieder offen, aber nur mit der **zusätzlichen** Menge («+ 200 g») und dem Hinweis «Nachkauf · 200 g schon gekauft». Das gilt auch für ausgeblendete Artikel. Beim erneuten Abhaken wird die neue Gesamtmenge als gekauft gemerkt.
 
+## E26 – Eigener Faktor fest, Eingabe per Tastatur (v0.9.2, 23.10.2026)
+- **Eigener Faktor:** Man selbst ist immer 1.0 und kann den eigenen Faktor nicht ändern, nur den Namen. Grund: Bei der Anzeige «aus eigener Sicht» (E24) verschoben sich sonst alle anderen Faktoren.
+- **Eingabe:** Faktor mit − / + (Schritt 0.05) oder direkt per Tastatur (Komma oder Punkt). Gerundet wird auf 0.05, erlaubt sind 0.05 bis 3.0.
+- **Reparatur:** Hatte der Ersteller (Rolle «owner») seinen eigenen Faktor verändert, rechnet die App beim Öffnen von «Familie» einmal alles um: Ersteller = 1.0, die anderen auf 0.05 gerundet (z.B. 1.01 → 1.0, 0.61 → 0.6). Die Mengen-Bezüge aller Menüs werden im gleichen Verhältnis angepasst, damit die Rezepte stimmen. Andere Mitglieder lösen das nie aus, weil ihr gespeicherter Faktor normalerweise nicht 1.0 ist.
+
 ## E25 – Menü-Import aus Text oder Link (v0.9.0, 23.10.2026)
 - **Ablauf:** Bei «Menüs» → «⤓ Importieren» einen Link oder den Rezepttext einfügen. Die App erkennt Titel, Personenzahl, Zutaten und Zubereitung und öffnet «Import prüfen». **Gespeichert wird erst mit «Speichern».** «Abbrechen» führt zurück zum eingefügten Text.
 - **Kontrolle:** Unter jeder Zutat steht die Originalzeile. ⚠️ markiert, was unsicher ist (z.B. «1–2 Knoblauchzehen», «2 Zehen Knoblauch»).
