@@ -299,3 +299,6 @@ grant execute on function public.household_members(uuid) to authenticated;
 grant execute on function public.set_member_role(uuid, uuid, text) to authenticated;
 grant execute on function public.assign_person(uuid, uuid, text) to authenticated;
 grant execute on function public.remove_member(uuid, uuid) to authenticated;
+
+-- Schnittstelle sofort über die neuen Funktionen informieren
+notify pgrst, 'reload schema';

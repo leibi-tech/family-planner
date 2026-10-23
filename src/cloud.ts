@@ -64,6 +64,8 @@ function niceError(status: number, body: any): string {
   if (code === 'email_address_invalid' || /email.*invalid/i.test(msg)) return 'Diese E-Mail-Adresse ist ungültig.';
   if (code === 'email_not_confirmed') return 'Die E-Mail ist noch nicht bestätigt (in Supabase «Confirm email» ausschalten).';
   if (/Code ungültig|Code oder Name falsch/.test(msg)) return 'Code oder Name falsch.';
+  if (/schema cache|Could not find the function/i.test(msg))
+    return 'Die Datenbank ist noch nicht auf dem neusten Stand: bitte «update-0.8.sql» in Supabase ausführen.';
   if (status === 429) return 'Zu viele Versuche. Bitte kurz warten.';
   return msg || `Fehler ${status}`;
 }
