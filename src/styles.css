@@ -83,6 +83,9 @@ button, input { font: inherit; color: inherit; }
 .btn:disabled { opacity: 0.45; cursor: default; }
 .btn-primary { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
 .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn-ghost { background: transparent; }
+.ok-note { background: #e6f4ea; color: #1e5b2f; padding: 10px 12px; border-radius: 10px; margin-top: 10px; }
+@media (prefers-color-scheme: dark) { .ok-note { background: #1f3a27; color: #bfe6c9; } }
 .btn-ghost-danger { color: var(--danger); background: transparent; }
 .btn-block { width: 100%; }
 

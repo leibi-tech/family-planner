@@ -111,6 +111,14 @@ Kein Datenbank-Update nötig. Einfach hochladen wie immer (siehe E).
 - **Zuletzt geändert:** die neusten Notizen und Listen mit Name und Zeit.
 - **Mehr** (unten rechts): Wochenplan, Menüs und Familie. Oben links bringt dich der Pfeil ‹ zurück zu «Mehr».
 
+## O) Passwort ändern (ab Version 0.13.0)
+Kein Datenbank-Update nötig. Einfach hochladen wie immer (siehe E).
+1. In der App: unten **Mehr**, dann **Familie**, dann die Karte **Gemeinsam: …** antippen.
+2. Ganz unten **Passwort ändern** antippen.
+3. Bisheriges Passwort eingeben, dann zweimal das neue (mindestens 8 Zeichen, anders als das bisherige).
+4. **Passwort speichern**. Es erscheint «Passwort geändert ✓». Du bleibst angemeldet; auf dem Handy der anderen Person ändert sich nichts.
+- **Passwort vergessen?** Das kommt als nächster Schritt (braucht einen kostenlosen E-Mail-Dienst, ich schreibe dir dann die Anleitung). Bis dahin kann in Supabase unter *Authentication → Users* bei einem Konto ein neues Passwort gesetzt werden (ich zeige dir bei Bedarf wo).
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

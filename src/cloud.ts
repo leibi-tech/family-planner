@@ -60,6 +60,7 @@ function niceError(status: number, body: any): string {
   const code = String(body?.error_code ?? body?.code ?? '');
   if (code === 'invalid_credentials' || /invalid login/i.test(msg)) return 'E-Mail oder Passwort stimmt nicht.';
   if (code === 'user_already_exists' || /already registered/i.test(msg)) return 'Für diese E-Mail gibt es schon ein Konto. Bitte «Anmelden» wählen.';
+  if (code === 'same_password' || /different from the old password/i.test(msg)) return 'Das neue Passwort muss anders sein als das bisherige.';
   if (code === 'weak_password' || /password should be/i.test(msg)) return 'Das Passwort ist zu kurz (mindestens 6, besser 8 Zeichen).';
   if (code === 'email_address_invalid' || /email.*invalid/i.test(msg)) return 'Diese E-Mail-Adresse ist ungültig.';
   if (code === 'email_not_confirmed') return 'Die E-Mail ist noch nicht bestätigt (in Supabase «Confirm email» ausschalten).';
@@ -142,6 +143,25 @@ export async function signIn(email: string, password: string): Promise<void> {
     body: JSON.stringify({ email, password }),
   });
   await saveSession(toSession(b));
+}
+
+/** Passwort ändern (angemeldet): prüft zuerst das bisherige Passwort, setzt dann das neue. */
+export async function changePassword(current: string, next: string): Promise<void> {
+  const s = await validSession();
+  let b: any;
+  try {
+    b = await call('/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      auth: false,
+      body: JSON.stringify({ email: s.user.email, password: current }),
+    });
+  } catch (e) {
+    if (e instanceof CloudError && /E-Mail oder Passwort stimmt nicht/.test(e.message))
+      throw new CloudError('Das bisherige Passwort stimmt nicht.');
+    throw e;
+  }
+  await saveSession(toSession(b));
+  await call('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: next }) });
 }
 
 export async function signOut(): Promise<void> {

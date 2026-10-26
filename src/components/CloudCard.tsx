@@ -14,6 +14,7 @@ import {
   removeMember,
   setMemberRole,
   claimPerson,
+  changePassword,
   type Member,
   onSessionChange,
   signIn,
@@ -132,6 +133,69 @@ function useBusy() {
     }
   };
   return { busy, error, run };
+}
+
+/** Passwort ändern (nur wenn angemeldet). Zugeklappt als Knopf, aufgeklappt als kleines Formular. */
+function PasswordChange() {
+  const [open, setOpen] = useState(false);
+  const [cur, setCur] = useState('');
+  const [pw1, setPw1] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [done, setDone] = useState(false);
+  const { busy, error, run } = useBusy();
+
+  const mismatch = pw2.length > 0 && pw1 !== pw2;
+  const valid = cur.length > 0 && pw1.length >= 8 && pw1 === pw2;
+
+  if (done)
+    return (
+      <p className="ok-note" role="status">
+        Passwort geändert ✓
+      </p>
+    );
+  if (!open)
+    return (
+      <button className="btn btn-block" style={{ marginTop: 10 }} onClick={() => setOpen(true)}>
+        Passwort ändern
+      </button>
+    );
+
+  return (
+    <div className="box-section" style={{ marginTop: 10 }}>
+      <h3 className="sec">Passwort ändern</h3>
+      <label className="field">
+        <span>Bisheriges Passwort</span>
+        <input type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} />
+      </label>
+      <label className="field">
+        <span>
+          Neues Passwort <span className="muted">(mind. 8 Zeichen)</span>
+        </span>
+        <input type="password" autoComplete="new-password" value={pw1} onChange={(e) => setPw1(e.target.value)} />
+      </label>
+      <label className="field">
+        <span>Neues Passwort wiederholen</span>
+        <input type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+      </label>
+      {mismatch && <p className="warn">Die beiden neuen Passwörter sind nicht gleich.</p>}
+      {error && <p className="warn">{error}</p>}
+      <button
+        className="btn btn-primary btn-block"
+        disabled={!valid || busy}
+        onClick={() =>
+          run(async () => {
+            await changePassword(cur, pw1);
+            setDone(true);
+          })
+        }
+      >
+        {busy ? 'Bitte warten …' : 'Passwort speichern'}
+      </button>
+      <button className="btn btn-block btn-ghost" style={{ marginTop: 6 }} onClick={() => setOpen(false)}>
+        Abbrechen
+      </button>
+    </div>
+  );
 }
 
 function LoginForm() {
@@ -275,7 +339,8 @@ function HouseholdSetup({ session }: { session: Session }) {
       )}
 
       {error && <p className="warn">{error}</p>}
-      <button className="btn btn-block btn-ghost-danger" onClick={() => signOut()}>
+      <PasswordChange />
+      <button className="btn btn-block btn-ghost-danger" style={{ marginTop: 10 }} onClick={() => signOut()}>
         Abmelden
       </button>
     </>
@@ -322,6 +387,8 @@ function Connected({ session, sync }: { session: Session; sync: SyncState }) {
       <button className="btn btn-primary btn-block" disabled={sync.status === 'läuft'} onClick={() => syncNow()}>
         Jetzt abgleichen
       </button>
+
+      <PasswordChange />
 
       <button
         className={'btn btn-block ' + (confirmOut ? 'btn-danger' : 'btn-ghost-danger')}

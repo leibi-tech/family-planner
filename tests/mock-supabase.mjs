@@ -5,6 +5,7 @@ const records = []; // {household_id, store, id, data, updated_at, deleted, owne
 let tick = 0;
 const members = {}; // token -> {role, person_id}
 const log = [];
+const passwords = {}; // E-Mail -> Passwort
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' };
 const send = (res, code, body) => { res.writeHead(code, { ...cors, 'Content-Type': 'application/json' }); res.end(body === undefined ? '' : JSON.stringify(body)); };
 const uidOf = (req) => (req.headers.authorization || '').replace('Bearer ', '').split(':')[0];
@@ -20,8 +21,21 @@ http.createServer(async (req, res) => {
   if (p === '/__control/members') { Object.assign(members, body); return send(res, 200, {}); }
   if (p === '/__control/dump') return send(res, 200, records);
   if (p === '/__control/reset') { records.length = 0; return send(res, 200, {}); }
+  if (p === '/__control/passwords') { Object.assign(passwords, body); return send(res, 200, {}); }
   if (p === '/__control/log') return send(res, 200, log);
 
+  if (p === '/auth/v1/token' && url.searchParams.get('grant_type') === 'password') {
+    if (passwords[body.email] !== body.password) return send(res, 400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
+    return send(res, 200, { access_token: body.email.split('@')[0] + ':tok', refresh_token: 'r', expires_in: 3600, user: { id: body.email.split('@')[0], email: body.email } });
+  }
+  if (p === '/auth/v1/user' && req.method === 'PUT') {
+    const email = uid + '@x.ch';
+    log.push({ uid, op: 'password-change' });
+    if (body.password === passwords[email]) return send(res, 422, { error_code: 'same_password', msg: 'New password should be different from the old password.' });
+    if (body.password.length < 6) return send(res, 422, { error_code: 'weak_password', msg: 'Password should be at least 6 characters.' });
+    passwords[email] = body.password;
+    return send(res, 200, { id: uid, email });
+  }
   if (p.startsWith('/rest/v1/rpc/my_membership')) return send(res, 200, members[uid] ? [members[uid]] : []);
   if (p === '/rest/v1/records' && req.method === 'POST') {
     const rows = Array.isArray(body) ? body : [body];

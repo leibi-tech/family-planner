@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 26.10.2026 · Version 0.12.1
+Stand: 26.10.2026 · Version 0.13.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -11,6 +11,7 @@ Stand: 26.10.2026 · Version 0.12.1
 - ✅ **Schritt 5 – Artikel von Hand, wiederkehrende Artikel, Vorschläge, Erledigte ausblenden**: fertig, auf dem Handy getestet.
 - ✅ **Online und getestet**: läuft unter https://leibi-tech.github.io/family-planner/, auf Tobias' Handy installiert, offline geprüft.
 - ✅ **ToDos & Ämtli-Plan (v0.10.x)**: steht (26.10.2026).
+- ⏳ **Passwort ändern (v0.13.0)**: gebaut und getestet. Tobias: hochladen und ausprobieren (ANLEITUNG O). Kein Datenbank-Update nötig. «Passwort vergessen» folgt danach (E-Mail-Dienst nötig).
 - ⏳ **Notizen & Listen (v0.11.0)**: gebaut und getestet, Tobias: hochladen und auf dem Handy ausprobieren (ANLEITUNG M). Kein Datenbank-Update nötig.
 
 ## Phase 1 – App lokal auf dem Handy (Ziel 1)
@@ -50,7 +51,8 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - Angeheftete Listen zeigen die ersten 5 offenen Punkte zum direkten Abhaken; ✕ löst die Anheftung nur bei der eigenen Person. Antippen öffnet Menü / ToDo / Notiz direkt, «Zurück» führt wieder zur Startseite.
    - Noch nicht auf der Startseite: Einkaufsliste, Kalender (kommt mit dem Kalender).
 3. **Kalender** (Konzept unten), danach im Dashboard einblenden.
-4. Kleinigkeiten, wenn Zeit: «Passwort vergessen» (E-Mail-Dienst, spätestens vor dem Play Store), Export-Knopf (siehe Datensicherung).
+4. **Passwort** (mit Tobias abgesprochen, 26.10.2026): zuerst ✅ «Passwort ändern» (v0.13.0, ohne E-Mail-Dienst), dann «Passwort vergessen» mit kostenlosem E-Mail-Dienst (z.B. Brevo als SMTP in Supabase, Link in der Mail, Bildschirm «Neues Passwort»). Spätestens vor dem Play Store.
+5. Kleinigkeiten, wenn Zeit: Export-Knopf (siehe Datensicherung).
 
 ### Zurückgestellt
 - **Menü-Vorlagen** (eingebaute Sammlung typischer Familienmenüs): vorerst weggelassen, Tobias entscheidet später.
@@ -96,6 +98,7 @@ Ihr nutzt **Google Kalender** und **Outlook/Microsoft**. Tobias möchte noch üb
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **26.10.2026 (7)**: v0.13.0 «Passwort ändern» (Karte «Gemeinsam nutzen»: bisheriges Passwort wird geprüft, neues mind. 8 Zeichen und anders, Wiederholung). Neuer Test `tests/password.mjs`. Reihenfolge mit Tobias: erst «ändern», dann «vergessen» mit E-Mail-Dienst.
 - **26.10.2026 (6)**: v0.12.1 Menüleiste: Start-Knopf jetzt in der Mitte (Reihenfolge Einkauf, ToDo, Start, Notizen, Mehr), grösseres Symbol, in der Trennlinie ein Bogen nach oben um das Symbol. Nur Darstellung, keine Datenbank-Änderung.
 - **26.10.2026 (5)**: v0.12.0 Startseite nach Tobias' Wünschen (Menü heute mit Link zum Menü, Meine ToDos, angeheftete und zuletzt geänderte Notizen/Listen). Menüleiste: 5 Knöpfe + «Mehr», Start hervorgehoben, App startet immer auf Start. Neu `nav.ts` (seitenübergreifendes Öffnen mit Rückweg). Automatische Tests jetzt im Ordner `tests/` (`bash tests/run-all.sh`).
 - **26.10.2026 (4)**: v0.11.1: Notiz/Liste als ToDo anheften (✅ oben in der Notiz). Antworten von Tobias: «Für alle» = offen; Datum optional. Privat wird übernommen. ToDo trägt `noteId`; bei Wechsel der Notiz auf privat/geteilt (neue ID) folgt `noteId` mit. Neu: «Notiz öffnen» von anderen Seiten (`requestOpenNote` in `notes.ts`), später auch für die Startseite nutzbar.
