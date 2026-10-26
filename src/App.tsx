@@ -29,11 +29,11 @@ const TITLES: Record<Tab, string> = {
   familie: 'Familie',
 };
 
-// Menüleiste unten: Start ist hervorgehoben, Wochenplan/Menüs/Familie liegen unter «Mehr».
+// Menüleiste unten: Start liegt in der Mitte und ist hervorgehoben (grösseres Symbol, Bogen in der Trennlinie), Wochenplan/Menüs/Familie liegen unter «Mehr».
 const TABS: Array<{ id: Tab; label: string; icon: string; home?: boolean }> = [
-  { id: 'start', label: 'Start', icon: '🏠', home: true },
   { id: 'einkauf', label: 'Einkauf', icon: '🛒' },
   { id: 'todo', label: 'ToDo', icon: '✅' },
+  { id: 'start', label: 'Start', icon: '🏠', home: true },
   { id: 'notizen', label: 'Notizen', icon: '🗒️' },
   { id: 'mehr', label: 'Mehr', icon: '☰' },
 ];

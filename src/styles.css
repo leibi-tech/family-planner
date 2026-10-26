@@ -394,9 +394,16 @@ button, input { font: inherit; color: inherit; }
 .pin-menu b { font-size: 16px; }
 
 /* --- Startseite (v0.12) --- */
-.tab.home .tab-icon { display: grid; place-items: center; width: 44px; height: 34px; margin-top: -2px; border-radius: 17px; background: var(--primary-soft); font-size: 22px; }
+/* Start-Knopf in der Mitte: grösseres Symbol, in der Trennlinie ein Bogen nach oben */
+.tab.home { position: relative; font-weight: 700; color: var(--primary); }
+.tab.home::before {
+  content: ''; position: absolute; left: 50%; top: -29px; width: 76px; height: 30px; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-bottom: 0; border-radius: 38px 38px 0 0;
+  z-index: 0;
+}
+.tab.home .tab-icon { z-index: 1; display: grid; place-items: center; width: 56px; height: 56px; margin-top: -30px; border-radius: 50%; background: var(--primary-soft); font-size: 30px; }
 .tab.home.active .tab-icon { background: var(--primary); }
-.tab.home { font-weight: 700; color: var(--primary); }
+.tab.home > span:last-child { z-index: 1; }
 .topbar-left { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .topbar-back { min-width: 44px; min-height: 44px; margin-left: -10px; border: 0; background: none; font-size: 34px; line-height: 1; color: var(--primary); cursor: pointer; }
 .more-icon { font-size: 26px; width: 34px; text-align: center; flex: none; }
