@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { getAllRaw, newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
 import { useSync } from '../components/CloudCard';
+import { requestOpenNote, type Note } from '../notes';
 import { addDays, dateKey, fmtDay, isoWeek, mondayOf } from '../model';
 import {
   choreRuleLabel,
@@ -212,6 +213,7 @@ function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me
                   <span className="shop-name todo-title">
                     {t.private && <span aria-label="privat">🔒 </span>}
                     {t.choreId && <span aria-label="Ämtli">🔁 </span>}
+                    {t.noteId && <span aria-label="mit Notiz">📝 </span>}
                     {t.title}
                   </span>
                   <span className="todo-meta">
@@ -318,11 +320,30 @@ function TodoSheet({
   };
 
   const creator = persons.find((p) => p.id === todo.createdBy)?.name;
+  const notes = useRecords<Note>('notes');
+  const linked = todo.noteId ? notes?.find((n) => n.id === todo.noteId) : undefined;
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet sheet-tall" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <h2>{isNew ? 'Neues ToDo' : 'ToDo bearbeiten'}</h2>
+        {todo.noteId && (
+          <div className="import-banner note-link">
+            {linked ? (
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  onClose();
+                  requestOpenNote(linked.id);
+                }}
+              >
+                {linked.kind === 'list' ? '☑️ Liste öffnen' : '📝 Notiz öffnen'}: {linked.title || 'ohne Titel'}
+              </button>
+            ) : (
+              <span className="muted">📝 Die verknüpfte Notiz ist nicht mehr verfügbar (gelöscht oder privat).</span>
+            )}
+          </div>
+        )}
         {fromChore && <p className="import-banner">🔁 Aus dem Ämtli-Plan (Woche ab {fmtDay(parseDate(todo.choreWeek!))})</p>}
 
         <label className="field">

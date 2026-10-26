@@ -7,6 +7,7 @@ import { useSync, WhoAmIPrompt } from './components/CloudCard';
 import { ShoppingPage } from './pages/ShoppingPage';
 import { TodoPage, useMe } from './pages/TodoPage';
 import { NotesPage } from './pages/NotesPage';
+import { onOpenNoteRequest } from './notes';
 import { useRecords } from './hooks';
 import { onChange, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
@@ -59,6 +60,9 @@ export function App() {
       clearInterval(t);
     };
   }, []);
+
+  // «Notiz öffnen» (z.B. aus einem ToDo): zur Seite Notizen wechseln
+  useEffect(() => onOpenNoteRequest(() => setTab('notizen')), []);
 
   // Zähler in der Menüleiste: meine offenen ToDos
   const todos = useRecords<Todo>('todos');

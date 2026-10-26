@@ -387,3 +387,8 @@ button, input { font: inherit; color: inherit; }
 .ni-count { flex: none; font-size: 12.5px; padding: 0 7px; border-radius: 99px; background: var(--border); color: var(--text); line-height: 20px; text-decoration: none; }
 .ni-edit { flex: 1; min-width: 0; min-height: 46px; margin: 3px 6px 3px 0; padding: 0 12px; border-radius: 10px; border: 1px solid var(--primary); background: var(--bg); color: var(--text); font: inherit; }
 .ni-add { padding-right: 8px; }
+
+.note-link .btn { width: 100%; min-height: 52px; overflow-wrap: anywhere; }
+.pin-menu .seg { margin-bottom: 6px; }
+.pin-menu .due-row input { min-height: 48px; }
+.pin-menu b { font-size: 16px; }

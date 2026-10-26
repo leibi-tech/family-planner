@@ -174,3 +174,22 @@ export function setPin(n: Note, personIds: string[], on: boolean): Note {
   for (const id of personIds) pins[id] = { on, at };
   return { ...n, pins };
 }
+
+// ---------- «Notiz öffnen» von anderen Seiten aus (z.B. aus einem ToDo) ----------
+let pendingOpen: string | null = null;
+const openEvents = new EventTarget();
+/** Bittet die App, die Seite «Notizen» zu öffnen und diese Notiz/Liste anzuzeigen. */
+export function requestOpenNote(id: string) {
+  pendingOpen = id;
+  openEvents.dispatchEvent(new Event('open'));
+}
+export const takePendingOpen = (): string | null => {
+  const x = pendingOpen;
+  pendingOpen = null;
+  return x;
+};
+export const hasPendingOpen = () => pendingOpen !== null;
+export const onOpenNoteRequest = (fn: () => void) => {
+  openEvents.addEventListener('open', fn);
+  return () => openEvents.removeEventListener('open', fn);
+};

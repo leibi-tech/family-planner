@@ -16,6 +16,7 @@ export interface Todo extends BaseRecord {
   cleared?: boolean; // erledigtes Ämtli-ToDo aus der Liste entfernt (bleibt in der Übersicht)
   choreId?: string; // stammt aus diesem Ämtli
   choreWeek?: string; // Montag der Ämtli-Woche
+  noteId?: string; // als ToDo angeheftete Notiz/Liste (Link zurück zur Notiz)
 }
 
 export type AssignMode = 'none' | 'fixed' | 'rotate';

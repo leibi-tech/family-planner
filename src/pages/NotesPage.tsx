@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { newId, put, type Person } from '../db';
+import { getAllRaw, newId, put, type Person } from '../db';
+import { addDays, dateKey, mondayOf } from '../model';
+import type { Todo } from '../todos';
 import { useRecords } from '../hooks';
 import {
   addItem,
@@ -9,12 +11,14 @@ import {
   fmtAgo,
   isPinnedFor,
   isPinnedForAll,
+  onOpenNoteRequest,
   patchItem,
   preview,
   progress,
   setPin,
   sortNotes,
   subItems,
+  takePendingOpen,
   topItems,
   updateNote,
   type Note,
@@ -38,6 +42,17 @@ export function NotesPage() {
   const me = useMe(persons);
   const [filter, setFilterState] = useState<Filter>(() => lsGet('fp-notes-filter', 'all') as Filter);
   const [open, setOpen] = useState<Note | null>(null); // geöffnete Notiz (neu oder bestehend)
+  const [req, setReq] = useState(0);
+
+  // Von aussen angefragt (z.B. «Notiz öffnen» im ToDo): sobald die Notizen geladen sind, anzeigen
+  useEffect(() => onOpenNoteRequest(() => setReq((x) => x + 1)), []);
+  useEffect(() => {
+    if (!notes) return;
+    const id = takePendingOpen();
+    if (!id) return;
+    const n = notes.find((x) => x.id === id);
+    if (n) setOpen(n);
+  }, [notes, req]);
 
   if (!notes || !persons) return <p className="muted center">Lade …</p>;
   const sortedPersons = [...persons].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name));
@@ -169,6 +184,10 @@ function NoteEditor({
   const [body, setBody] = useState(initial.body);
   const [, force] = useState(0);
   const [pinMenu, setPinMenu] = useState(false);
+  const [todoMenu, setTodoMenu] = useState(false);
+  const [todoFor, setTodoFor] = useState<'me' | 'all'>('me');
+  const [todoDue, setTodoDue] = useState('');
+  const [todoMsg, setTodoMsg] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<null | 'private' | 'shared' | 'delete'>(null);
 
   const commit = (fn: (n: Note) => Note) => {
@@ -204,8 +223,39 @@ function NoteEditor({
     const next: Note = { ...cur, id: newId(), updatedAt: 0, editedBy: me };
     await put<Note>('notes', next);
     await put('notes', { id: stored.id, updatedAt: stored.updatedAt, deleted: true });
+    // ToDos, die auf diese Notiz zeigen, folgen der neuen ID
+    for (const t of (await getAllRaw<Todo>('todos')).filter((x) => !x.deleted && x.noteId === stored.id)) {
+      await put<Todo>('todos', { ...t, noteId: next.id });
+    }
     base.current = next;
     setCurId(next.id);
+  };
+
+  // Als ToDo anheften: Titel der Notiz, Link zurück zur Notiz. Private Notiz = privates ToDo für mich.
+  const createTodo = async () => {
+    const name = title.trim() || (live.kind === 'list' ? 'Liste' : 'Notiz');
+    await commit((n) => ({ ...n, title, body })); // zuerst speichern, damit die Notiz sicher vorhanden ist
+    const priv = live.private;
+    const todo: Todo = {
+      id: newId(),
+      title: name,
+      note: '',
+      due: todoDue || null,
+      assignees: priv || todoFor === 'me' ? (me ? [me] : []) : [], // «für alle» = offen (wer Zeit hat)
+      private: priv,
+      createdBy: me,
+      createdAt: Date.now(),
+      done: false,
+      doneAt: null,
+      doneBy: null,
+      noteId: base.current.id,
+      updatedAt: 0,
+      deleted: false,
+    };
+    await put<Todo>('todos', todo);
+    setTodoMenu(false);
+    setTodoDue('');
+    setTodoMsg(priv ? '✅ Privates ToDo erstellt.' : todoFor === 'me' ? '✅ ToDo für dich erstellt.' : '✅ ToDo für alle erstellt (offen, wer Zeit hat).');
   };
 
   const pinFor = (ids: string[], on: boolean) => {
@@ -232,10 +282,25 @@ function NoteEditor({
         </button>
         <div className="note-head-actions">
           <button
+            className={'icon-btn' + (todoMenu ? ' on' : '')}
+            aria-label="Als ToDo anheften"
+            aria-expanded={todoMenu}
+            onClick={() => {
+              setTodoMenu(!todoMenu);
+              setPinMenu(false);
+              setTodoMsg(null);
+            }}
+          >
+            ✅
+          </button>
+          <button
             className={'icon-btn' + (pinnedMe ? ' on' : '')}
             aria-label="Anheften"
             aria-expanded={pinMenu}
-            onClick={() => setPinMenu(!pinMenu)}
+            onClick={() => {
+              setPinMenu(!pinMenu);
+              setTodoMenu(false);
+            }}
           >
             {pinnedAll ? '📌📌' : '📌'}
           </button>
@@ -264,6 +329,55 @@ function NoteEditor({
           </small>
         </div>
       )}
+
+      {todoMenu && (
+        <div className="pin-menu">
+          <b>Als ToDo anheften</b>
+          {live.private ? (
+            <small className="muted">🔒 Die Notiz ist privat, darum wird auch das ToDo privat (nur du siehst es).</small>
+          ) : (
+            <div>
+              <div className="seg">
+                <button className={todoFor === 'me' ? 'on' : ''} onClick={() => setTodoFor('me')}>
+                  Nur für mich
+                </button>
+                <button className={todoFor === 'all' ? 'on' : ''} onClick={() => setTodoFor('all')}>
+                  Für alle
+                </button>
+              </div>
+              <small className="muted">
+                {todoFor === 'me' ? 'Das ToDo steht bei dir unter «Meine».' : 'Offen: wer Zeit hat, übernimmt es.'}
+              </small>
+            </div>
+          )}
+          <div className="due-row">
+            <input type="date" value={todoDue} onChange={(e) => setTodoDue(e.target.value)} aria-label="Fällig am" />
+            {todoDue && (
+              <button className="btn" onClick={() => setTodoDue('')}>
+                Kein Datum
+              </button>
+            )}
+          </div>
+          {!todoDue && (
+            <div className="chips">
+              <button className="chip small" onClick={() => setTodoDue(dateKey(new Date()))}>
+                Heute
+              </button>
+              <button className="chip small" onClick={() => setTodoDue(dateKey(addDays(new Date(), 1)))}>
+                Morgen
+              </button>
+              <button className="chip small" onClick={() => setTodoDue(dateKey(addDays(mondayOf(new Date()), 6)))}>
+                Diese Woche
+              </button>
+            </div>
+          )}
+          <button className="btn btn-primary" onClick={createTodo}>
+            ToDo erstellen
+          </button>
+          <small className="muted">Fällig am: Datum ist optional. Im ToDo führt «Notiz öffnen» zurück hierher.</small>
+        </div>
+      )}
+      {todoMsg && <p className="import-banner">{todoMsg}</p>}
 
       {confirm === 'private' && (
         <div className="confirm-bar">

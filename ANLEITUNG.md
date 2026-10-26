@@ -99,6 +99,7 @@ Kein Datenbank-Update nötig. Einfach hochladen wie immer (siehe E).
 - **Liste:** Unten «Neuer Punkt …» eintippen und Enter. Kästchen antippen = erledigt (rutscht nach unten). Text antippen = ändern oder löschen (✕). Mit dem Pfeil ⤷ rechts fügst du einen **Unterpunkt** hinzu. «Erledigte entfernen» räumt auf.
 - **Schloss oben rechts:** 🔓 = alle in der Familie sehen es und können es bearbeiten. 🔒 = **privat**, nur du siehst es. Zum Umstellen tippst du aufs Schloss und bestätigst.
 - **Pin (📌) oben rechts:** «Für mich anheften» oder «Für alle anheften» (📌📌). Angeheftetes steht in der Übersicht oben und erscheint später auf der Startseite. Jede Person kann es bei sich selbst wieder lösen («Bei mir lösen»). Private Einträge kannst du nur für dich anheften.
+- **Als ToDo anheften (✅ oben rechts, ab 0.11.1):** Tippe aufs ✅. Du wählst «Nur für mich» oder «Für alle» (offen, wer Zeit hat) und kannst ein Datum setzen oder weglassen. Bei einer **privaten** Notiz fällt die Frage weg: Das ToDo wird auch privat. Im ToDo siehst du 📝; im ToDo-Fenster führt «Notiz öffnen» (bzw. «Liste öffnen») direkt zurück zur Notiz.
 - Wenn zwei Personen gleichzeitig dieselbe Liste ändern, werden die Punkte zusammengeführt. Bei einer Notiz mit Text gewinnt die zuletzt gespeicherte Fassung.
 
 ## F) Meine Daten

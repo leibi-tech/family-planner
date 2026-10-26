@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 26.10.2026 · Version 0.11.0
+Stand: 26.10.2026 · Version 0.11.1
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -39,7 +39,8 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - **Anheften mit Pin** (📌): «Für mich anheften» oder «Für alle anheften» (📌📌). Jede Person kann bei sich selbst wieder lösen. Angeheftetes erscheint später auf der Startseite. Private Einträge können nur für mich angeheftet werden.
    - Zeigt «Zuletzt geändert von …, vor …» (Grundlage für «letzte Änderungen» auf der Startseite).
    - Gleichzeitiges Bearbeiten (z.B. einer im Laden, eine zuhause): Listenpunkte und Pins werden Punkt für Punkt zusammengeführt, nichts geht verloren. Bei Notizen-Text gewinnt die neuere Fassung.
-   - Tobias: hochladen, ausprobieren (Notiz, Liste mit Unterpunkten, privat, Pin), Rückmeldung.
+   - **v0.11.1 «Als ToDo anheften»** (✅-Symbol oben in der Notiz): fragt «Nur für mich» oder «Für alle» (= offen, wer Zeit hat) und optional ein Fälligkeitsdatum. Bei einer privaten Notiz entfällt die Frage, das ToDo wird privat. Das ToDo zeigt 📝 und hat im ToDo-Fenster den Knopf «Notiz öffnen» / «Liste öffnen» (springt direkt zur Notiz).
+   - Tobias: hochladen, ausprobieren (Notiz, Liste mit Unterpunkten, privat, Pin, als ToDo anheften), Rückmeldung.
 2. **v0.12 Startseite / Dashboard** (wird zur ersten Seite beim Öffnen)
    - **Was kochen wir heute?** Menüs von heute (Frühstück/Mittag/Abend). Antippen öffnet direkt das Menü.
    - **Meine ToDos** (fällige und überfällige zuerst), Antippen öffnet das ToDo, Abhaken direkt möglich.
@@ -93,6 +94,7 @@ Ihr nutzt **Google Kalender** und **Outlook/Microsoft**. Tobias möchte noch üb
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **26.10.2026 (4)**: v0.11.1: Notiz/Liste als ToDo anheften (✅ oben in der Notiz). Antworten von Tobias: «Für alle» = offen; Datum optional. Privat wird übernommen. ToDo trägt `noteId`; bei Wechsel der Notiz auf privat/geteilt (neue ID) folgt `noteId` mit. Neu: «Notiz öffnen» von anderen Seiten (`requestOpenNote` in `notes.ts`), später auch für die Startseite nutzbar.
 - **26.10.2026 (3)**: v0.11.0 Notizen & Listen gebaut nach Tobias' Vorgaben (öffentlich, Schloss oben rechts für privat; Listen mit Unterpunkten; Pin = für mich, mehrere Pins = für alle, jede Person löst bei sich). Kein Datenbank-Update nötig (gleiche Tabelle `records`, Art `notes`, private über `owner_id` wie bei den ToDos). Neu: Listen/Pins werden beim Abgleich Punkt für Punkt zusammengeführt (E29). IndexedDB Version 7. Menüleiste jetzt mit 6 Knöpfen («Plan» statt «Wochenplan» als Knopfbeschriftung).
 - **26.10.2026 (2)**: ToDo & Ämtli stehen. Neue Richtung beschlossen: gemeinsame Notizen/Listen (v0.11) und Startseite/Dashboard (v0.12) mit «Was kochen wir heute?» (Link zum Menü), eigenen ToDos und zuletzt geänderten Notizen/Listen; Kalender kommt später dazu. Menü-Vorlagen zurückgestellt, Datensicherung nicht dringend, Preisvergleich per KI nur als Idee.
 - **26.10.2026**: v0.10.0 ToDos & Ämtli-Plan nach Tobias' Vorgaben (Zuweisung an alle Personen, auch mehrere; Ämtli mit Intervall + Rotation; Unerledigtes bleibt überfällig; dazu Fälligkeitsdatum/Notiz, Zähler, Übersicht pro Person, Erledigte ausblenden/löschen). Datenbank-Update `update-0.10.sql` (owner_id). IndexedDB Version 6 (Stores todos, chores).
