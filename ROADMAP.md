@@ -12,7 +12,7 @@ Stand: 26.10.2026 · Version 0.15.0
 - ✅ **Online und getestet**: läuft unter https://leibi-tech.github.io/family-planner/, auf Tobias' Handy installiert, offline geprüft.
 - ✅ **ToDos & Ämtli-Plan (v0.10.x)**: steht (26.10.2026).
 - ✅ **Kalender K1 – Google verbinden & ansehen (v0.14.0)**: läuft, Tobias hat verbunden (26.10.2026). Nötig war zusätzlich: Rechte für service_role (in update-0.14.sql ergänzt), Datenschutzseite `docs/datenschutz.html` für Google «In Produktion».
-- ⏳ **Kalender K2 – Termine erfassen/ändern/löschen (v0.15.0)**: gebaut und getestet. Tobias: Funktion in Supabase neu einfügen und deployen, hochladen, ausprobieren (ANLEITUNG Q).
+- ✅ **Kalender K2 – Termine erfassen/ändern/löschen (v0.15.0)**: läuft auf dem Handy, von Tobias getestet (26.10.2026).
 - ⏳ **Passwort ändern (v0.13.0)**: gebaut und getestet. Tobias: hochladen und ausprobieren (ANLEITUNG O). Kein Datenbank-Update nötig. «Passwort vergessen» folgt danach (E-Mail-Dienst nötig).
 - ⏳ **Notizen & Listen (v0.11.0)**: gebaut und getestet, Tobias: hochladen und auf dem Handy ausprobieren (ANLEITUNG M). Kein Datenbank-Update nötig.
 
@@ -54,7 +54,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - Noch nicht auf der Startseite: Einkaufsliste, Kalender (kommt mit dem Kalender).
 3. **Kalender** in 5 Schritten (mit Tobias abgesprochen, 26.10.2026):
    - ✅ **K1 (v0.14.0) Verbinden & Ansehen:** Google-Konto verbinden (jede Person ihr eigenes), Kalender wählen («Mein Kalender» / «Familie» / nicht zeigen), Monatsraster + Tagesliste, Personen ein-/ausblenden, Termin-Details mit Link zu Google, offline lesbar. Unter «Mehr» → «Kalender». Tobias: ANLEITUNG P.
-   - ⏳ **K2 (v0.15.0)** Termine erfassen, ändern, löschen (nur eigene Kalender und Familienkalender, nur online). Wiederholungen einfach (täglich … jährlich, bis), «nur diesen» / «alle». Betroffene Personen im Titel «[Kind 1] …», auch bei eigenen Terminen. Erinnerungen = Google-Standard. Tobias: ANLEITUNG Q.
+   - ✅ **K2 (v0.15.0)** Termine erfassen, ändern, löschen (nur eigene Kalender und Familienkalender, nur online). Wiederholungen einfach (täglich … jährlich, bis), «nur diesen» / «alle». Betroffene Personen im Titel «[Kind 1] …», auch bei eigenen Terminen. Erinnerungen = Google-Standard. Tobias: ANLEITUNG Q.
    - **K3** Übersicht nebeneinander: alle Personen im gleichen Zeitraster (Überschneidungen sehen).
    - **K4** Betreuungs-Warnung («Wer schaut auf die Kinder?») und Rückfrage bei fremden Terminen. Zusatzinfos in der eigenen Datenbank, mit dem Google-Termin verknüpft.
    - **K5** Termine auf der Startseite.
