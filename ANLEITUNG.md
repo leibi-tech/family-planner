@@ -89,7 +89,7 @@ Der Import aus **Text** funktioniert sofort. Für den Import per **Link** brauch
 ## L) ToDos und Ämtli
 - **ToDo erfassen:** Text eintippen und Enter = schnell. Mit **+** kannst du zusätzlich Datum, Personen, Notiz und «🔒 Privat» wählen.
 - **Abhaken:** Kästchen links antippen. Antippen des Textes öffnet das ToDo zum Bearbeiten.
-- **Meine / Alle** umschalten. Die rote Zahl unten am ToDo-Knopf zeigt deine offenen ToDos.
+- **Meine / Alle** umschalten, oder darunter eine Person antippen, um nur ihre ToDos zu sehen (private der anderen sind nie sichtbar). Die rote Zahl unten am ToDo-Knopf zeigt deine offenen ToDos.
 - **Ämtli erfassen:** «Ämtli-Plan» → «+ Ämtli erfassen». Wiederholung, ersten Termin und Personen wählen. Bei «Abwechselnd» die Personen in der gewünschten Reihenfolge antippen. Unten siehst du die nächsten 4 Termine.
 - Das Ämtli erscheint in seiner Woche automatisch bei den ToDos (🔁). Unten im Ämtli-Plan siehst du pro Woche, wer was erledigt hat.
 

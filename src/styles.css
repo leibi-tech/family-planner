@@ -344,3 +344,6 @@ button, input { font: inherit; color: inherit; }
 .tab-count.all-done { background: var(--primary); color: var(--primary-text); }
 .preview-row { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; font-size: 15px; }
 .preview-row .muted { text-align: right; overflow-wrap: anywhere; min-width: 0; }
+.person-chips { margin: -4px 0 12px; }
+.chip-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 0 6px; border-radius: 99px; font-size: 12px; line-height: 20px; background: var(--border); color: var(--text); }
+.chip.on .chip-count { background: rgba(255,255,255,0.25); color: inherit; }

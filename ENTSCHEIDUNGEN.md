@@ -110,5 +110,6 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Ämtli ändern** passt offene Ämtli-ToDos ab dieser Woche an; **Ämtli löschen** entfernt offene, erledigte bleiben in der Übersicht.
 - **Übersicht pro Person:** pro Woche, wer welches Ämtli erledigt hat (z.B. fürs Sackgeld). Dort kann man auch abhaken.
 - **Erledigte:** rutschen nach unten, «Erledigte ausblenden» (merkt sich das Handy) und «Erledigte löschen». Erledigte Ämtli-ToDos verschwinden dabei nur aus der Liste, nicht aus der Übersicht.
+- **Pro Person (v0.10.2):** Unter «Meine / Alle» je ein Knopf pro andere Person. Gezeigt wird, was dieser Person zugewiesen ist, ohne private ToDos. Private der anderen sind ohnehin nicht auf dem Handy (Datenbank-Regel); eigene private erscheinen nur unter «Meine». Ein neues ToDo in dieser Ansicht wird der Person zugewiesen.
 - **Zähler:** rote Zahl am ToDo-Knopf = meine offenen ToDos.
 

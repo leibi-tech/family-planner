@@ -85,14 +85,21 @@ export function TodoPage() {
 // ---------- Liste ----------
 
 function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me: string | null }) {
-  const [view, setView] = usePersisted<'mine' | 'all'>('fp-todo-view', 'mine');
+  // Ansicht: 'mine', 'all' oder die ID einer Person
+  const [view0, setView] = usePersisted<string>('fp-todo-view', 'mine');
+  const others = persons.filter((p) => p.id !== me);
+  const view = view0 === 'mine' || view0 === 'all' || others.some((p) => p.id === view0) ? view0 : 'mine';
+  const viewPerson = others.find((p) => p.id === view) ?? null;
   const [hideDone, setHideDone] = usePersisted<'0' | '1'>('fp-todo-hidedone', '0');
   const [editing, setEditing] = useState<{ todo: Todo; isNew: boolean } | null>(null);
   const [quick, setQuick] = useState('');
 
   const visibleAll = todos.filter((t) => !t.cleared);
   const mine = visibleAll.filter((t) => isMine(t, me));
-  const base = view === 'mine' ? mine : visibleAll;
+  // Pro Person: was ihr zugewiesen ist. Private ToDos gehören nur zu «Meine» – private der anderen
+  // sind auf diesem Handy gar nicht vorhanden (Datenbank-Regel), eigene private erscheinen nie bei anderen.
+  const ofPerson = (id: string) => visibleAll.filter((t) => !t.private && t.assignees.includes(id));
+  const base = view === 'mine' ? mine : view === 'all' ? visibleAll : ofPerson(view);
   const openCount = (l: Todo[]) => l.filter((t) => !t.done).length;
   const list = sortTodos(hideDone === '1' ? base.filter((t) => !t.done) : base);
   const doneList = base.filter((t) => t.done);
@@ -103,7 +110,7 @@ function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me
     title,
     note: '',
     due: null,
-    assignees: view === 'mine' && me ? [me] : [],
+    assignees: view === 'mine' && me ? [me] : viewPerson ? [viewPerson.id] : [],
     private: false,
     createdBy: me,
     createdAt: Date.now(),
@@ -143,6 +150,15 @@ function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me
           Alle <span className="tab-count">{openCount(visibleAll)}</span>
         </button>
       </div>
+      {others.length > 0 && (
+        <div className="chips person-chips">
+          {others.map((p) => (
+            <button key={p.id} className={'chip small' + (view === p.id ? ' on' : '')} onClick={() => setView(view === p.id ? 'all' : p.id)}>
+              {p.name} <span className="chip-count">{openCount(ofPerson(p.id))}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="quick-add">
         <input
@@ -176,7 +192,9 @@ function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me
           {base.length === 0
             ? view === 'mine'
               ? 'Keine ToDos für dich. 🎉'
-              : 'Noch keine ToDos erfasst.'
+              : viewPerson
+                ? `Keine ToDos für ${viewPerson.name}.`
+                : 'Noch keine ToDos erfasst.'
             : 'Alles erledigt. 🎉'}
         </p>
       ) : (
