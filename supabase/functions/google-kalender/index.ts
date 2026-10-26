@@ -57,7 +57,11 @@ async function db(path: string, init: RequestInit = {}): Promise<any> {
   if (!res.ok) {
     if (/google_accounts/.test(text) && /does not exist|schema cache/i.test(text))
       throw new HttpError(500, 'Die Datenbank ist noch nicht auf dem neusten Stand: bitte «update-0.14.sql» in Supabase ausführen.');
-    throw new HttpError(500, `Datenbank-Fehler (${res.status}).`);
+    let detail = '';
+    try {
+      detail = String(JSON.parse(text)?.message ?? '');
+    } catch {}
+    throw new HttpError(500, `Datenbank-Fehler (${res.status}${detail ? ': ' + detail.slice(0, 120) : ''}).`);
   }
   return text ? JSON.parse(text) : null;
 }

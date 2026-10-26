@@ -23,4 +23,10 @@ create index if not exists google_accounts_household_idx on public.google_accoun
 alter table public.google_accounts enable row level security;
 revoke all on public.google_accounts from anon, authenticated;
 
+-- Die Kalender-Funktion arbeitet mit dem Server-Schlüssel (Rolle service_role).
+-- Sie braucht Zugriff auf die Kontotabelle und muss die Mitglieder des Haushalts lesen können.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.google_accounts to service_role;
+grant select on public.members to service_role;
+
 notify pgrst, 'reload schema';
