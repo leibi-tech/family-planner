@@ -2,8 +2,10 @@
 // Ablauf: 1) lokale Änderungen hochladen (dirty), 2) Änderungen der anderen herunterladen.
 // Bei Konflikten gewinnt die neuere Änderung (updatedAt) – lokal wie auf dem Server.
 import { STORES, clearStore, getAllRaw, getMeta, localChanges, putRaw, setMeta, type BaseRecord, type StoreName } from './db';
+import { mergeNote, type Note } from './notes';
 import {
   CloudError,
+  fetchRecords,
   getSession,
   myMembership,
   onSessionChange,
@@ -74,8 +76,9 @@ async function syncOnce() {
     const dirtyByStore = new Map<StoreName, BaseRecord[]>();
     for (const store of STORES) {
       if (store === 'persons' && !isAdmin()) continue; // Personen ändert nur der Admin
-      const dirty = (await getAllRaw(store)).filter((r) => r.dirty);
+      let dirty = (await getAllRaw(store)).filter((r) => r.dirty);
       if (!dirty.length) continue;
+      if (store === 'notes') dirty = await mergeNotesWithServer(hh.id, dirty as Note[]);
       dirtyByStore.set(store, dirty);
       for (const r of dirty) {
         const row: CloudRecord = { household_id: hh.id, store, id: r.id, data: stripLocal(r), updated_at: r.updatedAt, deleted: r.deleted };
@@ -109,6 +112,11 @@ async function syncOnce() {
       const apply: BaseRecord[] = [];
       for (const r of list) {
         const mine = local.get(r.id);
+        if (store === 'notes' && mine && mine.dirty) {
+          // Notiz/Liste: beide Fassungen zusammenführen, statt eine zu verwerfen
+          apply.push({ ...mergeNote(mine as Note, { ...r.data, id: r.id, updatedAt: r.updated_at, deleted: r.deleted }), dirty: true });
+          continue;
+        }
         if (mine && mine.dirty && mine.updatedAt > r.updated_at) continue; // meine Änderung ist neuer
         if (mine && !mine.dirty && mine.updatedAt === r.updated_at && mine.deleted === r.deleted) continue;
         apply.push({ ...r.data, id: r.id, updatedAt: r.updated_at, deleted: r.deleted, dirty: false });
@@ -121,6 +129,28 @@ async function syncOnce() {
     const msg = e instanceof CloudError ? e.message : String(e);
     emit({ status: navigator.onLine ? 'fehler' : 'offline', error: msg });
   }
+}
+
+/**
+ * Vor dem Hochladen: geänderte Notizen/Listen mit der Fassung auf dem Server zusammenführen,
+ * damit Änderungen einer anderen Person nicht überschrieben werden.
+ */
+async function mergeNotesWithServer(householdId: string, dirty: Note[]): Promise<Note[]> {
+  const remote = new Map((await fetchRecords(householdId, 'notes', dirty.map((n) => n.id))).map((r) => [r.id, r]));
+  const out: Note[] = [];
+  const changed: Note[] = [];
+  for (const n of dirty) {
+    const r = remote.get(n.id);
+    if (!r) {
+      out.push(n);
+      continue;
+    }
+    const merged = { ...mergeNote(n, { ...r.data, id: r.id, updatedAt: r.updated_at, deleted: r.deleted }), dirty: true };
+    out.push(merged);
+    changed.push(merged);
+  }
+  await putRaw('notes', changed);
+  return out;
 }
 
 /** Eigene Rolle/Person vom Server holen (und offline merken). */

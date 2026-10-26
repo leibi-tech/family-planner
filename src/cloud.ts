@@ -203,6 +203,19 @@ export async function pushRecords(rows: CloudRecord[]): Promise<void> {
   }
 }
 
+/** Holt bestimmte Einträge einer Art vom Server (z.B. um eine Liste vor dem Hochladen zusammenzuführen). */
+export async function fetchRecords(householdId: string, store: string, ids: string[]): Promise<CloudRecord[]> {
+  const out: CloudRecord[] = [];
+  for (let i = 0; i < ids.length; i += 40) {
+    const list = ids.slice(i, i + 40).map((id) => `"${id}"`).join(',');
+    const page: CloudRecord[] = await call(
+      `/rest/v1/records?select=store,id,data,updated_at,deleted&household_id=eq.${householdId}&store=eq.${encodeURIComponent(store)}&id=in.(${encodeURIComponent(list)})`,
+    );
+    out.push(...page);
+  }
+  return out;
+}
+
 /** Holt alle Einträge, die seit «since» auf dem Server geändert wurden (seitenweise). */
 export async function pullRecords(householdId: string, since: string | null): Promise<CloudRecord[]> {
   const out: CloudRecord[] = [];

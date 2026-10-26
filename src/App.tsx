@@ -6,16 +6,18 @@ import { PlanPage } from './pages/PlanPage';
 import { useSync, WhoAmIPrompt } from './components/CloudCard';
 import { ShoppingPage } from './pages/ShoppingPage';
 import { TodoPage, useMe } from './pages/TodoPage';
+import { NotesPage } from './pages/NotesPage';
 import { useRecords } from './hooks';
 import { onChange, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 
-type Tab = 'familie' | 'menues' | 'plan' | 'einkauf' | 'todo';
+type Tab = 'familie' | 'menues' | 'plan' | 'einkauf' | 'todo' | 'notizen';
 
-const TABS: Array<{ id: Tab; label: string; icon: string; ready: boolean }> = [
-  { id: 'plan', label: 'Wochenplan', icon: '📅', ready: true },
+const TABS: Array<{ id: Tab; label: string; short?: string; icon: string; ready: boolean }> = [
+  { id: 'plan', label: 'Wochenplan', short: 'Plan', icon: '📅', ready: true },
   { id: 'einkauf', label: 'Einkauf', icon: '🛒', ready: true },
   { id: 'todo', label: 'ToDo', icon: '✅', ready: true },
+  { id: 'notizen', label: 'Notizen', icon: '🗒️', ready: true },
   { id: 'menues', label: 'Menüs', icon: '🍲', ready: true },
   { id: 'familie', label: 'Familie', icon: '👪', ready: true },
 ];
@@ -102,6 +104,8 @@ export function App() {
           <ShoppingPage />
         ) : tab === 'todo' ? (
           <TodoPage />
+        ) : tab === 'notizen' ? (
+          <NotesPage />
         ) : (
           <div className="soon">
             <div className="soon-icon">{current.icon}</div>
@@ -132,7 +136,7 @@ export function App() {
               {t.icon}
               {t.id === 'todo' && myOpen > 0 && <span className="tab-badge">{myOpen > 99 ? '99+' : myOpen}</span>}
             </span>
-            <span>{t.label}</span>
+            <span>{t.short ?? t.label}</span>
           </button>
         ))}
       </nav>
