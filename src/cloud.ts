@@ -265,3 +265,15 @@ export async function fetchRecipeFromUrl(url: string): Promise<WebRecipe> {
   if (!(await getSession())) throw new CloudError('Der Import per Link braucht ein Konto. Melde dich unter «Familie» an oder kopiere den Rezepttext.');
   return call('/functions/v1/rezept-import', { method: 'POST', body: JSON.stringify({ url }) });
 }
+
+// ---------- Kalender (Supabase-Funktion «google-kalender») ----------
+export async function calendarCall<T = any>(action: string, args: Record<string, unknown> = {}): Promise<T> {
+  if (!(await getSession())) throw new CloudError('Der Kalender braucht ein Konto. Melde dich unter «Familie» → «Gemeinsam nutzen» an.');
+  try {
+    return await call('/functions/v1/google-kalender', { method: 'POST', body: JSON.stringify({ action, ...args }) });
+  } catch (e) {
+    if (e instanceof CloudError && /rezept-import|function was not found|Fehler 404/i.test(e.message))
+      throw new CloudError('Der Kalender ist in Supabase noch nicht eingerichtet (Funktion «google-kalender» fehlt).');
+    throw e;
+  }
+}

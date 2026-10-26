@@ -6,6 +6,7 @@ let tick = 0;
 const members = {}; // token -> {role, person_id}
 const log = [];
 const passwords = {}; // E-Mail -> Passwort
+const gcal = { accounts: {}, googleList: [], events: {}, personOf: {}, errors: [], connectUrl: '' }; // Kalender-Nachbau
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' };
 const send = (res, code, body) => { res.writeHead(code, { ...cors, 'Content-Type': 'application/json' }); res.end(body === undefined ? '' : JSON.stringify(body)); };
 const uidOf = (req) => (req.headers.authorization || '').replace('Bearer ', '').split(':')[0];
@@ -23,6 +24,29 @@ http.createServer(async (req, res) => {
   if (p === '/__control/reset') { records.length = 0; return send(res, 200, {}); }
   if (p === '/__control/passwords') { Object.assign(passwords, body); return send(res, 200, {}); }
   if (p === '/__control/log') return send(res, 200, log);
+  if (p === '/__control/gcal') { Object.assign(gcal, body); return send(res, 200, {}); }
+
+  // Nachbau der Funktion «google-kalender» (v0.14)
+  if (p === '/functions/v1/google-kalender' && req.method === 'POST') {
+    if (!uid) return send(res, 401, { error: 'Bitte zuerst in der App anmelden.' });
+    log.push({ uid, op: 'gcal-' + body.action });
+    const st = gcal.accounts[uid];
+    if (body.action === 'status') return send(res, 200, st ? { connected: true, email: st.email, calendars: st.selected } : { connected: false });
+    if (body.action === 'connect') { gcal.accounts[uid] = { email: uid + '@gmail.com', selected: [] }; return send(res, 200, { url: gcal.connectUrl }); }
+    if (body.action === 'calendars') return send(res, 200, { email: st.email, calendars: gcal.googleList, selected: st.selected });
+    if (body.action === 'select') { st.selected = body.calendars; return send(res, 200, { ok: true, calendars: body.calendars }); }
+    if (body.action === 'disconnect') { delete gcal.accounts[uid]; return send(res, 200, { ok: true }); }
+    if (body.action === 'events') {
+      const calendars = []; const events = [];
+      for (const [u, a] of Object.entries(gcal.accounts))
+        for (const c of a.selected) {
+          if (calendars.some((x) => x.id === c.id)) continue;
+          calendars.push({ id: c.id, name: c.name, kind: c.kind, personId: c.kind === 'own' ? gcal.personOf[u] ?? members[u]?.person_id ?? null : null, mine: u === uid, email: a.email });
+          for (const e of gcal.events[c.id] ?? []) if (e.end > body.from && e.start < body.to || e.allDay) events.push({ calendarId: c.id, recurringEventId: null, location: null, description: null, link: 'https://calendar.google.com/x', ...e });
+        }
+      return send(res, 200, { calendars, events, errors: gcal.errors });
+    }
+  }
 
   if (p === '/auth/v1/token' && url.searchParams.get('grant_type') === 'password') {
     if (passwords[body.email] !== body.password) return send(res, 400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' });

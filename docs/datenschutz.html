@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Family-Planner – Datenschutz</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f6f5f2; --text: #1d1d1b; --muted: #6b6a66; --primary: #2f7d5b; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #161716; --text: #ecebe8; --muted: #a3a29d; --primary: #4fb487; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; overflow-wrap: anywhere; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 28px 0 8px; }
+  p, li { margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+  a { color: var(--primary); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Datenschutz – Family-Planner</h1>
+  <p class="muted">Stand: 26. Oktober 2026</p>
+
+  <h2>Worum es geht</h2>
+  <p>Family-Planner ist eine private App einer Familie (Menüplan, Einkaufsliste, ToDos, Notizen, Kalender). Sie wird nicht verkauft, enthält keine Werbung und ist nur für die Familie und eingeladene Personen gedacht.</p>
+  <p>Verantwortlich: Tobias Leibacher, Schweiz · E-Mail: <a href="mailto:leibachertobias@gmail.com">leibachertobias@gmail.com</a></p>
+
+  <h2>Welche Daten gespeichert werden</h2>
+  <ul>
+    <li><b>Auf dem Gerät:</b> Alle Einträge der App (Personen, Menüs, Wochenplan, Einkaufsliste, ToDos, Notizen) und eine Kopie der Kalendertermine, damit die App auch ohne Internet funktioniert.</li>
+    <li><b>Beim gemeinsamen Nutzen:</b> E-Mail-Adresse und Passwort (verschlüsselt) für die Anmeldung sowie die Einträge des Haushalts. Sie liegen bei Supabase auf Servern in der Schweiz (Zürich). Nur Konten desselben Haushalts sehen diese Daten; private Einträge nur die Person, die sie erfasst hat.</li>
+  </ul>
+
+  <h2>Google Kalender</h2>
+  <p>Wer seinen Google Kalender verbindet, erlaubt der App:</p>
+  <ul>
+    <li>die Liste der eigenen Kalender zu lesen, damit man auswählen kann, welche angezeigt werden;</li>
+    <li>Termine der ausgewählten Kalender anzuzeigen und (in einer späteren Version) zu erstellen, zu ändern und zu löschen.</li>
+  </ul>
+  <p>Die Termine der ausgewählten Kalender werden den anderen Mitgliedern des eigenen Haushalts in der App angezeigt. Sie werden nicht in der Datenbank gespeichert, sondern jeweils direkt bei Google abgerufen; nur eine Kopie bleibt auf den Geräten des Haushalts.</p>
+  <p>Gespeichert wird der Zugangsschlüssel zu Google und die E-Mail-Adresse des Google-Kontos, geschützt in der Datenbank (Supabase, Zürich). Die App selbst kann den Schlüssel nicht lesen; nur die Server-Funktion verwendet ihn, um Termine abzurufen.</p>
+  <p>Die Daten aus Google werden ausschliesslich für die Kalenderfunktion dieser App verwendet, nicht an Dritte weitergegeben, nicht für Werbung genutzt und nicht zum Trainieren von KI-Modellen verwendet. Die Nutzung der von Google erhaltenen Daten hält sich an die <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, einschliesslich der Anforderungen zur eingeschränkten Nutzung («Limited Use»).</p>
+
+  <h2>Verbindung trennen und Daten löschen</h2>
+  <ul>
+    <li>In der App unter «Mehr → Kalender → ⚙︎ Kalender → Verbindung trennen»: Der Zugangsschlüssel wird gelöscht und bei Google widerrufen.</li>
+    <li>Jederzeit auch direkt bei Google unter <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</li>
+    <li>Für das Löschen eines Kontos und aller Daten genügt eine E-Mail an die oben genannte Adresse.</li>
+  </ul>
+
+  <p class="muted" style="margin-top:32px"><a href="./">Zurück zur App</a></p>
+</main>
+</body>
+</html>

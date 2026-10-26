@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 26.10.2026 · Version 0.13.0
+Stand: 26.10.2026 · Version 0.14.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -11,6 +11,7 @@ Stand: 26.10.2026 · Version 0.13.0
 - ✅ **Schritt 5 – Artikel von Hand, wiederkehrende Artikel, Vorschläge, Erledigte ausblenden**: fertig, auf dem Handy getestet.
 - ✅ **Online und getestet**: läuft unter https://leibi-tech.github.io/family-planner/, auf Tobias' Handy installiert, offline geprüft.
 - ✅ **ToDos & Ämtli-Plan (v0.10.x)**: steht (26.10.2026).
+- ⏳ **Kalender K1 – Google verbinden & ansehen (v0.14.0)**: gebaut und getestet. Tobias: einmalig Google-Projekt und Supabase einrichten (ANLEITUNG P), hochladen, verbinden, Thadea verbindet auch.
 - ⏳ **Passwort ändern (v0.13.0)**: gebaut und getestet. Tobias: hochladen und ausprobieren (ANLEITUNG O). Kein Datenbank-Update nötig. «Passwort vergessen» folgt danach (E-Mail-Dienst nötig).
 - ⏳ **Notizen & Listen (v0.11.0)**: gebaut und getestet, Tobias: hochladen und auf dem Handy ausprobieren (ANLEITUNG M). Kein Datenbank-Update nötig.
 
@@ -28,8 +29,8 @@ Stand: 26.10.2026 · Version 0.13.0
 ## Phase 2 – Gemeinsame Nutzung (Ziel 2)
 Synchronisation über Supabase. Läuft: Konto, Haushalt mit Code, Rollen, automatischer Abgleich (offline-fähig). Jeder Eintrag hat eine eindeutige ID, einen Änderungszeitpunkt und beim Löschen eine Löschmarke.
 
-## Phase 3 – Google Play Store (Ziel 3)
-Die PWA wird als Android-App verpackt (TWA oder Capacitor).
+## Phase 3 – Eigene Android-App (APK), kein Play Store
+**Entscheid Tobias (26.10.2026):** Die App kommt **nie** in den Play Store (zu aufwendig, keine fremden Nutzer betreuen). Falls nötig eine APK (Capacitor) für die Familie und evtl. Kollegen, direkt installiert. Bis dahin bleibt die installierte Web-App die Hauptform.
 
 ## Nächste Schritte (Stand 26.10.2026, mit Tobias abgesprochen)
 Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseite zeigt auf einen Blick, was für die Familie heute wichtig ist.
@@ -50,7 +51,12 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - Menüleiste unten (mit Tobias geklärt): **5 Knöpfe** Start (hervorgehoben), Einkauf, ToDo, Notizen, Mehr. Unter «Mehr»: Wochenplan, Menüs, Familie (mit Zurück-Pfeil oben links). Die App startet immer auf der Startseite.
    - Angeheftete Listen zeigen die ersten 5 offenen Punkte zum direkten Abhaken; ✕ löst die Anheftung nur bei der eigenen Person. Antippen öffnet Menü / ToDo / Notiz direkt, «Zurück» führt wieder zur Startseite.
    - Noch nicht auf der Startseite: Einkaufsliste, Kalender (kommt mit dem Kalender).
-3. **Kalender** (Konzept unten), danach im Dashboard einblenden.
+3. **Kalender** in 5 Schritten (mit Tobias abgesprochen, 26.10.2026):
+   - ⏳ **K1 (v0.14.0) Verbinden & Ansehen:** Google-Konto verbinden (jede Person ihr eigenes), Kalender wählen («Mein Kalender» / «Familie» / nicht zeigen), Monatsraster + Tagesliste, Personen ein-/ausblenden, Termin-Details mit Link zu Google, offline lesbar. Unter «Mehr» → «Kalender». Tobias: ANLEITUNG P.
+   - **K2** Termine erfassen, ändern, löschen (nur eigene Kalender und Familienkalender, nur online). Wiederholungen mit «nur diesen» / «alle». Bei Familienterminen auswählen, welche Personen/Kinder betroffen sind.
+   - **K3** Übersicht nebeneinander: alle Personen im gleichen Zeitraster (Überschneidungen sehen).
+   - **K4** Betreuungs-Warnung («Wer schaut auf die Kinder?») und Rückfrage bei fremden Terminen. Zusatzinfos in der eigenen Datenbank, mit dem Google-Termin verknüpft.
+   - **K5** Termine auf der Startseite.
 4. **Passwort** (mit Tobias abgesprochen, 26.10.2026): zuerst ✅ «Passwort ändern» (v0.13.0, ohne E-Mail-Dienst), dann «Passwort vergessen» mit kostenlosem E-Mail-Dienst (z.B. Brevo als SMTP in Supabase, Link in der Mail, Bildschirm «Neues Passwort»). Spätestens vor dem Play Store.
 5. Kleinigkeiten, wenn Zeit: Export-Knopf (siehe Datensicherung).
 
@@ -76,15 +82,17 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 ## Ideen ToDo für später (nicht beschlossen)
 Ämtli pausieren (Ferien), Erinnerungen/Push-Benachrichtigungen, Punkte/Sackgeld-Zähler, «Einkaufen» als ToDo mit Link zur Einkaufsliste.
 
-## Kalender – Konzept in Abklärung (22.10.2026)
-Ihr nutzt **Google Kalender** und **Outlook/Microsoft**. Tobias möchte noch überlegen, was gebraucht wird und was sinnvoll ist. Eigener Tab «Kalender» ist gewünscht. Termine von heute sollen später auch auf der Startseite erscheinen.
-- **Bausteine:**
-  - A) Private Kalender lesend einblenden (Google: geheimer iCal-Link; Outlook: Kalender veröffentlichen, evtl. nur «verfügbar/beschäftigt»)
-  - B) Familien-Termine direkt in der App («betrifft auch», «isst nicht mit»)
-  - C) Familienkalender als Abo in Google/Outlook anzeigen
-  - D) Vorschlag im Wochenplan bei Abendterminen («Abendessen ohne Tobias?»)
-- **Technik:** Für A und C braucht es eine kleine Server-Funktion bei Supabase (Edge Function), weil die App fremde Kalender nicht direkt abrufen darf. In Google/Outlook direkt schreiben (Einladungen verschicken) wäre deutlich aufwendiger (Google-/Microsoft-Freigaben, beim Geschäftskonto evtl. IT-Bewilligung) und ist vorerst nicht geplant.
-- **Offene Fragen an Tobias und Thadea:** Wo erfasst ihr Termine heute, und soll das so bleiben? Was nervt heute am meisten? Braucht es Termine der Kinder? Braucht es Erinnerungen/Benachrichtigungen? Darf der Geschäftskalender rein, ganz oder nur «beschäftigt»?
+## Kalender – Konzept (Stand 26.10.2026, beschlossen, Umsetzung in K1–K5)
+**Vorgabe Tobias:** Kalender nur, wenn er **mit Google (Gmail) verbunden und in der App änderbar** ist, später evtl. auch Microsoft 365 (eigenes Geschäft). Nur lesend einblenden (iCal-Link) ist **gestrichen**, weil man sich nicht auf die Termine verlassen könnte.
+- **Gewünschte Ansicht:** Monatsraster mit Tagesliste. Beim Öffnen sind immer alle Personen sichtbar, Auswahl pro Person möglich. Termine: Titel, von/bis (Datum und Uhrzeit), ganztägig, mehrere Personen, Wiederholung.
+- **Technik (Vorschlag):** Anmeldung mit dem Google-Konto über eine Supabase-Funktion. Die Funktion speichert den Zugangsschlüssel geschützt in der Datenbank und liest/schreibt Termine über die Google-Kalender-Schnittstelle. Die App zeigt eine Kopie, damit die Termine auch offline sichtbar sind. Personen = Google-Kalender (eigene, von Thadea freigegebene und ein gemeinsamer Familienkalender).
+- **Google-Regeln:** Eigenes Google-Cloud-Projekt (gratis), App «in Produktion», aber nicht von Google geprüft. Dann erscheint einmalig der Hinweis «Google hat diese App nicht überprüft», bis 100 Personen. Im Testmodus würde die Anmeldung nach 7 Tagen ablaufen, darum Produktion.
+- **Wünsche Tobias (26.10.2026):**
+  - Online alle Termine sehen; **nur eigene ändern**. Bei fremden Terminen eine **Rückfrage** schicken können («Dein Termin geht nicht, bitte besprechen»).
+  - **Übersicht nebeneinander/übereinander:** Termine aller Personen im gleichen Zeitraster, damit Überschneidungen auffallen.
+  - **Betreuungs-Warnung:** Haben beide Eltern gleichzeitig einen Termin (z.B. abends Hockey + Termin Thadea), erhalten beide eine Warnung «Wer schaut auf die Kinder?». Dort erfassen: wer, wann, wo, wie betreut oder wer die Kinder mitnimmt.
+  - Diese Zusatzinfos nur in der eigenen Datenbank (nicht in Google), aber **mit dem Google-Termin verknüpft**: Wird der Termin verschoben oder gelöscht, merkt die App das und reagiert.
+- **Entscheide Tobias (26.10.2026, Sitzung 9):** Jede Person verbindet ihr eigenes Google-Konto; Kinder-/Familientermine in einem gemeinsamen Google-Familienkalender; ändern nur mit Internet; Wiederholungen «nur diesen» und «alle».
 
 ## Ideen für später (noch nicht entschieden)
 - **Preisvergleich über KI** (Idee von Tobias, 26.10.2026): Preise der Einkaufsliste bei verschiedenen Läden vergleichen. Steht als Idee, wird nicht weiterverfolgt.
@@ -98,6 +106,8 @@ Ihr nutzt **Google Kalender** und **Outlook/Microsoft**. Tobias möchte noch üb
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **26.10.2026 (9)**: Kalender K1 (v0.14.0) gebaut: Supabase-Funktion `google-kalender` (Verbinden über Google, Schlüssel geschützt in `google_accounts`, Termine aller Konten des Haushalts), `update-0.14.sql`, Seite «Kalender» unter «Mehr» (Monatsraster, Tagesliste, Filter pro Person, Details, offline-Kopie). Tests: `tests/google-function.mjs` (Funktion gegen gefälschtes Google) und `tests/calendar.mjs`. Offene Fragen von Tobias beantwortet (siehe Konzept).
+- **26.10.2026 (8)**: Kalender abgeklärt. Entscheide Tobias: kein Play Store (höchstens APK für Familie/Kollegen); Kalender nur mit echter Google-Verbindung und Bearbeiten in der App, iCal-Lesen gestrichen. Noch nichts gebaut.
 - **26.10.2026 (7)**: v0.13.0 «Passwort ändern» (Karte «Gemeinsam nutzen»: bisheriges Passwort wird geprüft, neues mind. 8 Zeichen und anders, Wiederholung). Neuer Test `tests/password.mjs`. Reihenfolge mit Tobias: erst «ändern», dann «vergessen» mit E-Mail-Dienst.
 - **26.10.2026 (6)**: v0.12.1 Menüleiste: Start-Knopf jetzt in der Mitte (Reihenfolge Einkauf, ToDo, Start, Notizen, Mehr), grösseres Symbol, in der Trennlinie ein Bogen nach oben um das Symbol. Nur Darstellung, keine Datenbank-Änderung.
 - **26.10.2026 (5)**: v0.12.0 Startseite nach Tobias' Wünschen (Menü heute mit Link zum Menü, Meine ToDos, angeheftete und zuletzt geänderte Notizen/Listen). Menüleiste: 5 Knöpfe + «Mehr», Start hervorgehoben, App startet immer auf Start. Neu `nav.ts` (seitenübergreifendes Öffnen mit Rückweg). Automatische Tests jetzt im Ordner `tests/` (`bash tests/run-all.sh`).

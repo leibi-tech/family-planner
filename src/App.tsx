@@ -8,15 +8,17 @@ import { ShoppingPage } from './pages/ShoppingPage';
 import { TodoPage, useMe } from './pages/TodoPage';
 import { NotesPage } from './pages/NotesPage';
 import { StartPage } from './pages/StartPage';
+import { CalendarPage } from './pages/CalendarPage';
+import { readReturnFromGoogle } from './calendar';
 import { onNavBack, onOpenRequest, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
 import { onChange, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 
-type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender';
 
 /** Seiten, die unter «Mehr» liegen (der Knopf «Mehr» bleibt dann hervorgehoben). */
-const MORE_PAGES: Tab[] = ['plan', 'menues', 'familie'];
+const MORE_PAGES: Tab[] = ['kalender', 'plan', 'menues', 'familie'];
 
 const TITLES: Record<Tab, string> = {
   start: 'Start',
@@ -27,6 +29,7 @@ const TITLES: Record<Tab, string> = {
   mehr: 'Mehr',
   menues: 'Menüs',
   familie: 'Familie',
+  kalender: 'Kalender',
 };
 
 // Menüleiste unten: Start liegt in der Mitte und ist hervorgehoben (grösseres Symbol, Bogen in der Trennlinie), Wochenplan/Menüs/Familie liegen unter «Mehr».
@@ -41,8 +44,8 @@ const TABS: Array<{ id: Tab; label: string; icon: string; home?: boolean }> = [
 declare const __APP_VERSION__: string;
 
 export function App() {
-  // Die App startet immer mit der Startseite.
-  const [tab, setTabState] = useState<Tab>('start');
+  // Die App startet immer mit der Startseite – ausser nach der Rückkehr von der Google-Anmeldung.
+  const [tab, setTabState] = useState<Tab>(() => (readReturnFromGoogle() ? 'kalender' : 'start'));
   const setTab = (t: Tab) => {
     setTabState(t);
     window.scrollTo(0, 0);
@@ -133,6 +136,8 @@ export function App() {
           <TodoPage />
         ) : tab === 'notizen' ? (
           <NotesPage />
+        ) : tab === 'kalender' ? (
+          <CalendarPage goto={(t) => setTab(t as Tab)} />
         ) : (
           <MorePage goto={setTab} />
         )}
@@ -173,6 +178,7 @@ export function App() {
 /** «Mehr»: Seiten, die nicht in der Menüleiste Platz haben. */
 function MorePage({ goto }: { goto: (t: Tab) => void }) {
   const items: Array<{ id: Tab; icon: string; label: string; sub: string }> = [
+    { id: 'kalender', icon: '📆', label: 'Kalender', sub: 'Termine aus Google Kalender' },
     { id: 'plan', icon: '📅', label: 'Wochenplan', sub: 'Menüs für die Woche planen' },
     { id: 'menues', icon: '🍲', label: 'Menüs', sub: 'Gerichte erfassen und importieren' },
     { id: 'familie', icon: '👪', label: 'Familie', sub: 'Personen, Portionen, gemeinsam nutzen' },

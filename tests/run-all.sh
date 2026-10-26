@@ -12,13 +12,15 @@ python3 -m http.server 8765 > /tmp/fp-web.log 2>&1 &
 WEB=$!
 sleep 1
 fail=0
-for t in ui-local start-page sync-two todo-link password; do
+for t in ui-local start-page sync-two todo-link password calendar; do
   echo "== $t"
-  out=$(node tests/$t.mjs 2>&1 | grep -v '^\[{')
+  out=$(timeout 150 node tests/$t.mjs 2>&1 | grep -v "^\[{")
   echo "$out" | grep -E "^(OK|FAIL)" | sed 's/^OK   /  ok   /'
   echo "$out" | grep -E "FAIL|Error" > /dev/null && fail=1
+  echo "$out" | grep -q "^OK" || { echo "  keine Ergebnisse:"; echo "$out" | head -8; fail=1; }
 done
 kill $MOCK $WEB 2>/dev/null
 rm -rf docs-test
+echo "== google-function"; node tests/google-function.mjs | grep -E "^(OK|FAIL)" | sed "s/^OK   /  ok   /"; node tests/google-function.mjs > /dev/null || fail=1
 [ $fail = 0 ] && echo "ALLE TESTS OK" || echo "FEHLER GEFUNDEN"
 exit $fail

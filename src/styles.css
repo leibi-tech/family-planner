@@ -448,3 +448,55 @@ button, input { font: inherit; color: inherit; }
 .dash-recent-main { display: flex; flex-direction: column; min-width: 0; }
 .dash-recent-title { font-weight: 600; overflow-wrap: anywhere; }
 .dash-recent-meta { font-size: 13px; }
+
+/* --- Kalender (v0.14) --- */
+.cal-flash { cursor: pointer; margin: 0 0 12px; }
+.cal-banner { display: grid; gap: 10px; }
+.cal-today-btn { border: 0; background: none; color: var(--primary); font-weight: 600; font-size: 14px; min-height: 30px; cursor: pointer; padding: 0 8px; }
+.cal-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.cal-chip {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 99px; cursor: pointer;
+  border: 2px solid var(--c); background: var(--surface); font-weight: 600; font-size: 15px;
+}
+.cal-chip.off { border-color: var(--border); color: var(--muted); text-decoration: line-through; }
+.cal-chip.off .cal-dot { opacity: 0.3; }
+.cal-dot { width: 12px; height: 12px; flex: none; border-radius: 50%; background: var(--c); display: inline-block; }
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px 4px;
+}
+.cal-wd { text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); padding-bottom: 2px; }
+.cal-cell {
+  min-width: 0; min-height: 62px; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+  padding: 3px 2px; border: 0; border-radius: 8px; background: none; cursor: pointer; text-align: left; overflow: hidden;
+}
+.cal-cell.other { opacity: 0.4; }
+.cal-num { align-self: center; font-size: 14px; font-weight: 600; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; }
+.cal-cell.today .cal-num { background: var(--primary); color: var(--primary-text); }
+.cal-cell.sel { background: var(--primary-soft); box-shadow: inset 0 0 0 2px var(--primary); }
+.cal-bars { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-bar {
+  display: block; min-width: 0; height: 13px; line-height: 13px; padding: 0 3px; border-radius: 3px;
+  font-size: 9.5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: clip;
+}
+.cal-more { font-size: 10px; color: var(--muted); text-align: center; line-height: 1; }
+.cal-dayhead { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px; font-size: 18px; }
+.cal-empty { margin: 4px 0 12px; }
+.cal-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.cal-ev {
+  width: 100%; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 12px 8px 14px; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: inset 5px 0 0 var(--c);
+}
+.cal-ev-time { flex: none; width: 92px; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+.cal-ev-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cal-ev-title { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.cal-ev-sub { font-size: 13.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 12px; }
+.cal-foot .muted { flex: 1 1 100%; font-size: 13px; }
+.cal-detail-title { border-left: 6px solid var(--c); padding-left: 10px; overflow-wrap: anywhere; }
+.cal-detail-row { margin: 0 0 10px; overflow-wrap: anywhere; }
+.cal-detail-desc { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
+.cal-link { display: grid; place-items: center; text-decoration: none; color: inherit; }
+.cal-pick { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 12px; }
+.cal-pick-name { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.cal-pick .seg button { font-size: 14px; padding: 0 4px; }

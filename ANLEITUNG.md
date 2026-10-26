@@ -119,9 +119,58 @@ Kein Datenbank-Update nötig. Einfach hochladen wie immer (siehe E).
 4. **Passwort speichern**. Es erscheint «Passwort geändert ✓». Du bleibst angemeldet; auf dem Handy der anderen Person ändert sich nichts.
 - **Passwort vergessen?** Das kommt als nächster Schritt (braucht einen kostenlosen E-Mail-Dienst, ich schreibe dir dann die Anleitung). Bis dahin kann in Supabase unter *Authentication → Users* bei einem Konto ein neues Passwort gesetzt werden (ich zeige dir bei Bedarf wo).
 
+## P) Kalender mit Google einrichten (ab Version 0.14.0, einmalig)
+Das ist der aufwendigste Teil bisher (ca. 20 Minuten), muss aber nur **einmal** gemacht werden. Mach es am PC.
+
+**Teil 1 – Google-Projekt (gratis)**
+1. Öffne **console.cloud.google.com** und melde dich mit deinem Google-Konto an (Bedingungen akzeptieren).
+2. Oben links neben «Google Cloud» auf die **Projektauswahl** klicken → **Neues Projekt**. Name: `Family-Planner` → **Erstellen**. Danach oben sicherstellen, dass dieses Projekt ausgewählt ist.
+3. Oben im Suchfeld **Google Calendar API** eingeben, öffnen und **Aktivieren** klicken.
+4. Im Suchfeld **Google Auth Platform** (oder «OAuth-Zustimmungsbildschirm») öffnen → **Jetzt starten** / **Get started**:
+   - App-Name: `Family-Planner`, Support-E-Mail: deine Gmail-Adresse → Weiter
+   - Zielgruppe: **Extern** → Weiter
+   - Kontakt-E-Mail: deine Gmail-Adresse → Weiter → Richtlinie akzeptieren → **Erstellen**
+5. Links auf **Clients** → **Client erstellen**:
+   - Anwendungstyp: **Webanwendung**, Name: `Family-Planner`
+   - Unten bei **Autorisierte Weiterleitungs-URIs** auf **URI hinzufügen** und genau das eintragen:
+     `https://hkakelobqtbyliszrils.supabase.co/functions/v1/google-kalender`
+   - **Erstellen**. Es erscheinen **Client-ID** und **Clientschlüssel**. Fenster offen lassen (oder als JSON herunterladen). ⚠️ Den Clientschlüssel **nicht** in den Chat kopieren.
+6. Links auf **Branding** und ergänzen (Google verlangt das für «In Produktion»):
+   - Startseite der App: `https://leibi-tech.github.io/family-planner/`
+   - Link zur Datenschutzerklärung: `https://leibi-tech.github.io/family-planner/datenschutz.html` *(die Seite ist in Version 0.14.0 dabei, also zuerst hochladen, siehe E)*
+   - Link zu den Nutzungsbedingungen: leer lassen
+   - **Autorisierte Domains:** `leibi-tech.github.io` und `hkakelobqtbyliszrils.supabase.co` hinzufügen (falls Google eine nicht annimmt: weglassen und melden)
+   - Unten **Speichern**.
+   Danach links auf **Zielgruppe** (Audience) → **App veröffentlichen** → bestätigen. Der Status heisst danach **«In Produktion»**. *(Ohne das läuft die Verbindung nach 7 Tagen ab.)* Eine Überprüfung durch Google braucht es für uns nicht.
+
+**Teil 2 – Supabase**
+7. supabase.com → Projekt **family-planner** → **SQL Editor** → Inhalt von `supabase\update-0.14.sql` einfügen → **Run** (oben rechts muss «Database» stehen).
+8. Links **Edge Functions** → **Secrets** (bzw. «Manage secrets»): zwei Einträge hinzufügen und speichern:
+   - Name `GOOGLE_CLIENT_ID` → Wert: die Client-ID aus Schritt 5
+   - Name `GOOGLE_CLIENT_SECRET` → Wert: der Clientschlüssel aus Schritt 5
+9. **Edge Functions** → **Deploy a new function** → **Via Editor**. Name oben: **`google-kalender`** (genau so). Datei `supabase\functions\google-kalender\index-zum-kopieren.txt` öffnen, alles kopieren und den Beispieltext im Editor ganz ersetzen → **Deploy function**.
+10. In der Funktion unter **Details/Settings** den Schalter **Verify JWT** **ausschalten** und speichern.
+
+**Teil 3 – App**
+11. Neue Version hochladen wie immer (siehe E) und die App auf dem Handy einmal schliessen und neu öffnen.
+12. In der App: **Mehr → Kalender → Mit Google verbinden**. Google zeigt **«Google hat diese App nicht überprüft»** → **Erweitert** → **Weiter zu Family-Planner (unsicher)**. Das ist normal, weil die App nur für uns ist. Dann den Zugriff auf den Kalender erlauben (alle Häkchen setzen).
+13. Zurück in der App: Kalender wählen. Dein Hauptkalender ist als **«Mein Kalender»** vorgeschlagen. Euren gemeinsamen Kalender auf **«Familie»** stellen. **Auswahl speichern**.
+14. **Thadea** macht auf ihrem Handy Schritt 12 und 13 mit ihrem eigenen Google-Konto.
+
+**Familienkalender (falls ihr noch keinen habt):** In Google Kalender am PC links bei «Weitere Kalender» auf **+** → **Neuen Kalender erstellen**, Name `Familie`. Danach in seinen Einstellungen bei **«Für bestimmte Personen freigeben»** Thadeas Gmail-Adresse mit **«Änderungen an Terminen vornehmen»** hinzufügen.
+
+**So funktioniert der Kalender (Version 0.14.0):**
+- Monatsansicht mit farbigen Balken pro Person, darunter die Termine des gewählten Tages. Tag antippen = Termine dieses Tages. **Heute** springt zurück.
+- Oben Knöpfe pro Person und «Familie»: antippen blendet aus bzw. wieder ein. Beim Öffnen sind immer alle sichtbar.
+- Termin antippen zeigt Details und den Link «In Google Kalender öffnen».
+- **Ohne Internet** siehst du den letzten Stand (unten «Offline · Stand …»). Online wird alle 5 Minuten aufgefrischt, mit «⟳ Aktualisieren» sofort.
+- **Ändern und Erfassen** von Terminen kommt im nächsten Schritt. Bis dahin in Google Kalender.
+- Alles, was du unter «Mein Kalender» auswählst, sehen alle in der Familie. Private Kalender einfach auf «Nicht zeigen» lassen.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
+- **Kalender:** Die Termine bleiben bei Google. Der Zugangsschlüssel zu Google liegt geschützt in Supabase; die App selbst kann ihn nicht lesen. «Verbindung trennen» löscht ihn und meldet die App bei Google ab.
 - ⚠️ Gelöschtes wird auch auf den anderen Handys gelöscht. Ein Export-Knopf als zusätzliche Sicherung kommt noch (Wunschliste).
 
 ## Wenn etwas nicht klappt
