@@ -1,12 +1,13 @@
 // Minimaler Nachbau von Supabase für Tests: Auth, records (mit Neuere-gewinnt), Mitgliedschaft.
 import http from 'node:http';
+process.env.TZ = 'Europe/Zurich'; // wie die Handys (für Termin-Zeiten)
 const PORT = 8766;
 const records = []; // {household_id, store, id, data, updated_at, deleted, owner_id, server_updated_at}
 let tick = 0;
 const members = {}; // token -> {role, person_id}
 const log = [];
 const passwords = {}; // E-Mail -> Passwort
-const gcal = { accounts: {}, googleList: [], events: {}, personOf: {}, errors: [], connectUrl: '' }; // Kalender-Nachbau
+const gcal = { accounts: {}, googleList: [], events: {}, personOf: {}, errors: [], connectUrl: '', writes: [], repeats: {}, seq: 0 }; // Kalender-Nachbau
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' };
 const send = (res, code, body) => { res.writeHead(code, { ...cors, 'Content-Type': 'application/json' }); res.end(body === undefined ? '' : JSON.stringify(body)); };
 const uidOf = (req) => (req.headers.authorization || '').replace('Bearer ', '').split(':')[0];
@@ -25,6 +26,7 @@ http.createServer(async (req, res) => {
   if (p === '/__control/passwords') { Object.assign(passwords, body); return send(res, 200, {}); }
   if (p === '/__control/log') return send(res, 200, log);
   if (p === '/__control/gcal') { Object.assign(gcal, body); return send(res, 200, {}); }
+  if (p === '/__control/gcal-dump') return send(res, 200, gcal);
 
   // Nachbau der Funktion «google-kalender» (v0.14)
   if (p === '/functions/v1/google-kalender' && req.method === 'POST') {
@@ -36,12 +38,52 @@ http.createServer(async (req, res) => {
     if (body.action === 'calendars') return send(res, 200, { email: st.email, calendars: gcal.googleList, selected: st.selected });
     if (body.action === 'select') { st.selected = body.calendars; return send(res, 200, { ok: true, calendars: body.calendars }); }
     if (body.action === 'disconnect') { delete gcal.accounts[uid]; return send(res, 200, { ok: true }); }
+    const own = st && st.selected.some((c) => c.id === body.calendarId);
+    if (['create', 'update', 'delete', 'master'].includes(body.action) && !own) return send(res, 403, { error: 'Diesen Kalender kannst du nicht ändern (nicht in deiner Auswahl).' });
+    const toEv = (e) => {
+      const add1 = (d) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + 1); return x.toISOString().slice(0, 10); };
+      return e.allDay ? { title: e.title, allDay: true, start: e.startDate, end: add1(e.endDate), location: e.location || null, description: e.description || null }
+        : { title: e.title, allDay: false, start: new Date(`${e.startDate}T${e.startTime}:00`).toISOString(), end: new Date(`${e.endDate}T${e.endTime}:00`).toISOString(), location: e.location || null, description: e.description || null };
+    };
+    const shift = (iso, days, allDay) => { if (allDay) { const x = new Date(iso + 'T12:00:00'); x.setDate(x.getDate() + days); return x.toISOString().slice(0, 10); } const x = new Date(iso); x.setDate(x.getDate() + days); return x.toISOString(); };
+    if (body.action === 'create') {
+      const list = (gcal.events[body.calendarId] ??= []);
+      const id = 'n' + (++gcal.seq);
+      const base = toEv(body.event);
+      gcal.writes.push({ uid, op: 'create', cal: body.calendarId, event: body.event });
+      if (body.event.repeat) {
+        gcal.repeats[id] = body.event.repeat;
+        for (let i = 0; i < 3; i++) list.push({ ...base, id: `${id}_${i}`, recurringEventId: id, start: shift(base.start, i * 7, base.allDay), end: shift(base.end, i * 7, base.allDay) });
+      } else list.push({ ...base, id });
+      return send(res, 200, { ok: true, id });
+    }
+    if (body.action === 'master') return send(res, 200, { repeat: gcal.repeats[body.eventId] ?? null });
+    if (body.action === 'update') {
+      const list = gcal.events[body.calendarId] ?? [];
+      gcal.writes.push({ uid, op: 'update', scope: body.scope, id: body.eventId, event: body.event });
+      const ne = toEv(body.event);
+      if (body.scope === 'all' && body.recurringEventId) {
+        for (const e of list.filter((x) => x.recurringEventId === body.recurringEventId)) Object.assign(e, { title: ne.title, location: ne.location, description: ne.description });
+        if (body.event.repeat !== undefined) gcal.repeats[body.recurringEventId] = body.event.repeat;
+      } else {
+        const e = list.find((x) => x.id === body.eventId);
+        if (!e) return send(res, 404, { error: 'Diesen Termin gibt es in Google nicht mehr.' });
+        Object.assign(e, ne);
+      }
+      return send(res, 200, { ok: true });
+    }
+    if (body.action === 'delete') {
+      gcal.writes.push({ uid, op: 'delete', scope: body.scope, id: body.eventId });
+      const list = gcal.events[body.calendarId] ?? [];
+      gcal.events[body.calendarId] = list.filter((x) => (body.scope === 'all' && body.recurringEventId ? x.recurringEventId !== body.recurringEventId : x.id !== body.eventId));
+      return send(res, 200, { ok: true });
+    }
     if (body.action === 'events') {
       const calendars = []; const events = [];
       for (const [u, a] of Object.entries(gcal.accounts))
         for (const c of a.selected) {
           if (calendars.some((x) => x.id === c.id)) continue;
-          calendars.push({ id: c.id, name: c.name, kind: c.kind, personId: c.kind === 'own' ? gcal.personOf[u] ?? members[u]?.person_id ?? null : null, mine: u === uid, email: a.email });
+          calendars.push({ id: c.id, name: c.name, kind: c.kind, personId: c.kind === 'own' ? gcal.personOf[u] ?? members[u]?.person_id ?? null : null, mine: u === uid, writable: u === uid, email: a.email });
           for (const e of gcal.events[c.id] ?? []) if (e.end > body.from && e.start < body.to || e.allDay) events.push({ calendarId: c.id, recurringEventId: null, location: null, description: null, link: 'https://calendar.google.com/x', ...e });
         }
       return send(res, 200, { calendars, events, errors: gcal.errors });

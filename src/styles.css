@@ -500,3 +500,13 @@ button, input { font: inherit; color: inherit; }
 .cal-pick { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 12px; }
 .cal-pick-name { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
 .cal-pick .seg button { font-size: 14px; padding: 0 4px; }
+.cal-add { margin-left: auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
+.cal-dayhead .pill-today { margin-left: 0; }
+.cal-ask { display: grid; gap: 10px; margin: 8px 0 12px; }
+.cal-seg { margin-bottom: 14px; }
+.cal-when { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 0 10px; }
+.cal-when .field { margin-bottom: 12px; }
+.cal-when input { width: 100%; min-width: 0; }
+.cal-until { display: grid; gap: 4px; margin-top: 8px; font-size: 14px; }
+.cal-until input { min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+.field select.select { width: 100%; }

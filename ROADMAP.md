@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 26.10.2026 · Version 0.14.0
+Stand: 26.10.2026 · Version 0.15.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -11,7 +11,8 @@ Stand: 26.10.2026 · Version 0.14.0
 - ✅ **Schritt 5 – Artikel von Hand, wiederkehrende Artikel, Vorschläge, Erledigte ausblenden**: fertig, auf dem Handy getestet.
 - ✅ **Online und getestet**: läuft unter https://leibi-tech.github.io/family-planner/, auf Tobias' Handy installiert, offline geprüft.
 - ✅ **ToDos & Ämtli-Plan (v0.10.x)**: steht (26.10.2026).
-- ⏳ **Kalender K1 – Google verbinden & ansehen (v0.14.0)**: gebaut und getestet. Tobias: einmalig Google-Projekt und Supabase einrichten (ANLEITUNG P), hochladen, verbinden, Thadea verbindet auch.
+- ✅ **Kalender K1 – Google verbinden & ansehen (v0.14.0)**: läuft, Tobias hat verbunden (26.10.2026). Nötig war zusätzlich: Rechte für service_role (in update-0.14.sql ergänzt), Datenschutzseite `docs/datenschutz.html` für Google «In Produktion».
+- ⏳ **Kalender K2 – Termine erfassen/ändern/löschen (v0.15.0)**: gebaut und getestet. Tobias: Funktion in Supabase neu einfügen und deployen, hochladen, ausprobieren (ANLEITUNG Q).
 - ⏳ **Passwort ändern (v0.13.0)**: gebaut und getestet. Tobias: hochladen und ausprobieren (ANLEITUNG O). Kein Datenbank-Update nötig. «Passwort vergessen» folgt danach (E-Mail-Dienst nötig).
 - ⏳ **Notizen & Listen (v0.11.0)**: gebaut und getestet, Tobias: hochladen und auf dem Handy ausprobieren (ANLEITUNG M). Kein Datenbank-Update nötig.
 
@@ -52,8 +53,8 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - Angeheftete Listen zeigen die ersten 5 offenen Punkte zum direkten Abhaken; ✕ löst die Anheftung nur bei der eigenen Person. Antippen öffnet Menü / ToDo / Notiz direkt, «Zurück» führt wieder zur Startseite.
    - Noch nicht auf der Startseite: Einkaufsliste, Kalender (kommt mit dem Kalender).
 3. **Kalender** in 5 Schritten (mit Tobias abgesprochen, 26.10.2026):
-   - ⏳ **K1 (v0.14.0) Verbinden & Ansehen:** Google-Konto verbinden (jede Person ihr eigenes), Kalender wählen («Mein Kalender» / «Familie» / nicht zeigen), Monatsraster + Tagesliste, Personen ein-/ausblenden, Termin-Details mit Link zu Google, offline lesbar. Unter «Mehr» → «Kalender». Tobias: ANLEITUNG P.
-   - **K2** Termine erfassen, ändern, löschen (nur eigene Kalender und Familienkalender, nur online). Wiederholungen mit «nur diesen» / «alle». Bei Familienterminen auswählen, welche Personen/Kinder betroffen sind.
+   - ✅ **K1 (v0.14.0) Verbinden & Ansehen:** Google-Konto verbinden (jede Person ihr eigenes), Kalender wählen («Mein Kalender» / «Familie» / nicht zeigen), Monatsraster + Tagesliste, Personen ein-/ausblenden, Termin-Details mit Link zu Google, offline lesbar. Unter «Mehr» → «Kalender». Tobias: ANLEITUNG P.
+   - ⏳ **K2 (v0.15.0)** Termine erfassen, ändern, löschen (nur eigene Kalender und Familienkalender, nur online). Wiederholungen einfach (täglich … jährlich, bis), «nur diesen» / «alle». Betroffene Personen im Titel «[Kind 1] …», auch bei eigenen Terminen. Erinnerungen = Google-Standard. Tobias: ANLEITUNG Q.
    - **K3** Übersicht nebeneinander: alle Personen im gleichen Zeitraster (Überschneidungen sehen).
    - **K4** Betreuungs-Warnung («Wer schaut auf die Kinder?») und Rückfrage bei fremden Terminen. Zusatzinfos in der eigenen Datenbank, mit dem Google-Termin verknüpft.
    - **K5** Termine auf der Startseite.
@@ -106,6 +107,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **26.10.2026 (10)**: K1 bei Tobias eingerichtet und läuft (Google «In Produktion» mit Datenschutzseite; 403 behoben mit Rechten für service_role). K2 (v0.15.0) gebaut nach Tobias' Antworten: Erfassen/Ändern/Löschen, Serien «nur diesen/alle», Personen im Titel. Neue Tests `tests/calendar-edit.mjs`, Funktionstests für Schreiben.
 - **26.10.2026 (9)**: Kalender K1 (v0.14.0) gebaut: Supabase-Funktion `google-kalender` (Verbinden über Google, Schlüssel geschützt in `google_accounts`, Termine aller Konten des Haushalts), `update-0.14.sql`, Seite «Kalender» unter «Mehr» (Monatsraster, Tagesliste, Filter pro Person, Details, offline-Kopie). Tests: `tests/google-function.mjs` (Funktion gegen gefälschtes Google) und `tests/calendar.mjs`. Offene Fragen von Tobias beantwortet (siehe Konzept).
 - **26.10.2026 (8)**: Kalender abgeklärt. Entscheide Tobias: kein Play Store (höchstens APK für Familie/Kollegen); Kalender nur mit echter Google-Verbindung und Bearbeiten in der App, iCal-Lesen gestrichen. Noch nichts gebaut.
 - **26.10.2026 (7)**: v0.13.0 «Passwort ändern» (Karte «Gemeinsam nutzen»: bisheriges Passwort wird geprüft, neues mind. 8 Zeichen und anders, Wiederholung). Neuer Test `tests/password.mjs`. Reihenfolge mit Tobias: erst «ändern», dann «vergessen» mit E-Mail-Dienst.

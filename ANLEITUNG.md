@@ -164,8 +164,23 @@ Das ist der aufwendigste Teil bisher (ca. 20 Minuten), muss aber nur **einmal** 
 - Oben Knöpfe pro Person und «Familie»: antippen blendet aus bzw. wieder ein. Beim Öffnen sind immer alle sichtbar.
 - Termin antippen zeigt Details und den Link «In Google Kalender öffnen».
 - **Ohne Internet** siehst du den letzten Stand (unten «Offline · Stand …»). Online wird alle 5 Minuten aufgefrischt, mit «⟳ Aktualisieren» sofort.
-- **Ändern und Erfassen** von Terminen kommt im nächsten Schritt. Bis dahin in Google Kalender.
+- **Ändern und Erfassen** von Terminen: siehe Q (ab Version 0.15.0).
 - Alles, was du unter «Mein Kalender» auswählst, sehen alle in der Familie. Private Kalender einfach auf «Nicht zeigen» lassen.
+
+## Q) Termine erfassen und ändern (ab Version 0.15.0)
+**Einmalig in Supabase:** Die Kalender-Funktion hat neue Teile bekommen.
+1. supabase.com → **Edge Functions** → **google-kalender** → oben **Code**.
+2. Links `index.ts` anklicken, rechts alles markieren (Ctrl+A) und mit dem Inhalt von `supabase\functions\google-kalender\index-zum-kopieren.txt` ersetzen (Ctrl+V).
+3. **Deploy** klicken. Kein Datenbank-Update nötig. «Verify JWT» bleibt aus.
+4. App hochladen wie immer (siehe E), auf dem Handy schliessen und neu öffnen (Version 0.15.0).
+
+**So geht es:**
+- **Neuer Termin:** Tag im Kalender antippen → **+ Termin**. Titel, Kalender («mein Kalender» oder «Familie»), **Wen betrifft es?**, Mit Zeit / Ganztägig, Beginn und Ende, Wiederholung, Ort, Notiz → **Speichern**.
+- **Wen betrifft es?** Bei deinem eigenen Kalender bist du immer dabei; du kannst Kinder dazunehmen (z.B. Zahnarzt mit Kind 1). Im Familienkalender: niemand gewählt = ganze Familie. Die Namen stehen in Google vorne im Titel, z.B. «[Kind 1] Zahnarzt». Die App zeigt sie farbig und ohne Klammern. Wer direkt in Google einen Termin so schreibt, wird ebenfalls erkannt (Namen genau wie in der App).
+- **Ändern / Löschen:** Termin antippen → **✎ Bearbeiten** oder **Löschen**. Bei wiederkehrenden Terminen fragt die App: **«Nur diesen Termin»** oder **«Alle Termine der Serie»**. Bei «alle» verschiebt eine Änderung von Datum/Zeit die ganze Serie gleich weit.
+- **Wiederholung:** täglich, wöchentlich, alle 2 Wochen, monatlich, jährlich, optional «bis» Datum. Kompliziertere Serien aus Google (z.B. Mo + Mi) bleiben unverändert («Wie bisher»).
+- **Erinnerungen:** wie in deinem Google Kalender eingestellt (Standard-Erinnerung).
+- Termine der anderen Person kannst du ansehen, aber nicht ändern. Ändern geht nur mit Internet.
 
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.

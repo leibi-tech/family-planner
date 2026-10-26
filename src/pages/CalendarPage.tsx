@@ -4,6 +4,18 @@ import { useRecords } from '../hooks';
 import { dateKey } from '../model';
 import { useSync } from '../components/CloudCard';
 import {
+  buildTitle,
+  createEvent,
+  deleteEvent,
+  eventPersons,
+  eventToInput,
+  isWritable,
+  parseTitle,
+  REPEAT_LABELS,
+  seriesRepeat,
+  updateEvent,
+  type EventInput,
+  type Repeat,
   disconnectGoogle,
   eventsFromCache,
   fetchMonths,
@@ -57,6 +69,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   const [hidden, setHidden] = useState<Set<string>>(new Set()); // beim Öffnen immer alle sichtbar
   const [settings, setSettings] = useState(false);
   const [detail, setDetail] = useState<CalEvent | null>(null);
+  const [editor, setEditor] = useState<{ ev: CalEvent | null; scope: 'one' | 'all'; day: Date } | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -132,16 +145,17 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   const personIds = sortedPersons.map((p) => p.id);
   const calById = useMemo(() => new Map((cache?.calendars ?? []).map((c) => [c.id, c])), [cache]);
 
-  const keyOf = (c: CalInfo | undefined) => (c?.kind === 'own' ? c.personId ?? 'unbekannt' : 'family');
-  const colorOf = (e: CalEvent) => {
-    const c = calById.get(e.calendarId);
-    return c?.kind === 'own' ? personColor(personIds, c.personId) : personColor(personIds, null);
+  const personsOf = (e: CalEvent) => eventPersons(e, calById.get(e.calendarId), sortedPersons);
+  const keysOf = (e: CalEvent) => {
+    const ps = personsOf(e);
+    return ps.length ? ps : ['family'];
   };
+  const colorOf = (e: CalEvent) => personColor(personIds, personsOf(e)[0] ?? null);
+  const titleOf = (e: CalEvent) => parseTitle(e.title, sortedPersons).title;
   const whoOf = (e: CalEvent) => {
-    const c = calById.get(e.calendarId);
-    if (!c) return '';
-    if (c.kind === 'family') return 'Familie';
-    return sortedPersons.find((p) => p.id === c.personId)?.name ?? c.name;
+    const ps = personsOf(e);
+    if (!ps.length) return 'Familie';
+    return ps.map((id) => sortedPersons.find((p) => p.id === id)?.name ?? '?').join(', ');
   };
 
   if (!household) {
@@ -156,24 +170,27 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
     );
   }
 
-  // Filter: Personen mit eigenem Kalender + Familie
+  const monthEvents = eventsFromCache(cache?.household === household ? cache : undefined, [
+    monthKey(ym.y, ym.m - 1),
+    monthKey(ym.y, ym.m),
+    monthKey(ym.y, ym.m + 1),
+  ]);
+  // Filter: Personen, die Termine haben (eigener Kalender oder im Titel genannt), + Familie
+  const present = new Set<string>();
+  for (const c of cache?.calendars ?? []) if (c.kind === 'own' && c.personId) present.add(c.personId);
+  for (const e of monthEvents) keysOf(e).forEach((k) => present.add(k));
   const filterKeys: Array<{ key: string; label: string; color: string }> = [];
-  for (const p of sortedPersons)
-    if ((cache?.calendars ?? []).some((c) => c.kind === 'own' && c.personId === p.id))
-      filterKeys.push({ key: p.id, label: p.name, color: personColor(personIds, p.id) });
-  if ((cache?.calendars ?? []).some((c) => c.kind === 'family'))
+  for (const p of sortedPersons) if (present.has(p.id)) filterKeys.push({ key: p.id, label: p.name, color: personColor(personIds, p.id) });
+  if (present.has('family') || (cache?.calendars ?? []).some((c) => c.kind === 'family'))
     filterKeys.push({ key: 'family', label: 'Familie', color: personColor(personIds, null) });
   const toggle = (k: string) => {
     const n = new Set(hidden);
     n.has(k) ? n.delete(k) : n.add(k);
     setHidden(n);
   };
-
-  const all = eventsFromCache(cache?.household === household ? cache : undefined, [
-    monthKey(ym.y, ym.m - 1),
-    monthKey(ym.y, ym.m),
-    monthKey(ym.y, ym.m + 1),
-  ]).filter((e) => !hidden.has(keyOf(calById.get(e.calendarId))));
+  // Sichtbar, solange mindestens eine betroffene Person eingeblendet ist
+  const all = monthEvents.filter((e) => keysOf(e).some((k) => !hidden.has(k)));
+  const writableCals = (cache?.calendars ?? []).filter(isWritable);
 
   // Raster: Montag vor dem 1. bis Sonntag nach dem Monatsende
   const first = new Date(ym.y, ym.m, 1);
@@ -272,7 +289,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
               <span className="cal-bars">
                 {evs.slice(0, MAX_BARS).map((e) => (
                   <span key={e.calendarId + e.id} className="cal-bar" style={{ background: colorOf(e) }}>
-                    {e.title}
+                    {titleOf(e)}
                   </span>
                 ))}
                 {evs.length > MAX_BARS && <span className="cal-more">+{evs.length - MAX_BARS}</span>}
@@ -285,6 +302,16 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
       <h3 className="cal-dayhead">
         {selDay.toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long' })}
         {dateKey(selDay) === todayKey && <span className="pill pill-today">Heute</span>}
+        {writableCals.length > 0 && (
+          <button
+            className="btn btn-primary cal-add"
+            disabled={!online}
+            title={online ? 'Neuer Termin' : 'Termine erfassen geht nur mit Internet'}
+            onClick={() => setEditor({ ev: null, scope: 'one', day: selDay })}
+          >
+            + Termin
+          </button>
+        )}
       </h3>
       {selEvents.length === 0 ? (
         <p className="muted cal-empty">Keine Termine.</p>
@@ -295,7 +322,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
               <button className="cal-ev" style={{ ['--c' as any]: colorOf(e) }} onClick={() => setDetail(e)}>
                 <span className="cal-ev-time">{timeLabel(e, selDay)}</span>
                 <span className="cal-ev-main">
-                  <span className="cal-ev-title">{e.title}</span>
+                  <span className="cal-ev-title">{titleOf(e)}</span>
                   <span className="cal-ev-sub">
                     {whoOf(e)}
                     {e.location ? ` · ${e.location}` : ''}
@@ -331,7 +358,47 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
         </p>
       ))}
 
-      {detail && <EventSheet ev={detail} who={whoOf(detail)} color={colorOf(detail)} cal={calById.get(detail.calendarId)} onClose={() => setDetail(null)} />}
+      {detail && (
+        <EventSheet
+          ev={detail}
+          title={titleOf(detail)}
+          who={whoOf(detail)}
+          color={colorOf(detail)}
+          cal={calById.get(detail.calendarId)}
+          online={online}
+          ownerName={(() => {
+            const c = calById.get(detail.calendarId);
+            return sortedPersons.find((p) => p.id === c?.personId)?.name ?? c?.email ?? 'die andere Person';
+          })()}
+          onClose={() => setDetail(null)}
+          onEdit={(scope) => {
+            setEditor({ ev: detail, scope, day: selDay });
+            setDetail(null);
+          }}
+          onDeleted={async () => {
+            setDetail(null);
+            setFlash('Termin gelöscht ✓');
+            await refresh(ym.y, ym.m - 1, 3, true);
+          }}
+        />
+      )}
+      {editor && (
+        <EventEditor
+          ev={editor.ev}
+          scope={editor.scope}
+          day={editor.day}
+          calendars={writableCals}
+          cal={editor.ev ? calById.get(editor.ev.calendarId) : undefined}
+          persons={sortedPersons}
+          myPersonId={sync.membership?.person_id ?? null}
+          onClose={() => setEditor(null)}
+          onSaved={async (msg) => {
+            setEditor(null);
+            setFlash(msg);
+            await refresh(ym.y, ym.m - 1, 3, true);
+          }}
+        />
+      )}
       {settings && (
         <SettingsSheet
           household={household}
@@ -347,30 +414,382 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   );
 }
 
-function EventSheet({ ev, who, color, cal, onClose }: { ev: CalEvent; who: string; color: string; cal?: CalInfo; onClose: () => void }) {
+function EventSheet({
+  ev,
+  title,
+  who,
+  color,
+  cal,
+  online,
+  ownerName,
+  onClose,
+  onEdit,
+  onDeleted,
+}: {
+  ev: CalEvent;
+  title: string;
+  who: string;
+  color: string;
+  cal?: CalInfo;
+  online: boolean;
+  ownerName: string;
+  onClose: () => void;
+  onEdit: (scope: 'one' | 'all') => void;
+  onDeleted: () => Promise<void>;
+}) {
+  const [ask, setAsk] = useState<null | 'edit' | 'delete'>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const writable = isWritable(cal);
+  const series = !!ev.recurringEventId;
+
+  const del = async (scope: 'one' | 'all') => {
+    setBusy(true);
+    setError(null);
+    try {
+      await deleteEvent(ev, scope);
+      await onDeleted();
+    } catch (e: any) {
+      setError(e?.message ?? String(e));
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <h2 className="cal-detail-title" style={{ ['--c' as any]: color }}>
-          {ev.title}
+          {title}
         </h2>
         <p className="cal-detail-row">🕒 {whenLabel(ev)}</p>
-        {ev.recurringEventId && <p className="cal-detail-row">🔁 Wiederkehrender Termin</p>}
+        {series && <p className="cal-detail-row">🔁 Wiederkehrender Termin</p>}
         <p className="cal-detail-row">
           👤 {who}
           {cal ? <span className="muted"> · Kalender «{cal.name}»</span> : null}
         </p>
         {ev.location && <p className="cal-detail-row">📍 {ev.location}</p>}
         {ev.description && <p className="cal-detail-desc">{ev.description.replace(/<[^>]+>/g, ' ')}</p>}
-        <p className="muted small-note">Termine ändern kommt im nächsten Schritt. Bis dahin direkt in Google Kalender.</p>
-        <div className="sheet-actions">
-          {ev.link && (
-            <a className="btn btn-block cal-link" href={ev.link} target="_blank" rel="noopener">
-              In Google Kalender öffnen
-            </a>
+
+        {!writable && <p className="muted small-note">Diesen Termin kann nur {ownerName} ändern.</p>}
+        {writable && !online && <p className="warn">Ändern und Löschen geht nur mit Internet.</p>}
+
+        {ask === 'edit' && (
+          <div className="cal-ask">
+            <b>Was möchtest du ändern?</b>
+            <button className="btn btn-primary" onClick={() => onEdit('one')}>
+              Nur diesen Termin
+            </button>
+            <button className="btn" onClick={() => onEdit('all')}>
+              Alle Termine der Serie
+            </button>
+          </div>
+        )}
+        {ask === 'delete' && (
+          <div className="cal-ask">
+            <b>{series ? 'Was möchtest du löschen?' : 'Termin wirklich löschen?'}</b>
+            {series ? (
+              <>
+                <button className="btn btn-danger" disabled={busy} onClick={() => del('one')}>
+                  Nur diesen Termin löschen
+                </button>
+                <button className="btn btn-danger" disabled={busy} onClick={() => del('all')}>
+                  Alle Termine der Serie löschen
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-danger" disabled={busy} onClick={() => del('one')}>
+                Ja, löschen
+              </button>
+            )}
+            <button className="btn" disabled={busy} onClick={() => setAsk(null)}>
+              Abbrechen
+            </button>
+          </div>
+        )}
+        {error && <p className="warn">{error}</p>}
+
+        {ask === null && (
+          <div className="sheet-actions">
+            {writable && (
+              <div className="btn-pair">
+                <button className="btn btn-primary" disabled={!online} onClick={() => (series ? setAsk('edit') : onEdit('one'))}>
+                  ✎ Bearbeiten
+                </button>
+                <button className="btn btn-ghost-danger" disabled={!online} onClick={() => setAsk('delete')}>
+                  Löschen
+                </button>
+              </div>
+            )}
+            {ev.link && (
+              <a className="btn btn-block cal-link" href={ev.link} target="_blank" rel="noopener">
+                In Google Kalender öffnen
+              </a>
+            )}
+            <button className="btn" onClick={onClose}>
+              Schliessen
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type RepeatChoice = 'none' | Repeat['freq'] | 'keep';
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const addMinutes = (date: string, time: string, min: number): [string, string] => {
+  const [y, m, d] = date.split('-').map(Number);
+  const [h, mi] = time.split(':').map(Number);
+  const t = new Date(y, m - 1, d, h, mi + min);
+  return [dateKey(t), `${pad2(t.getHours())}:${pad2(t.getMinutes())}`];
+};
+const minutesBetween = (d1: string, t1: string, d2: string, t2: string) => {
+  const a = new Date(`${d1}T${t1}:00`);
+  const b = new Date(`${d2}T${t2}:00`);
+  return Math.round((+b - +a) / 60000);
+};
+
+function EventEditor({
+  ev,
+  scope,
+  day,
+  calendars,
+  cal,
+  persons,
+  myPersonId,
+  onClose,
+  onSaved,
+}: {
+  ev: CalEvent | null;
+  scope: 'one' | 'all';
+  day: Date;
+  calendars: CalInfo[];
+  cal?: CalInfo;
+  persons: Person[];
+  myPersonId: string | null;
+  onClose: () => void;
+  onSaved: (msg: string) => Promise<void>;
+}) {
+  const isNew = !ev;
+  const series = !!ev?.recurringEventId;
+  const init = useMemo<EventInput>(() => {
+    if (ev) {
+      const i = eventToInput(ev);
+      return { ...i, title: parseTitle(ev.title, persons).title };
+    }
+    const now = new Date();
+    const d = dateKey(day);
+    const isToday = d === dateKey(now);
+    const start = isToday ? `${pad2(Math.min(now.getHours() + 1, 23))}:00` : '09:00';
+    const [ed, et] = addMinutes(d, start, 60);
+    return { title: '', allDay: false, startDate: d, endDate: ed, startTime: start, endTime: et, location: '', description: '' };
+  }, []);
+
+  const defaultCal = cal?.id ?? (calendars.find((c) => c.kind === 'own') ?? calendars[0])?.id ?? '';
+  const [calId, setCalId] = useState(defaultCal);
+  const curCal = calendars.find((c) => c.id === calId) ?? cal;
+  const owner = curCal?.kind === 'own' ? curCal.personId ?? myPersonId : null;
+
+  const [title, setTitle] = useState(init.title);
+  const [who, setWho] = useState<string[]>(() => (ev ? parseTitle(ev.title, persons).personIds : []));
+  const [allDay, setAllDay] = useState(init.allDay);
+  const [startDate, setStartDate] = useState(init.startDate);
+  const [endDate, setEndDate] = useState(init.endDate);
+  const [startTime, setStartTime] = useState(init.startTime ?? '09:00');
+  const [endTime, setEndTime] = useState(init.endTime ?? '10:00');
+  const [location, setLocation] = useState(init.location ?? '');
+  const [description, setDescription] = useState(init.description ?? '');
+  const [repeat, setRepeat] = useState<RepeatChoice>(isNew || !series ? 'none' : 'keep');
+  const [until, setUntil] = useState('');
+  const [loadingRepeat, setLoadingRepeat] = useState(series && scope === 'all');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Wiederholung der Serie laden (nur bei «alle»)
+  useEffect(() => {
+    if (!(ev && series && scope === 'all')) return;
+    seriesRepeat(ev)
+      .then((r) => {
+        if (r.repeat && r.repeat !== 'other') {
+          setRepeat(r.repeat.freq);
+          setUntil(r.repeat.until ?? '');
+        } else if (r.repeat === 'other') setRepeat('keep');
+        else setRepeat('none');
+      })
+      .catch(() => setRepeat('keep'))
+      .finally(() => setLoadingRepeat(false));
+  }, []);
+
+  // Beginn verschieben → Ende mitverschieben (gleiche Dauer)
+  const changeStart = (d: string, t: string) => {
+    if (allDay) {
+      const span = Math.round((+new Date(endDate + 'T00:00:00') - +new Date(startDate + 'T00:00:00')) / 86400000);
+      const [nd] = addMinutes(d, '00:00', Math.max(0, span) * 1440);
+      setEndDate(nd);
+    } else {
+      const dur = Math.max(15, minutesBetween(startDate, startTime, endDate, endTime));
+      const [nd, nt] = addMinutes(d, t, dur);
+      setEndDate(nd);
+      setEndTime(nt);
+    }
+    setStartDate(d);
+    setStartTime(t);
+  };
+
+  const toggleWho = (id: string) => setWho(who.includes(id) ? who.filter((x) => x !== id) : [...who, id]);
+  const titleWho = who.filter((x) => x !== owner);
+  const fullTitle = buildTitle(title, titleWho.length === persons.length ? [] : titleWho, persons);
+
+  const endOk = allDay ? endDate >= startDate : `${endDate}T${endTime}` > `${startDate}T${startTime}`;
+  const valid = title.trim() && calId && endOk && !loadingRepeat;
+  const showRepeat = !(series && scope === 'one');
+
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    const input: EventInput = {
+      title: fullTitle,
+      allDay,
+      startDate,
+      endDate,
+      startTime: allDay ? undefined : startTime,
+      endTime: allDay ? undefined : endTime,
+      location,
+      description,
+      repeat: !showRepeat || repeat === 'keep' ? undefined : repeat === 'none' ? null : { freq: repeat, until: until || null },
+    };
+    try {
+      if (isNew) await createEvent(calId, input);
+      else await updateEvent(ev!, scope, input);
+      await onSaved(isNew ? 'Termin gespeichert ✓' : 'Termin geändert ✓');
+    } catch (e: any) {
+      setError(e?.message ?? String(e));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet sheet-tall" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <h2>{isNew ? 'Neuer Termin' : series ? (scope === 'all' ? 'Alle Termine der Serie ändern' : 'Diesen Termin ändern') : 'Termin ändern'}</h2>
+        {series && scope === 'all' && (
+          <p className="import-banner">Änderungen an Datum und Zeit verschieben alle Termine der Serie gleich weit.</p>
+        )}
+
+        <label className="field">
+          <span>Was?</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="z.B. Zahnarzt" autoFocus={isNew} enterKeyHint="done" />
+        </label>
+
+        <div className="field">
+          <span>Kalender</span>
+          {isNew ? (
+            <select className="select" value={calId} onChange={(e) => setCalId(e.target.value)}>
+              {calendars.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.kind === 'family' ? `${c.name} (Familie)` : `${c.name} (mein Kalender)`}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="muted">{curCal?.name}</span>
           )}
-          <button className="btn btn-primary" onClick={onClose}>
-            Schliessen
+        </div>
+
+        <div className="field">
+          <span>Wen betrifft es?</span>
+          <div className="chips">
+            {persons.map((p) => {
+              const fixed = p.id === owner;
+              const on = fixed || who.includes(p.id);
+              return (
+                <button key={p.id} className={'chip small' + (on ? ' on' : '')} disabled={fixed} onClick={() => toggleWho(p.id)}>
+                  {p.name}
+                </button>
+              );
+            })}
+          </div>
+          <span className="small-hint muted">
+            {curCal?.kind === 'family' && titleWho.length === 0 ? 'Niemand gewählt = ganze Familie. ' : ''}
+            {fullTitle !== title.trim() && title.trim() ? `In Google: «${fullTitle}»` : ''}
+          </span>
+        </div>
+
+        <div className="seg cal-seg">
+          <button className={!allDay ? 'on' : ''} onClick={() => setAllDay(false)}>
+            Mit Zeit
+          </button>
+          <button className={allDay ? 'on' : ''} onClick={() => setAllDay(true)}>
+            Ganztägig
+          </button>
+        </div>
+
+        <div className="cal-when">
+          <label className="field">
+            <span>Beginn</span>
+            <input type="date" value={startDate} onChange={(e) => e.target.value && changeStart(e.target.value, startTime)} />
+          </label>
+          {!allDay && (
+            <label className="field">
+              <span>&nbsp;</span>
+              <input type="time" value={startTime} onChange={(e) => e.target.value && changeStart(startDate, e.target.value)} />
+            </label>
+          )}
+          <label className="field">
+            <span>Ende</span>
+            <input type="date" value={endDate} onChange={(e) => e.target.value && setEndDate(e.target.value)} />
+          </label>
+          {!allDay && (
+            <label className="field">
+              <span>&nbsp;</span>
+              <input type="time" value={endTime} onChange={(e) => e.target.value && setEndTime(e.target.value)} />
+            </label>
+          )}
+        </div>
+        {!endOk && <p className="warn">Das Ende liegt vor dem Beginn.</p>}
+
+        {showRepeat && (
+          <div className="field">
+            <span>Wiederholen</span>
+            {loadingRepeat ? (
+              <span className="muted">Lade …</span>
+            ) : (
+              <select className="select" value={repeat} onChange={(e) => setRepeat(e.target.value as RepeatChoice)}>
+                {repeat === 'keep' && <option value="keep">Wie bisher (in Google festgelegt)</option>}
+                <option value="none">Nicht wiederholen</option>
+                {(Object.keys(REPEAT_LABELS) as Array<Repeat['freq']>).map((k) => (
+                  <option key={k} value={k}>
+                    {REPEAT_LABELS[k]}
+                  </option>
+                ))}
+              </select>
+            )}
+            {repeat !== 'none' && repeat !== 'keep' && (
+              <label className="cal-until">
+                <span className="muted">bis (leer = ohne Ende)</span>
+                <input type="date" value={until} min={startDate} onChange={(e) => setUntil(e.target.value)} />
+              </label>
+            )}
+          </div>
+        )}
+        {series && scope === 'one' && <p className="muted small-note">🔁 Teil einer Serie. Die Änderung gilt nur für diesen Termin.</p>}
+
+        <label className="field">
+          <span>Ort (optional)</span>
+          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="z.B. Weinfelden" />
+        </label>
+        <label className="field">
+          <span>Notiz (optional)</span>
+          <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </label>
+
+        {error && <p className="warn">{error}</p>}
+        <div className="sheet-actions">
+          <button className="btn btn-primary" disabled={!valid || busy} onClick={save}>
+            {busy ? 'Speichere …' : 'Speichern'}
+          </button>
+          <button className="btn" disabled={busy} onClick={onClose}>
+            Abbrechen
           </button>
         </div>
       </div>
@@ -444,7 +863,7 @@ function SettingsSheet({
     setBusy(true);
     setError(null);
     try {
-      const sel = list.filter((c) => choice[c.id] && choice[c.id] !== 'none').map((c) => ({ id: c.id, name: c.name, kind: choice[c.id] as 'own' | 'family' }));
+      const sel = list.filter((c) => choice[c.id] && choice[c.id] !== 'none').map((c) => ({ id: c.id, name: c.name, kind: choice[c.id] as 'own' | 'family', access: c.access }));
       await saveSelection(sel);
       setSaved(true);
       await onChanged();

@@ -24,6 +24,7 @@ export interface CalInfo {
   kind: 'own' | 'family';
   personId: string | null; // bei «own»: Person des Kontos
   mine: boolean;
+  writable?: boolean; // darf ich hier Termine erfassen/ändern?
   email: string | null;
 }
 
@@ -31,6 +32,31 @@ export interface CalStatus {
   connected: boolean;
   email?: string | null;
   calendars?: Array<{ id: string; name: string; kind: 'own' | 'family' }>;
+}
+
+export interface Repeat {
+  freq: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+  until?: string | null;
+}
+export const REPEAT_LABELS: Record<Repeat['freq'], string> = {
+  daily: 'Täglich',
+  weekly: 'Wöchentlich',
+  biweekly: 'Alle 2 Wochen',
+  monthly: 'Monatlich',
+  yearly: 'Jährlich',
+};
+
+/** Was die App an Google schickt (siehe Funktion «google-kalender»). */
+export interface EventInput {
+  title: string;
+  allDay: boolean;
+  startDate: string;
+  endDate: string; // inklusiv
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  description?: string;
+  repeat?: Repeat | null; // undefined = unverändert lassen
 }
 
 export interface GoogleCalendar {
@@ -185,10 +211,80 @@ export async function fetchStatus(): Promise<CalStatus> {
   return s;
 }
 
+export const isWritable = (c: CalInfo | undefined) => !!c && (c.writable ?? c.mine);
+
+export const createEvent = (calendarId: string, event: EventInput) => calendarCall('create', { calendarId, event });
+export const updateEvent = (
+  e: CalEvent,
+  scope: 'one' | 'all',
+  event: EventInput,
+) =>
+  calendarCall('update', {
+    calendarId: e.calendarId,
+    eventId: e.id,
+    recurringEventId: e.recurringEventId,
+    scope,
+    origStartDate: dateKey(eventDays(e)[0]),
+    event,
+  });
+export const deleteEvent = (e: CalEvent, scope: 'one' | 'all') =>
+  calendarCall('delete', { calendarId: e.calendarId, eventId: e.id, recurringEventId: e.recurringEventId, scope });
+export const seriesRepeat = (e: CalEvent) =>
+  calendarCall<{ repeat: Repeat | 'other' | null }>('master', { calendarId: e.calendarId, eventId: e.recurringEventId });
+
+// ---------- Personen im Titel: «[Kind 1, Kind 2] Turnen» ----------
+interface Named {
+  id: string;
+  name: string;
+}
+/** Zerlegt «[A, B] Titel» in Personen (nur bekannte Namen) und Titel. */
+export function parseTitle(title: string, persons: Named[]): { title: string; personIds: string[] } {
+  const m = title.match(/^\s*\[([^\]]+)\]\s*(.*)$/);
+  if (!m) return { title, personIds: [] };
+  const ids: string[] = [];
+  for (const raw of m[1].split(/[,;+&]/)) {
+    const n = raw.trim().toLowerCase();
+    const p = persons.find((x) => x.name.trim().toLowerCase() === n);
+    if (!p) return { title, personIds: [] }; // unbekannter Name → Titel so lassen
+    if (!ids.includes(p.id)) ids.push(p.id);
+  }
+  return { title: m[2] || title, personIds: ids };
+}
+export function buildTitle(title: string, personIds: string[], persons: Named[]): string {
+  const names = persons.filter((p) => personIds.includes(p.id)).map((p) => p.name);
+  const clean = title.trim();
+  return names.length ? `[${names.join(', ')}] ${clean}` : clean;
+}
+/** Wen betrifft ein Termin? Leere Liste = ganze Familie. */
+export function eventPersons(e: CalEvent, cal: CalInfo | undefined, persons: Named[]): string[] {
+  const { personIds } = parseTitle(e.title, persons);
+  if (cal?.kind === 'own' && cal.personId) return [cal.personId, ...personIds.filter((x) => x !== cal.personId)];
+  return personIds;
+}
+
+/** Lokales Datum/Zeit eines Termins für das Formular. */
+export function eventToInput(e: CalEvent): EventInput {
+  const [s, en] = eventDays(e);
+  if (e.allDay) return { title: e.title, allDay: true, startDate: dateKey(s), endDate: dateKey(en), location: e.location ?? '', description: e.description ?? '' };
+  const st = new Date(e.start);
+  const et = new Date(e.end);
+  const t = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return {
+    title: e.title,
+    allDay: false,
+    startDate: dateKey(st),
+    endDate: dateKey(et),
+    startTime: t(st),
+    endTime: t(et),
+    location: e.location ?? '',
+    description: e.description ?? '',
+  };
+}
+
 export const listGoogleCalendars = () =>
   calendarCall<{ email: string; calendars: GoogleCalendar[]; selected: CalStatus['calendars'] }>('calendars');
 
-export async function saveSelection(cals: Array<{ id: string; name: string; kind: 'own' | 'family' }>) {
+export async function saveSelection(cals: Array<{ id: string; name: string; kind: 'own' | 'family'; access?: string }>) {
   await calendarCall('select', { calendars: cals });
   await fetchStatus();
 }

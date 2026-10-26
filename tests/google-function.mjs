@@ -53,6 +53,9 @@ const google = {
     'familie@group': [{ id: 'e3', summary: 'Ferien', start: { date: '2026-10-30' }, end: { date: '2026-11-02' }, recurringEventId: null }],
   },
   eventCalls: [],
+  writes: [],
+  readonly: [],
+  masters: {},
 };
 
 const R = (body, status = 200, headers = {}) => new Response(body === null ? null : JSON.stringify(body), { status, headers });
@@ -112,6 +115,22 @@ globalThis.fetch = async (input, init = {}) => {
     const at = (h.Authorization || '').replace('Bearer ', '');
     if (!google.calendars[at]) return R({}, 401);
     if (url.pathname.endsWith('/users/me/calendarList')) return R({ items: google.calendars[at] });
+    const w = url.pathname.match(/\/calendars\/([^/]+)\/events(?:\/([^/]+))?$/);
+    if (w && method !== 'GET' || (w && w[2])) {
+      const cal = decodeURIComponent(w[1]);
+      if (!google.calendars[at].some((c) => c.id === cal)) return R({}, 404);
+      if (google.readonly.includes(cal + '|' + at)) return R({}, 403);
+      const list = (google.events[cal] ??= []);
+      const id = w[2] && decodeURIComponent(w[2]);
+      const body = init.body ? JSON.parse(init.body) : null;
+      google.writes.push({ method, cal, id, body });
+      if (method === 'POST') { const ne = { id: 'new' + google.writes.length, ...body }; list.push(ne); return R(ne); }
+      const cur = list.find((e) => e.id === id) ?? google.masters[id];
+      if (!cur) return R({}, 404);
+      if (method === 'GET') return R(cur);
+      if (method === 'PATCH') { Object.assign(cur, body); return R(cur); }
+      if (method === 'DELETE') { google.events[cal] = list.filter((e) => e.id !== id); delete google.masters[id]; return new Response(null, { status: 204 }); }
+    }
     const m = url.pathname.match(/\/calendars\/(.+)\/events$/);
     if (m) {
       const cal = decodeURIComponent(m[1]);
@@ -199,12 +218,67 @@ ok(hockey.start === '2026-10-27T19:00:00+01:00' && hockey.title === 'Hockey' && 
 ok((await post('tok-fremd', { action: 'events', household: 'H1', from: '2026-10-01T00:00:00Z', to: '2026-12-01T00:00:00Z' })).status === 403, 'fremder Haushalt → keine Termine');
 ok((await post('tok-tobias', { action: 'events', household: 'H1', from: '2026-10-01', to: '2028-10-01' })).status === 400, 'zu langer Zeitraum → 400');
 
+
+// ---------- K2: Termine schreiben ----------
+google.writes.length = 0;
+ok((await post('tok-fremd', { action: 'create', calendarId: 'tobias@gmail.com', event: {} })).status === 409, 'Erstellen ohne Google-Verbindung → abgelehnt');
+ok((await post('tok-tobias', { action: 'create', calendarId: 'thadea@gmail.com', event: { title: 'X', allDay: true, startDate: '2026-11-02', endDate: '2026-11-02' } })).status === 403, 'Termin in Thadeas Kalender erstellen → verboten');
+ok((await post('tok-tobias', { action: 'create', calendarId: 'tobias@gmail.com', event: { title: ' ', allDay: true, startDate: '2026-11-02', endDate: '2026-11-02' } })).status === 400, 'ohne Titel → 400');
+ok((await post('tok-tobias', { action: 'create', calendarId: 'tobias@gmail.com', event: { title: 'A', allDay: false, startDate: '2026-11-02', endDate: '2026-11-02', startTime: '10:00', endTime: '09:00' } })).status === 400, 'Ende vor Beginn → 400');
+let r = await post('tok-tobias', { action: 'create', calendarId: 'tobias@gmail.com', event: { title: '[Kind 1] Zahnarzt', allDay: false, startDate: '2026-11-03', endDate: '2026-11-03', startTime: '14:00', endTime: '15:00', location: 'Weinfelden' } });
+let wr = google.writes.at(-1);
+ok(r.status === 200 && wr.method === 'POST' && wr.body.start.dateTime === '2026-11-03T14:00:00' && wr.body.start.timeZone === 'Europe/Zurich' && wr.body.summary === '[Kind 1] Zahnarzt' && !('date' in wr.body.start), 'Termin mit Zeit erstellt (Zürcher Zeit, Personen im Titel)');
+r = await post('tok-tobias', { action: 'create', calendarId: 'familie@group', event: { title: 'Hockey', allDay: false, startDate: '2026-11-03', endDate: '2026-11-03', startTime: '19:00', endTime: '21:00', repeat: { freq: 'biweekly', until: '2027-03-31' } } });
+wr = google.writes.at(-1);
+ok(wr.body.recurrence[0] === 'RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270331T215959Z', 'Serie «alle 2 Wochen bis» als Google-Regel');
+await post('tok-tobias', { action: 'create', calendarId: 'familie@group', event: { title: 'Ferien', allDay: true, startDate: '2026-12-24', endDate: '2026-12-26', repeat: { freq: 'yearly' } } });
+wr = google.writes.at(-1);
+ok(wr.body.start.date === '2026-12-24' && wr.body.end.date === '2026-12-27' && wr.body.recurrence[0] === 'RRULE:FREQ=YEARLY', 'ganztägig: Ende exklusiv (+1 Tag), jährlich');
+
+// Einzelnen Termin ändern
+const newId = google.writes[google.writes.length - 3].body && google.events['tobias@gmail.com'].find((e) => e.summary === '[Kind 1] Zahnarzt').id;
+r = await post('tok-tobias', { action: 'update', calendarId: 'tobias@gmail.com', eventId: newId, scope: 'one', event: { title: 'Zahnarzt', allDay: true, startDate: '2026-11-04', endDate: '2026-11-04', repeat: null } });
+wr = google.writes.at(-1);
+ok(r.status === 200 && wr.method === 'PATCH' && wr.body.start.date === '2026-11-04' && wr.body.start.dateTime === null && Array.isArray(wr.body.recurrence) && wr.body.recurrence.length === 0, 'Ändern: von Zeit auf ganztägig (dateTime gelöscht)');
+
+// Serie: ein Termin vs. alle
+google.masters['serie1'] = { id: 'serie1', summary: 'Turnen', start: { dateTime: '2026-09-01T17:00:00+02:00' }, end: { dateTime: '2026-09-01T18:00:00+02:00' }, recurrence: ['EXDATE;TZID=Europe/Zurich:20261013T170000', 'RRULE:FREQ=WEEKLY;BYDAY=TU'] };
+google.events['familie@group'].push({ id: 'serie1_20261103T160000Z', recurringEventId: 'serie1', summary: 'Turnen', start: { dateTime: '2026-11-03T17:00:00+01:00' }, end: { dateTime: '2026-11-03T18:00:00+01:00' } });
+const ms = await post('tok-tobias', { action: 'master', calendarId: 'familie@group', eventId: 'serie1' });
+ok(ms.body.repeat?.freq === 'weekly' && ms.body.repeat.until === null, 'Wiederholung der Serie gelesen (wöchentlich)');
+await post('tok-tobias', { action: 'update', calendarId: 'familie@group', eventId: 'serie1_20261103T160000Z', recurringEventId: 'serie1', scope: 'one', event: { title: 'Turnen fällt aus?', allDay: false, startDate: '2026-11-03', endDate: '2026-11-03', startTime: '17:30', endTime: '18:30' } });
+wr = google.writes.at(-1);
+ok(wr.id === 'serie1_20261103T160000Z' && !('recurrence' in wr.body), '«Nur diesen»: nur der eine Termin geändert');
+await post('tok-tobias', { action: 'update', calendarId: 'familie@group', eventId: 'serie1_20261103T160000Z', recurringEventId: 'serie1', scope: 'all', origStartDate: '2026-11-03', event: { title: 'Turnen', allDay: false, startDate: '2026-11-04', endDate: '2026-11-04', startTime: '18:00', endTime: '19:00', repeat: { freq: 'weekly', until: '2027-06-30' } } });
+wr = google.writes.at(-1);
+ok(wr.id === 'serie1' && wr.body.start.dateTime === '2026-09-02T18:00:00' && wr.body.end.dateTime === '2026-09-02T19:00:00', '«Alle»: Serie um einen Tag und auf 18:00 verschoben (ab Serienbeginn)');
+ok(wr.body.recurrence[0].startsWith('EXDATE') && wr.body.recurrence[1] === 'RRULE:FREQ=WEEKLY;UNTIL=20270630T215959Z', '«Alle»: Ausnahmen behalten, neue Regel');
+
+// Löschen
+await post('tok-tobias', { action: 'delete', calendarId: 'familie@group', eventId: 'serie1_20261103T160000Z', recurringEventId: 'serie1', scope: 'one' });
+ok(google.writes.at(-1).method === 'DELETE' && google.writes.at(-1).id === 'serie1_20261103T160000Z', 'Löschen «nur diesen»');
+await post('tok-tobias', { action: 'delete', calendarId: 'familie@group', eventId: 'serie1_20261110T160000Z', recurringEventId: 'serie1', scope: 'all' });
+ok(google.writes.at(-1).id === 'serie1' && !google.masters.serie1, 'Löschen «alle» löscht die Serie');
+ok((await post('tok-tobias', { action: 'delete', calendarId: 'familie@group', eventId: 'gibtsnicht' })).status === 200, 'Löschen eines schon gelöschten Termins = ok');
+
+// Nur-Lesen-Kalender
+accounts.find((a) => a.user_id === 'u-tobias').calendars.push({ id: 'feiertage', name: 'Feiertage', kind: 'family', access: 'reader' });
+ok((await post('tok-tobias', { action: 'create', calendarId: 'feiertage', event: { title: 'X', allDay: true, startDate: '2026-11-02', endDate: '2026-11-02' } })).status === 403, 'Nur-Lesen-Kalender: Schreiben verboten');
+const ev3 = await post('tok-tobias', { action: 'events', household: 'H1', from: '2026-10-01T00:00:00Z', to: '2026-12-01T00:00:00Z' });
+const cmap = Object.fromEntries(ev3.body.calendars.map((x) => [x.id, x]));
+accounts.find((a) => a.user_id === 'u-tobias').calendars.pop();
+ok(cmap['tobias@gmail.com'].writable && !cmap['thadea@gmail.com'].writable, '«writable»: eigener ja, fremder nein');
+
+// Regeln lesen
+const { ruleToRepeat } = await import(join(dir, 'f.mjs'));
+ok(ruleToRepeat(['RRULE:FREQ=WEEKLY;BYDAY=MO,WE']) === 'other' && ruleToRepeat(['RRULE:FREQ=DAILY;COUNT=5']) === 'other' && ruleToRepeat(['RRULE:FREQ=MONTHLY;UNTIL=20270101T000000Z']).until === '2027-01-01', 'Google-Regeln: einfache erkannt, komplizierte als «andere»');
+
 // 11) Abgelaufener Zugang bei Thadea: Tobias sieht trotzdem seine Termine + Hinweis
 const th = accounts.find((a) => a.user_id === 'u-thadea');
 th.access_token = null;
 th.refresh_token = 'rt-widerrufen';
 const ev2 = await post('tok-tobias', { action: 'events', household: 'H1', from: '2026-10-01T00:00:00Z', to: '2026-12-01T00:00:00Z' });
-ok(ev2.body.events.length === 2 && ev2.body.errors.length === 1 && /thadea@gmail.com/.test(ev2.body.errors[0]), 'abgelaufene Verbindung: Rest kommt, Hinweis mit Konto');
+ok(!ev2.body.events.some((e) => e.id === 'e2') && ev2.body.events.some((e) => e.id === 'e1') && ev2.body.errors.length === 1 && /thadea@gmail.com/.test(ev2.body.errors[0]), 'abgelaufene Verbindung: Rest kommt, Hinweis mit Konto');
 
 // 12) Trennen
 await post('tok-tobias', { action: 'disconnect' });
