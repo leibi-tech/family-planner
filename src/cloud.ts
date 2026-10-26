@@ -64,6 +64,8 @@ function niceError(status: number, body: any): string {
   if (code === 'email_address_invalid' || /email.*invalid/i.test(msg)) return 'Diese E-Mail-Adresse ist ungültig.';
   if (code === 'email_not_confirmed') return 'Die E-Mail ist noch nicht bestätigt (in Supabase «Confirm email» ausschalten).';
   if (/Code ungültig|Code oder Name falsch/.test(msg)) return 'Code oder Name falsch.';
+  if (/owner_id/i.test(msg))
+    return 'Die Datenbank ist noch nicht auf dem neusten Stand: bitte «update-0.10.sql» in Supabase ausführen (private ToDos).';
   if (/schema cache|Could not find the function/i.test(msg))
     return 'Die Datenbank ist noch nicht auf dem neusten Stand: bitte «update-0.8.sql» in Supabase ausführen.';
   if (/function was not found|not_found/i.test(msg + code) && status === 404)
@@ -187,6 +189,7 @@ export interface CloudRecord {
   data: any;
   updated_at: number;
   deleted: boolean;
+  owner_id?: string | null; // nur bei privaten Einträgen: Konto, das sie sehen darf
   server_updated_at?: string;
 }
 

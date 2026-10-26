@@ -79,9 +79,23 @@ Der Import aus **Text** funktioniert sofort. Für den Import per **Link** brauch
 - **Link geht nicht?** Manche Seiten enthalten keine lesbaren Rezeptangaben. Dann Zutaten und Zubereitung auf der Seite markieren, kopieren und als Text einfügen.
 - Der Link-Import braucht Internet und ein Konto («Gemeinsam nutzen»).
 
+## K) Datenbank-Update für private ToDos (ab Version 0.10.0, einmalig)
+1. Öffne supabase.com → euer Projekt → links **SQL Editor**.
+2. Prüfe oben rechts: Dort muss **Database** stehen (nicht «Logs»).
+3. Öffne im Ordner Family-Planner die Datei `supabase/update-0.10.sql` (Rechtsklick → Öffnen mit → Editor), alles markieren (Ctrl+A), kopieren (Ctrl+C).
+4. Im SQL Editor einfügen (Ctrl+V) und auf **Run** klicken. Es sollte «Success» erscheinen.
+5. Ohne dieses Update erscheint beim Speichern eines privaten ToDos eine Meldung, und private ToDos werden nicht abgeglichen.
+
+## L) ToDos und Ämtli
+- **ToDo erfassen:** Text eintippen und Enter = schnell. Mit **+** kannst du zusätzlich Datum, Personen, Notiz und «🔒 Privat» wählen.
+- **Abhaken:** Kästchen links antippen. Antippen des Textes öffnet das ToDo zum Bearbeiten.
+- **Meine / Alle** umschalten. Die rote Zahl unten am ToDo-Knopf zeigt deine offenen ToDos.
+- **Ämtli erfassen:** «Ämtli-Plan» → «+ Ämtli erfassen». Wiederholung, ersten Termin und Personen wählen. Bei «Abwechselnd» die Personen in der gewünschten Reihenfolge antippen. Unten siehst du die nächsten 4 Termine.
+- Das Ämtli erscheint in seiner Woche automatisch bei den ToDos (🔁). Unten im Ämtli-Plan siehst du pro Woche, wer was erledigt hat.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
-- Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie.
+- Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
 - ⚠️ Gelöschtes wird auch auf den anderen Handys gelöscht. Ein Export-Knopf als zusätzliche Sicherung kommt noch (Wunschliste).
 
 ## Wenn etwas nicht klappt

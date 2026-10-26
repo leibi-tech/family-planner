@@ -69,17 +69,23 @@ async function syncOnce() {
   try {
     // 1) Hochladen
     const rows: CloudRecord[] = [];
+    const privateRows: CloudRecord[] = []; // private ToDos: getrennt, mit owner_id (nur dieses Konto sieht sie)
+    const uid = (await getSession())!.user.id;
     const dirtyByStore = new Map<StoreName, BaseRecord[]>();
     for (const store of STORES) {
       if (store === 'persons' && !isAdmin()) continue; // Personen ändert nur der Admin
       const dirty = (await getAllRaw(store)).filter((r) => r.dirty);
       if (!dirty.length) continue;
       dirtyByStore.set(store, dirty);
-      for (const r of dirty)
-        rows.push({ household_id: hh.id, store, id: r.id, data: stripLocal(r), updated_at: r.updatedAt, deleted: r.deleted });
+      for (const r of dirty) {
+        const row: CloudRecord = { household_id: hh.id, store, id: r.id, data: stripLocal(r), updated_at: r.updatedAt, deleted: r.deleted };
+        if ((r as any).private === true) privateRows.push({ ...row, owner_id: uid });
+        else rows.push(row);
+      }
     }
-    if (rows.length) {
-      await pushRecords(rows);
+    if (rows.length || privateRows.length) {
+      if (rows.length) await pushRecords(rows);
+      if (privateRows.length) await pushRecords(privateRows);
       // Nur als «hochgeladen» markieren, wenn sich der Eintrag inzwischen nicht wieder geändert hat
       for (const [store, sent] of dirtyByStore) {
         const now = new Map((await getAllRaw(store)).map((r) => [r.id, r]));

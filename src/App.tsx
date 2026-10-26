@@ -5,12 +5,17 @@ import { MenusPage } from './pages/MenusPage';
 import { PlanPage } from './pages/PlanPage';
 import { useSync, WhoAmIPrompt } from './components/CloudCard';
 import { ShoppingPage } from './pages/ShoppingPage';
+import { TodoPage, useMe } from './pages/TodoPage';
+import { useRecords } from './hooks';
+import { onChange, type Person } from './db';
+import { generateChoreTodos, isMine, type Todo } from './todos';
 
-type Tab = 'familie' | 'menues' | 'plan' | 'einkauf';
+type Tab = 'familie' | 'menues' | 'plan' | 'einkauf' | 'todo';
 
 const TABS: Array<{ id: Tab; label: string; icon: string; ready: boolean }> = [
   { id: 'plan', label: 'Wochenplan', icon: '📅', ready: true },
   { id: 'einkauf', label: 'Einkauf', icon: '🛒', ready: true },
+  { id: 'todo', label: 'ToDo', icon: '✅', ready: true },
   { id: 'menues', label: 'Menüs', icon: '🍲', ready: true },
   { id: 'familie', label: 'Familie', icon: '👪', ready: true },
 ];
@@ -35,6 +40,29 @@ export function App() {
   const [persistent, setPersistent] = useState<boolean | null>(null);
   const sync = useSync();
   const [online, setOnline] = useState(navigator.onLine);
+
+  // Ämtli: fällige Wochen automatisch als ToDo eröffnen (beim Start, bei Änderungen, beim Zurückkehren)
+  useEffect(() => {
+    const gen = () => void generateChoreTodos();
+    gen();
+    const offC = onChange('chores', gen);
+    const offP = onChange('persons', gen);
+    const vis = () => document.visibilityState === 'visible' && gen();
+    document.addEventListener('visibilitychange', vis);
+    const t = window.setInterval(gen, 30 * 60000);
+    return () => {
+      offC();
+      offP();
+      document.removeEventListener('visibilitychange', vis);
+      clearInterval(t);
+    };
+  }, []);
+
+  // Zähler in der Menüleiste: meine offenen ToDos
+  const todos = useRecords<Todo>('todos');
+  const persons = useRecords<Person>('persons');
+  const me = useMe(persons);
+  const myOpen = (todos ?? []).filter((t) => !t.done && !t.cleared && isMine(t, me)).length;
 
   useEffect(() => {
     requestPersistentStorage().then(setPersistent);
@@ -72,6 +100,8 @@ export function App() {
           <PlanPage />
         ) : tab === 'einkauf' ? (
           <ShoppingPage />
+        ) : tab === 'todo' ? (
+          <TodoPage />
         ) : (
           <div className="soon">
             <div className="soon-icon">{current.icon}</div>
@@ -100,6 +130,7 @@ export function App() {
           >
             <span className="tab-icon" aria-hidden>
               {t.icon}
+              {t.id === 'todo' && myOpen > 0 && <span className="tab-badge">{myOpen > 99 ? '99+' : myOpen}</span>}
             </span>
             <span>{t.label}</span>
           </button>

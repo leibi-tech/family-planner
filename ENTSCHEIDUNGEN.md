@@ -100,3 +100,15 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Faktoren aus eigener Sicht:** Gespeichert wird wie bisher ein Faktor pro Person. Angezeigt wird er geteilt durch den eigenen Faktor, so ist man selbst immer 1.0. Beispiel aus Thadeas Sicht: Tobias 1.25, Thadea 1.0, Kinder 0.5. An den Einkaufsmengen ändert das nichts, weil nur die Verhältnisse zählen.
 - **Datenbank-Update:** `supabase/update-0.8.sql`, ist auch in `schema.sql` enthalten.
 
+## E28 – ToDos und Ämtli-Plan (v0.10.0, 26.10.2026)
+- **Neuer Menüpunkt «ToDo»** (5. Knopf unten) mit zwei Teilen: «ToDos» und «Ämtli-Plan».
+- **Zuweisen:** an alle Personen der Familie (auch Kinder ohne Konto), mehrere pro ToDo möglich. Erledigt, sobald jemand abhakt; angezeigt wird, wer abgehakt hat.
+- **Meine / Alle:** «Meine» = mir zugewiesen, oder von mir erfasst und niemandem zugewiesen, oder privat. Ohne Haushalt gilt die erste Person der Familie als «ich».
+- **Privat:** nur für die erfassende Person sichtbar, darum keine Zuweisung an andere. Geschützt wird in der Datenbank (Spalte `owner_id`, Sicherheitsregel), nicht nur in der App: Die anderen Handys bekommen private Einträge gar nie. Beim Umschalten privat ↔ Familie entsteht ein neuer Eintrag, der alte wird ohne Inhalt gelöscht, damit keine Kopie auf anderen Handys bleibt.
+- **Ämtli:** Wiederholung «jede Woche» bis «alle 8 Wochen», Wochentag = Tag des ersten Termins. Zuweisung: niemand, fix (alle gewählten) oder abwechselnd (Reihenfolge beim Antippen). Zu Beginn der fälligen Woche wird das Ämtli automatisch als ToDo eröffnet (feste ID pro Ämtli und Woche, darum keine Doppelten mit zwei Handys; mit kleinem Zeitstempel, damit «erledigt» auf einem anderen Handy immer gewinnt). War die App länger zu, werden bis 3 Wochen nachgeholt.
+- **Unerledigte Ämtli** bleiben offen und werden rot als «überfällig» markiert. Das nächste Mal kommt trotzdem normal.
+- **Ämtli ändern** passt offene Ämtli-ToDos ab dieser Woche an; **Ämtli löschen** entfernt offene, erledigte bleiben in der Übersicht.
+- **Übersicht pro Person:** pro Woche, wer welches Ämtli erledigt hat (z.B. fürs Sackgeld). Dort kann man auch abhaken.
+- **Erledigte:** rutschen nach unten, «Erledigte ausblenden» (merkt sich das Handy) und «Erledigte löschen». Erledigte Ämtli-ToDos verschwinden dabei nur aus der Liste, nicht aus der Übersicht.
+- **Zähler:** rote Zahl am ToDo-Knopf = meine offenen ToDos.
+

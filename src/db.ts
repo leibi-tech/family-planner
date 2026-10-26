@@ -17,8 +17,8 @@ export interface Person extends BaseRecord {
 }
 
 const DB_NAME = 'family-planner';
-const DB_VERSION = 5;
-export const STORES = ['persons', 'menus', 'days', 'shopping', 'manual', 'recurring', 'suggest'] as const;
+const DB_VERSION = 6;
+export const STORES = ['persons', 'menus', 'days', 'shopping', 'manual', 'recurring', 'suggest', 'todos', 'chores'] as const;
 export type StoreName = (typeof STORES)[number];
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -51,7 +51,7 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('shopping')) {
         db.createObjectStore('shopping', { keyPath: 'id' });
       }
-      for (const name of ['manual', 'recurring', 'suggest']) {
+      for (const name of ['manual', 'recurring', 'suggest', 'todos', 'chores']) {
         if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
       }
       if (!db.objectStoreNames.contains('meta')) {
@@ -137,6 +137,16 @@ export async function putRaw(store: StoreName, records: BaseRecord[]): Promise<v
     tx.onerror = () => reject(tx.error);
   });
   changes.dispatchEvent(new Event(store));
+}
+
+/**
+ * Automatisch erzeugte Einträge (z.B. Ämtli-ToDos) speichern: mit sehr kleinem Zeitstempel,
+ * damit jede echte Änderung (z.B. «erledigt» auf einem anderen Handy) beim Abgleich gewinnt.
+ */
+export async function putGenerated(store: StoreName, records: BaseRecord[]): Promise<void> {
+  if (!records.length) return;
+  await putRaw(store, records.map((r) => ({ ...r, updatedAt: 1, dirty: true })));
+  localChanges.dispatchEvent(new Event('change'));
 }
 
 export async function clearStore(store: StoreName): Promise<void> {
