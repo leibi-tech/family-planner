@@ -7,38 +7,45 @@ import { useSync, WhoAmIPrompt } from './components/CloudCard';
 import { ShoppingPage } from './pages/ShoppingPage';
 import { TodoPage, useMe } from './pages/TodoPage';
 import { NotesPage } from './pages/NotesPage';
-import { onOpenNoteRequest } from './notes';
+import { StartPage } from './pages/StartPage';
+import { onNavBack, onOpenRequest, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
 import { onChange, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 
-type Tab = 'familie' | 'menues' | 'plan' | 'einkauf' | 'todo' | 'notizen';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie';
 
-const TABS: Array<{ id: Tab; label: string; short?: string; icon: string; ready: boolean }> = [
-  { id: 'plan', label: 'Wochenplan', short: 'Plan', icon: '📅', ready: true },
-  { id: 'einkauf', label: 'Einkauf', icon: '🛒', ready: true },
-  { id: 'todo', label: 'ToDo', icon: '✅', ready: true },
-  { id: 'notizen', label: 'Notizen', icon: '🗒️', ready: true },
-  { id: 'menues', label: 'Menüs', icon: '🍲', ready: true },
-  { id: 'familie', label: 'Familie', icon: '👪', ready: true },
+/** Seiten, die unter «Mehr» liegen (der Knopf «Mehr» bleibt dann hervorgehoben). */
+const MORE_PAGES: Tab[] = ['plan', 'menues', 'familie'];
+
+const TITLES: Record<Tab, string> = {
+  start: 'Start',
+  plan: 'Wochenplan',
+  einkauf: 'Einkauf',
+  todo: 'ToDo',
+  notizen: 'Notizen',
+  mehr: 'Mehr',
+  menues: 'Menüs',
+  familie: 'Familie',
+};
+
+// Menüleiste unten: Start ist hervorgehoben, Wochenplan/Menüs/Familie liegen unter «Mehr».
+const TABS: Array<{ id: Tab; label: string; icon: string; home?: boolean }> = [
+  { id: 'start', label: 'Start', icon: '🏠', home: true },
+  { id: 'einkauf', label: 'Einkauf', icon: '🛒' },
+  { id: 'todo', label: 'ToDo', icon: '✅' },
+  { id: 'notizen', label: 'Notizen', icon: '🗒️' },
+  { id: 'mehr', label: 'Mehr', icon: '☰' },
 ];
 
 declare const __APP_VERSION__: string;
 
 export function App() {
-  const [tab, setTabState] = useState<Tab>(() => {
-    try {
-      const t = localStorage.getItem('fp-tab') as Tab | null;
-      if (t && TABS.some((x) => x.id === t)) return t;
-    } catch {}
-    return 'plan';
-  });
+  // Die App startet immer mit der Startseite.
+  const [tab, setTabState] = useState<Tab>('start');
   const setTab = (t: Tab) => {
     setTabState(t);
     window.scrollTo(0, 0);
-    try {
-      localStorage.setItem('fp-tab', t);
-    } catch {}
   };
   const [persistent, setPersistent] = useState<boolean | null>(null);
   const sync = useSync();
@@ -61,8 +68,15 @@ export function App() {
     };
   }, []);
 
-  // «Notiz öffnen» (z.B. aus einem ToDo): zur Seite Notizen wechseln
-  useEffect(() => onOpenNoteRequest(() => setTab('notizen')), []);
+  // Direkt zu einem Menü, einer Notiz oder einem ToDo springen (Startseite, ToDo → Notiz) und wieder zurück
+  useEffect(() => {
+    const off1 = onOpenRequest((kind) => setTab(TAB_FOR[kind] as Tab));
+    const off2 = onNavBack((from) => setTab(from as Tab));
+    return () => {
+      off1();
+      off2();
+    };
+  }, []);
 
   // Zähler in der Menüleiste: meine offenen ToDos
   const todos = useRecords<Todo>('todos');
@@ -82,12 +96,19 @@ export function App() {
     };
   }, []);
 
-  const current = TABS.find((t) => t.id === tab)!;
+  const inMore = MORE_PAGES.includes(tab);
 
   return (
     <div className="app">
       <header className="topbar">
-        <h1>{current.label}</h1>
+        <div className="topbar-left">
+          {inMore && (
+            <button className="topbar-back" aria-label="Zurück zu Mehr" onClick={() => setTab('mehr')}>
+              ‹
+            </button>
+          )}
+          <h1>{TITLES[tab]}</h1>
+        </div>
         {!online ? (
           <span className="pill">offline</span>
         ) : sync.household ? (
@@ -98,7 +119,9 @@ export function App() {
       </header>
 
       <main className="content">
-        {tab === 'familie' ? (
+        {tab === 'start' ? (
+          <StartPage goto={(t) => setTab(t as Tab)} />
+        ) : tab === 'familie' ? (
           <FamilyPage />
         ) : tab === 'menues' ? (
           <MenusPage />
@@ -111,12 +134,7 @@ export function App() {
         ) : tab === 'notizen' ? (
           <NotesPage />
         ) : (
-          <div className="soon">
-            <div className="soon-icon">{current.icon}</div>
-            <p>
-              <b>{current.label}</b> kommt in einem der nächsten Schritte.
-            </p>
-          </div>
+          <MorePage goto={setTab} />
         )}
 
         <footer className="foot muted">
@@ -130,20 +148,53 @@ export function App() {
       <WhoAmIPrompt />
 
       <nav className="tabbar">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={'tab' + (t.id === tab ? ' active' : '') + (t.ready ? '' : ' later')}
-            onClick={() => setTab(t.id)}
-          >
-            <span className="tab-icon" aria-hidden>
-              {t.icon}
-              {t.id === 'todo' && myOpen > 0 && <span className="tab-badge">{myOpen > 99 ? '99+' : myOpen}</span>}
-            </span>
-            <span>{t.short ?? t.label}</span>
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const active = t.id === tab || (t.id === 'mehr' && inMore);
+          return (
+            <button
+              key={t.id}
+              className={'tab' + (active ? ' active' : '') + (t.home ? ' home' : '')}
+              onClick={() => setTab(t.id)}
+              aria-current={active ? 'page' : undefined}
+            >
+              <span className="tab-icon" aria-hidden>
+                {t.icon}
+                {t.id === 'todo' && myOpen > 0 && <span className="tab-badge">{myOpen > 99 ? '99+' : myOpen}</span>}
+              </span>
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
       </nav>
     </div>
+  );
+}
+
+/** «Mehr»: Seiten, die nicht in der Menüleiste Platz haben. */
+function MorePage({ goto }: { goto: (t: Tab) => void }) {
+  const items: Array<{ id: Tab; icon: string; label: string; sub: string }> = [
+    { id: 'plan', icon: '📅', label: 'Wochenplan', sub: 'Menüs für die Woche planen' },
+    { id: 'menues', icon: '🍲', label: 'Menüs', sub: 'Gerichte erfassen und importieren' },
+    { id: 'familie', icon: '👪', label: 'Familie', sub: 'Personen, Portionen, gemeinsam nutzen' },
+  ];
+  return (
+    <ul className="list">
+      {items.map((i) => (
+        <li key={i.id}>
+          <button className="row" onClick={() => goto(i.id)}>
+            <span className="more-icon" aria-hidden>
+              {i.icon}
+            </span>
+            <span className="row-main">
+              {i.label}
+              <span className="row-sub">{i.sub}</span>
+            </span>
+            <span className="chev" aria-hidden>
+              ›
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

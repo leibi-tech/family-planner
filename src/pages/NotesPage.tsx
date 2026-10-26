@@ -11,20 +11,19 @@ import {
   fmtAgo,
   isPinnedFor,
   isPinnedForAll,
-  onOpenNoteRequest,
   patchItem,
   preview,
   progress,
   setPin,
   sortNotes,
   subItems,
-  takePendingOpen,
   topItems,
   updateNote,
   type Note,
   type NoteItem,
 } from '../notes';
 import { useMe } from './TodoPage';
+import { navBack, onOpenRequest, takePending } from '../nav';
 
 type Filter = 'all' | 'note' | 'list';
 
@@ -43,22 +42,33 @@ export function NotesPage() {
   const [filter, setFilterState] = useState<Filter>(() => lsGet('fp-notes-filter', 'all') as Filter);
   const [open, setOpen] = useState<Note | null>(null); // geöffnete Notiz (neu oder bestehend)
   const [req, setReq] = useState(0);
+  const fromRef = useRef<string | null>(null); // von dieser Seite aus geöffnet (Startseite, ToDo): «Zurück» führt dorthin
 
-  // Von aussen angefragt (z.B. «Notiz öffnen» im ToDo): sobald die Notizen geladen sind, anzeigen
-  useEffect(() => onOpenNoteRequest(() => setReq((x) => x + 1)), []);
+  // Von aussen angefragt (z.B. von der Startseite oder aus einem ToDo): sobald die Notizen geladen sind, anzeigen
+  useEffect(() => onOpenRequest((k) => k === 'note' && setReq((x) => x + 1)), []);
   useEffect(() => {
     if (!notes) return;
-    const id = takePendingOpen();
-    if (!id) return;
-    const n = notes.find((x) => x.id === id);
-    if (n) setOpen(n);
+    const p = takePending('note');
+    if (!p) return;
+    const n = notes.find((x) => x.id === p.id);
+    if (n) {
+      fromRef.current = p.from;
+      setOpen(n);
+    }
   }, [notes, req]);
 
   if (!notes || !persons) return <p className="muted center">Lade …</p>;
   const sortedPersons = [...persons].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name));
 
   if (open) {
-    return <NoteEditor key={open.id} initial={open} persons={sortedPersons} me={me} onClose={() => setOpen(null)} />;
+    return <NoteEditor key={open.id} initial={open} persons={sortedPersons} me={me} onClose={() => {
+          setOpen(null);
+          if (fromRef.current) {
+            navBack(fromRef.current);
+            fromRef.current = null;
+          }
+        }}
+      />;
   }
 
   const setFilter = (f: Filter) => {

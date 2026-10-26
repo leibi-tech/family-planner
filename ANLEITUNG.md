@@ -102,6 +102,15 @@ Kein Datenbank-Update nötig. Einfach hochladen wie immer (siehe E).
 - **Als ToDo anheften (✅ oben rechts, ab 0.11.1):** Tippe aufs ✅. Du wählst «Nur für mich» oder «Für alle» (offen, wer Zeit hat) und kannst ein Datum setzen oder weglassen. Bei einer **privaten** Notiz fällt die Frage weg: Das ToDo wird auch privat. Im ToDo siehst du 📝; im ToDo-Fenster führt «Notiz öffnen» (bzw. «Liste öffnen») direkt zurück zur Notiz.
 - Wenn zwei Personen gleichzeitig dieselbe Liste ändern, werden die Punkte zusammengeführt. Bei einer Notiz mit Text gewinnt die zuletzt gespeicherte Fassung.
 
+## N) Startseite (ab Version 0.12.0)
+Kein Datenbank-Update nötig. Einfach hochladen wie immer (siehe E).
+- **Die App startet immer auf der Startseite** (Knopf «Start» unten, grün hervorgehoben).
+- **Was kochen wir heute?** Die Menüs von heute. Menünamen antippen öffnet das Menü; mit «Schliessen» kommst du wieder zur Startseite. «Plan ›» öffnet den Wochenplan.
+- **Meine ToDos:** deine offenen ToDos, Überfälliges zuerst (max. 5, darunter «+ n weitere»). Kästchen antippen = erledigt, Text antippen = ToDo öffnen.
+- **Angeheftet:** Notizen und Listen mit Pin (📌). Bei Listen siehst du die ersten 5 offenen Punkte und kannst sie direkt abhaken. Das ✕ rechts löst die Anheftung nur bei dir.
+- **Zuletzt geändert:** die neusten Notizen und Listen mit Name und Zeit.
+- **Mehr** (unten rechts): Wochenplan, Menüs und Familie. Oben links bringt dich der Pfeil ‹ zurück zu «Mehr».
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

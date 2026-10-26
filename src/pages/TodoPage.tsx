@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAllRaw, newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
 import { useSync } from '../components/CloudCard';
-import { requestOpenNote, type Note } from '../notes';
+import type { Note } from '../notes';
+import { navBack, onOpenRequest, requestOpen, takePending } from '../nav';
 import { addDays, dateKey, fmtDay, isoWeek, mondayOf } from '../model';
 import {
   choreRuleLabel,
@@ -60,6 +61,18 @@ export function TodoPage() {
   const persons = useRecords<Person>('persons');
   const me = useMe(persons);
   const [section, setSection] = usePersisted<'todos' | 'aemtli'>('fp-todo-section', 'todos');
+  const [req, setReq] = useState(0);
+  const [openReq, setOpenReq] = useState<{ id: string; from: string | null } | null>(null);
+
+  // Von aussen angefragt (Startseite): ToDo-Fenster direkt öffnen, sobald die ToDos geladen sind
+  useEffect(() => onOpenRequest((k) => k === 'todo' && setReq((x) => x + 1)), []);
+  useEffect(() => {
+    if (!todos) return;
+    const p = takePending('todo');
+    if (!p) return;
+    setSection('todos');
+    setOpenReq({ id: p.id, from: p.from });
+  }, [todos, req]);
 
   if (!todos || !chores || !persons) return <p className="muted center">Lade …</p>;
   const sorted = [...persons].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name));
@@ -75,7 +88,7 @@ export function TodoPage() {
         </button>
       </div>
       {section === 'todos' ? (
-        <TodoList todos={todos} persons={sorted} me={me} />
+        <TodoList todos={todos} persons={sorted} me={me} openReq={openReq} onOpenHandled={() => setOpenReq(null)} />
       ) : (
         <ChoresView chores={chores} todos={todos} persons={sorted} me={me} />
       )}
@@ -85,7 +98,19 @@ export function TodoPage() {
 
 // ---------- Liste ----------
 
-function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me: string | null }) {
+function TodoList({
+  todos,
+  persons,
+  me,
+  openReq,
+  onOpenHandled,
+}: {
+  todos: Todo[];
+  persons: Person[];
+  me: string | null;
+  openReq: { id: string; from: string | null } | null;
+  onOpenHandled: () => void;
+}) {
   // Ansicht: 'mine', 'all' oder die ID einer Person
   const [view0, setView] = usePersisted<string>('fp-todo-view', 'mine');
   const others = persons.filter((p) => p.id !== me);
@@ -94,6 +119,16 @@ function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me
   const [hideDone, setHideDone] = usePersisted<'0' | '1'>('fp-todo-hidedone', '0');
   const [editing, setEditing] = useState<{ todo: Todo; isNew: boolean } | null>(null);
   const [quick, setQuick] = useState('');
+  const fromRef = useRef<string | null>(null); // von der Startseite geöffnet: «Schliessen» führt dorthin zurück
+  useEffect(() => {
+    if (!openReq) return;
+    const t = todos.find((x) => x.id === openReq.id);
+    if (t) {
+      fromRef.current = openReq.from;
+      setEditing({ todo: t, isNew: false });
+    }
+    onOpenHandled();
+  }, [openReq]);
 
   const visibleAll = todos.filter((t) => !t.cleared);
   const mine = visibleAll.filter((t) => isMine(t, me));
@@ -252,7 +287,19 @@ function TodoList({ todos, persons, me }: { todos: Todo[]; persons: Person[]; me
       </div>
 
       {editing && (
-        <TodoSheet todo={editing.todo} isNew={editing.isNew} persons={persons} me={me} onClose={() => setEditing(null)} />
+        <TodoSheet
+          todo={editing.todo}
+          isNew={editing.isNew}
+          persons={persons}
+          me={me}
+          onClose={() => {
+            setEditing(null);
+            if (fromRef.current) {
+              navBack(fromRef.current);
+              fromRef.current = null;
+            }
+          }}
+        />
       )}
     </>
   );
@@ -334,7 +381,7 @@ function TodoSheet({
                 className="btn btn-primary"
                 onClick={() => {
                   onClose();
-                  requestOpenNote(linked.id);
+                  requestOpen('note', linked.id, 'todo');
                 }}
               >
                 {linked.kind === 'list' ? '☑️ Liste öffnen' : '📝 Notiz öffnen'}: {linked.title || 'ohne Titel'}

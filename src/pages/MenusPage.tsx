@@ -3,6 +3,7 @@ import { newId, put, remove, type Person } from '../db';
 import { useRecords } from '../hooks';
 import { useSync } from '../components/CloudCard';
 import { ImportSheet, type ImportResult } from '../components/ImportSheet';
+import { navBack, onOpenRequest, takePending } from '../nav';
 import {
   CATEGORIES,
   MEAL_TYPES,
@@ -46,6 +47,21 @@ export function MenusPage() {
   const [importText, setImportText] = useState('');
   const [imported, setImported] = useState<ImportResult | null>(null);
   const importSaved = useRef(false);
+  const [req, setReq] = useState(0);
+  const fromRef = useRef<string | null>(null); // von der Startseite geöffnet: «Schliessen» führt dorthin zurück
+
+  // Von aussen angefragt (Startseite): Menü direkt öffnen, sobald die Menüs geladen sind
+  useEffect(() => onOpenRequest((k) => k === 'menu' && setReq((x) => x + 1)), []);
+  useEffect(() => {
+    if (!menus) return;
+    const p = takePending('menu');
+    if (!p) return;
+    const m = menus.find((x) => x.id === p.id);
+    if (m) {
+      fromRef.current = p.from;
+      setEditing(m);
+    }
+  }, [menus, req]);
 
   if (!menus || !persons) return <p className="muted center">Lade …</p>;
 
@@ -133,7 +149,13 @@ export function MenusPage() {
           isNew={!menus.some((m) => m.id === editing.id)}
           persons={persons}
           familyFactor={familyFactor}
-          onClose={() => setEditing(null)}
+          onClose={() => {
+            setEditing(null);
+            if (fromRef.current) {
+              navBack(fromRef.current);
+              fromRef.current = null;
+            }
+          }}
         />
       )}
     </section>
