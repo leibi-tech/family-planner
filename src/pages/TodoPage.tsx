@@ -365,7 +365,7 @@ function TodoSheet({
             </div>
             <small className="muted">
               {assignees.length === 0
-                ? 'Niemand zugewiesen – erscheint bei «Alle» (und bei dir unter «Meine»).'
+                ? 'Offen – wer Zeit hat, übernimmt es. Erscheint bei «Alle» (und bei dir unter «Meine»).'
                 : assignees.length > 1
                   ? 'Mehrere Personen: erledigt, sobald jemand abhakt.'
                   : ''}
@@ -424,7 +424,7 @@ function ChoresView({ chores, todos, persons, me }: { chores: Chore[]; todos: To
   const weekTodos = todos.filter((t) => t.choreWeek === wk);
   const groups = [
     ...persons.map((p) => ({ id: p.id, name: p.name, items: weekTodos.filter((t) => t.assignees.includes(p.id)) })),
-    { id: '-', name: 'Niemand zugewiesen', items: weekTodos.filter((t) => t.assignees.length === 0) },
+    { id: '-', name: 'Offen (wer Zeit hat)', items: weekTodos.filter((t) => t.assignees.length === 0) },
   ].filter((g) => g.items.length > 0);
   const isThisWeek = wk === dateKey(mondayOf(new Date()));
 
@@ -440,7 +440,7 @@ function ChoresView({ chores, todos, persons, me }: { chores: Chore[]; todos: To
             const occ = occurrenceIn(c, mondayOf(new Date()), persons);
             const who =
               c.assignMode === 'none' || c.people.length === 0
-                ? 'niemand zugewiesen'
+                ? 'offen (wer Zeit hat)'
                 : c.assignMode === 'rotate'
                   ? 'abwechselnd: ' + c.people.map(nameOf).join(' → ')
                   : c.people.map(nameOf).join(', ');
@@ -632,7 +632,7 @@ function ChoreSheet({ chore, isNew, persons, onClose }: { chore: Chore; isNew: b
           <span>Wer macht es?</span>
           <div className="seg seg3">
             <button className={mode === 'none' ? 'on' : ''} onClick={() => setMode('none')}>
-              Niemand
+              Offen
             </button>
             <button className={mode === 'fixed' ? 'on' : ''} onClick={() => setMode('fixed')}>
               Fix
@@ -641,6 +641,7 @@ function ChoreSheet({ chore, isNew, persons, onClose }: { chore: Chore; isNew: b
               Abwechselnd
             </button>
           </div>
+          {mode === 'none' && <small className="muted">Niemand fest eingeteilt – wer Zeit hat, übernimmt es.</small>}
           {mode !== 'none' && (
             <>
               <div className="chips">
@@ -669,7 +670,7 @@ function ChoreSheet({ chore, isNew, persons, onClose }: { chore: Chore; isNew: b
             {preview.map((p) => (
               <div key={p.due} className="preview-row">
                 <span>{fmtDue(p.due)}</span>
-                <span className="muted">{p.who.length ? p.who.map(nameOf).join(', ') : 'niemand'}</span>
+                <span className="muted">{p.who.length ? p.who.map(nameOf).join(', ') : 'offen'}</span>
               </div>
             ))}
           </div>
