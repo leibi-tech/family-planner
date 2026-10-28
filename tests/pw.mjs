@@ -2,9 +2,10 @@
 // oder in Claude Code im Web / auf GitHub (normales npm-Paket "playwright").
 import { existsSync } from 'node:fs';
 
-const fixed = '/opt/npm-tools/node_modules/playwright/index.mjs';
+// Fest installierte Playwright-Pakete (Cowork bzw. Claude Code im Web)
+const fixed = ['/opt/npm-tools/node_modules/playwright/index.mjs', '/opt/node-tools/node_modules/playwright/index.mjs'].find((f) => existsSync(f));
 let pw;
-if (existsSync(fixed)) {
+if (fixed) {
   pw = await import(fixed);
 } else {
   try {

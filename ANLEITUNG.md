@@ -204,6 +204,17 @@ Danach bekommst du einen Link zu einem **Pull Request** (Vorschlag für die Änd
 - Wenn du danach wieder am PC mit Claude (Cowork) arbeitest: zuerst in **GitHub Desktop** auf **Fetch origin** und dann **Pull origin** klicken. So hat der PC den neusten Stand.
 - Datenbank-Updates und Supabase-Funktionen musst du weiterhin selbst in Supabase einspielen. Claude sagt dir, wenn das nötig ist.
 
+## S) Kalender: Monat, Woche, Tag (ab Version 0.16.0)
+Kein Datenbank-Update und nichts in Supabase nötig.
+1. Pull Request mergen (Link von Claude öffnen → **Merge pull request** → **Confirm merge**).
+2. 1–2 Minuten warten, App schliessen und neu öffnen. Unter Mehr → unten muss **0.16.0** stehen.
+
+**So geht es:**
+- Oben im Kalender: **Monat / Woche / Tag**. Ein Tipp darauf springt immer auf **heute**. Die App merkt sich die zuletzt gewählte Ansicht.
+- **Woche:** die 7 Tage untereinander. Tag antippen → Tagesansicht dieses Tages. **+** neben dem Tag → neuer Termin an diesem Tag.
+- **Tag:** Zeitraster mit einer Spalte pro Person (und Familie). So siehst du sofort, wenn zwei gleichzeitig weg sind. Rote Linie = jetzt. Mit den farbigen Knöpfen blendest du Personen aus.
+- **Farben:** Termin für dich und Antonia = halb blau, halb orange. Termin mit **allen** Personen = grün wie «Familie».
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

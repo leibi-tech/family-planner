@@ -7,7 +7,10 @@ import {
   buildTitle,
   createEvent,
   deleteEvent,
+  eventColors,
   eventPersons,
+  isoWeek,
+  stripes,
   eventToInput,
   isWritable,
   parseTitle,
@@ -43,6 +46,20 @@ import {
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const MAX_BARS = 3;
+const HOUR_PX = 48; // Höhe einer Stunde in der Tagesansicht
+
+type View = 'month' | 'week' | 'day';
+const VIEW_KEY = 'calView';
+const loadView = (): View => {
+  try {
+    const v = localStorage.getItem(VIEW_KEY);
+    return v === 'week' || v === 'day' ? v : 'month';
+  } catch {
+    return 'month';
+  }
+};
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const mondayOf = (d: Date) => addDays(d, -((d.getDay() + 6) % 7));
 
 const fmtAgo = (t: number) => {
   const min = Math.round((Date.now() - t) / 60000);
@@ -71,6 +88,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   const [detail, setDetail] = useState<CalEvent | null>(null);
   const [editor, setEditor] = useState<{ ev: CalEvent | null; scope: 'one' | 'all'; day: Date } | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
+  const [view, setView] = useState<View>(loadView);
 
   useEffect(() => {
     const up = () => setOnline(true);
@@ -150,11 +168,13 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
     const ps = personsOf(e);
     return ps.length ? ps : ['family'];
   };
-  const colorOf = (e: CalEvent) => personColor(personIds, personsOf(e)[0] ?? null);
+  const colorsOf = (e: CalEvent) => eventColors(personIds, personsOf(e));
+  const bgOf = (e: CalEvent, dir: 'right' | 'bottom' = 'right') => stripes(colorsOf(e), dir);
   const titleOf = (e: CalEvent) => parseTitle(e.title, sortedPersons).title;
   const whoOf = (e: CalEvent) => {
     const ps = personsOf(e);
     if (!ps.length) return 'Familie';
+    if (ps.length > 1 && personIds.every((id) => ps.includes(id))) return 'Familie (alle)';
     return ps.map((id) => sortedPersons.find((p) => p.id === id)?.name ?? '?').join(', ');
   };
 
@@ -202,7 +222,13 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   const byDay = new Map<string, CalEvent[]>();
   for (const d of cells) byDay.set(dateKey(d), sortEvents(all.filter((e) => occursOn(e, d))));
 
+  const showDay = (d: Date) => {
+    setSelDay(d);
+    setYm({ y: d.getFullYear(), m: d.getMonth() });
+  };
   const move = (delta: number) => {
+    if (view === 'week') return showDay(addDays(selDay, 7 * delta));
+    if (view === 'day') return showDay(addDays(selDay, delta));
     const d = new Date(ym.y, ym.m + delta, 1);
     setYm({ y: d.getFullYear(), m: d.getMonth() });
     const t = new Date();
@@ -210,14 +236,65 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   };
   const goToday = () => {
     const t = new Date();
-    setYm({ y: t.getFullYear(), m: t.getMonth() });
-    setSelDay(new Date(t.getFullYear(), t.getMonth(), t.getDate()));
+    showDay(new Date(t.getFullYear(), t.getMonth(), t.getDate()));
+  };
+  // Monat / Woche / Tag: immer auf heute springen, Ansicht merken
+  const chooseView = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* egal */
+    }
+    goToday();
+  };
+  const openDay = (d: Date) => {
+    setView('day');
+    try {
+      localStorage.setItem(VIEW_KEY, 'day');
+    } catch {
+      /* egal */
+    }
+    showDay(d);
   };
 
   const selEvents = byDay.get(dateKey(selDay)) ?? sortEvents(all.filter((e) => occursOn(e, selDay)));
   const todayKey = dateKey(new Date());
   const noCalendars = cache && cache.household === household && cache.calendars.length === 0;
   const notConnected = status && !status.connected;
+  const canAdd = writableCals.length > 0;
+  const newEvent = (d: Date) => setEditor({ ev: null, scope: 'one', day: d });
+  const eventsOn = (d: Date) => byDay.get(dateKey(d)) ?? sortEvents(all.filter((e) => occursOn(e, d)));
+  const weekStart = mondayOf(selDay);
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const navLabel = { month: ['Vorheriger Monat', 'Nächster Monat'], week: ['Vorherige Woche', 'Nächste Woche'], day: ['Vorheriger Tag', 'Nächster Tag'] }[view];
+  const navTitle =
+    view === 'month'
+      ? `${MONTHS[ym.m]} ${ym.y}`
+      : view === 'week'
+        ? `KW ${isoWeek(weekStart)} · ${weekStart.getDate()}.${weekStart.getMonth() + 1}.–${weekDays[6].getDate()}.${weekDays[6].getMonth() + 1}.`
+        : selDay.toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+  // Spalten der Tagesansicht: eine pro eingeblendeter Person (+ Familie)
+  const columns = filterKeys.filter((f) => !hidden.has(f.key));
+  const renderList = (evs: CalEvent[], d: Date) => (
+    <ul className="cal-list">
+      {evs.map((e) => (
+        <li key={e.calendarId + e.id}>
+          <button className="cal-ev" onClick={() => setDetail(e)}>
+            <span className="cal-ev-stripe" style={{ background: bgOf(e, 'bottom') }} />
+            <span className="cal-ev-time">{timeLabel(e, d)}</span>
+            <span className="cal-ev-main">
+              <span className="cal-ev-title">{titleOf(e)}</span>
+              <span className="cal-ev-sub">
+                {whoOf(e)}
+                {e.location ? ` · ${e.location}` : ''}
+              </span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
     <section className="cal">
@@ -235,19 +312,31 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
         </div>
       )}
 
+      <div className="seg seg3 cal-views" role="tablist">
+        {(
+          [
+            ['month', 'Monat'],
+            ['week', 'Woche'],
+            ['day', 'Tag'],
+          ] as Array<[View, string]>
+        ).map(([v, label]) => (
+          <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => chooseView(v)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="weeknav">
-        <button className="btn step" aria-label="Vorheriger Monat" onClick={() => move(-1)}>
+        <button className="btn step" aria-label={navLabel[0]} onClick={() => move(-1)}>
           ‹
         </button>
         <div className="weeknav-title">
-          <b>
-            {MONTHS[ym.m]} {ym.y}
-          </b>
+          <b className="cal-navtitle">{navTitle}</b>
           <button className="cal-today-btn" onClick={goToday}>
             Heute
           </button>
         </div>
-        <button className="btn step" aria-label="Nächster Monat" onClick={() => move(1)}>
+        <button className="btn step" aria-label={navLabel[1]} onClick={() => move(1)}>
           ›
         </button>
       </div>
@@ -269,6 +358,8 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
         </div>
       )}
 
+      {view === 'month' && (
+        <>
       <div className="cal-grid" role="grid">
         {WD.map((w) => (
           <div key={w} className="cal-wd">
@@ -288,7 +379,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
               <span className="cal-num">{d.getDate()}</span>
               <span className="cal-bars">
                 {evs.slice(0, MAX_BARS).map((e) => (
-                  <span key={e.calendarId + e.id} className="cal-bar" style={{ background: colorOf(e) }}>
+                  <span key={e.calendarId + e.id} className="cal-bar" style={{ background: bgOf(e) }}>
                     {titleOf(e)}
                   </span>
                 ))}
@@ -299,15 +390,71 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
         })}
       </div>
 
+        </>
+      )}
+
+      {view === 'week' && (
+        <div className="cal-week">
+          {weekDays.map((d) => {
+            const evs = eventsOn(d);
+            const isToday = dateKey(d) === todayKey;
+            return (
+              <div key={dateKey(d)} className={'cal-wday' + (isToday ? ' today' : '')}>
+                <div className="cal-wday-head">
+                  <button className="cal-wday-title" onClick={() => openDay(d)}>
+                    {d.toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'numeric' })}
+                    {isToday && <span className="pill pill-today">Heute</span>}
+                  </button>
+                  {canAdd && (
+                    <button className="btn cal-wday-add" disabled={!online} aria-label={`Neuer Termin am ${d.getDate()}.${d.getMonth() + 1}.`} onClick={() => newEvent(d)}>
+                      +
+                    </button>
+                  )}
+                </div>
+                {evs.length === 0 ? <p className="muted cal-wday-empty">Keine Termine</p> : renderList(evs, d)}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view === 'day' && (
+        <>
+          {canAdd && (
+            <div className="cal-dv-actions">
+              <button
+                className="btn btn-primary cal-add"
+                disabled={!online}
+                title={online ? 'Neuer Termin' : 'Termine erfassen geht nur mit Internet'}
+                onClick={() => newEvent(selDay)}
+              >
+                + Termin
+              </button>
+            </div>
+          )}
+          <DayGrid
+            day={selDay}
+            columns={columns.length ? columns : [{ key: 'family', label: 'Familie', color: personColor(personIds, null) }]}
+            events={eventsOn(selDay)}
+            keysOf={keysOf}
+            titleOf={titleOf}
+            bgOf={bgOf}
+            onOpen={setDetail}
+          />
+        </>
+      )}
+
+      {view === 'month' && (
+        <>
       <h3 className="cal-dayhead">
         {selDay.toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long' })}
         {dateKey(selDay) === todayKey && <span className="pill pill-today">Heute</span>}
-        {writableCals.length > 0 && (
+        {canAdd && (
           <button
             className="btn btn-primary cal-add"
             disabled={!online}
             title={online ? 'Neuer Termin' : 'Termine erfassen geht nur mit Internet'}
-            onClick={() => setEditor({ ev: null, scope: 'one', day: selDay })}
+            onClick={() => newEvent(selDay)}
           >
             + Termin
           </button>
@@ -316,22 +463,10 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
       {selEvents.length === 0 ? (
         <p className="muted cal-empty">Keine Termine.</p>
       ) : (
-        <ul className="cal-list">
-          {selEvents.map((e) => (
-            <li key={e.calendarId + e.id}>
-              <button className="cal-ev" style={{ ['--c' as any]: colorOf(e) }} onClick={() => setDetail(e)}>
-                <span className="cal-ev-time">{timeLabel(e, selDay)}</span>
-                <span className="cal-ev-main">
-                  <span className="cal-ev-title">{titleOf(e)}</span>
-                  <span className="cal-ev-sub">
-                    {whoOf(e)}
-                    {e.location ? ` · ${e.location}` : ''}
-                  </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        renderList(selEvents, selDay)
+      )}
+
+        </>
       )}
 
       <div className="cal-foot">
@@ -363,7 +498,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
           ev={detail}
           title={titleOf(detail)}
           who={whoOf(detail)}
-          color={colorOf(detail)}
+          bg={bgOf(detail, 'bottom')}
           cal={calById.get(detail.calendarId)}
           online={online}
           ownerName={(() => {
@@ -414,11 +549,145 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   );
 }
 
+/** Tagesansicht: Zeitraster mit einer Spalte pro Person, damit Überschneidungen auffallen. */
+function DayGrid({
+  day,
+  columns,
+  events,
+  keysOf,
+  titleOf,
+  bgOf,
+  onOpen,
+}: {
+  day: Date;
+  columns: Array<{ key: string; label: string; color: string }>;
+  events: CalEvent[];
+  keysOf: (e: CalEvent) => string[];
+  titleOf: (e: CalEvent) => string;
+  bgOf: (e: CalEvent, dir?: 'right' | 'bottom') => string;
+  onOpen: (e: CalEvent) => void;
+}) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+  const dayEnd = addDays(dayStart, 1);
+  const allDay = events.filter((e) => e.allDay || (new Date(e.start) <= dayStart && new Date(e.end) >= dayEnd));
+  const timed = events.filter((e) => !allDay.includes(e));
+  const minutes = (t: Date) => Math.max(0, Math.min(1440, (+t - +dayStart) / 60000));
+  const isToday = dateKey(day) === dateKey(new Date());
+  const [nowMin, setNowMin] = useState(() => minutes(new Date()));
+  useEffect(() => {
+    if (!isToday) return;
+    const t = window.setInterval(() => setNowMin(minutes(new Date())), 60000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateKey(day)]);
+
+  // Beim Öffnen zum ersten Termin bzw. 7 Uhr scrollen
+  const firstMin = Math.min(7 * 60, ...timed.map((e) => minutes(new Date(e.start))));
+  useEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = Math.max(0, (firstMin / 60 - 0.5) * HOUR_PX);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateKey(day)]);
+
+  // Pro Spalte: Termine nebeneinander legen, wenn sie sich überschneiden
+  const layout = (list: CalEvent[]) => {
+    const items = list
+      .map((e) => ({ e, s: minutes(new Date(e.start)), en: minutes(new Date(e.end)) }))
+      .map((x) => ({ ...x, en: Math.max(x.en, x.s + 20) }))
+      .sort((a, b) => a.s - b.s || b.en - a.en);
+    const out: Array<{ e: CalEvent; s: number; en: number; lane: number; lanes: number }> = [];
+    let group: typeof out = [];
+    let groupEnd = -1;
+    const close = () => {
+      const n = Math.max(1, ...group.map((g) => g.lane + 1));
+      group.forEach((g) => (g.lanes = n));
+      group = [];
+    };
+    for (const it of items) {
+      if (it.s >= groupEnd) close();
+      const used = new Set(group.filter((g) => g.en > it.s).map((g) => g.lane));
+      let lane = 0;
+      while (used.has(lane)) lane++;
+      const placed = { ...it, lane, lanes: 1 };
+      group.push(placed);
+      out.push(placed);
+      groupEnd = Math.max(groupEnd, it.en);
+    }
+    close();
+    return out;
+  };
+  const hm = (d: Date) => d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+  const cols = { gridTemplateColumns: `36px repeat(${columns.length}, minmax(0, 1fr))` };
+
+  return (
+    <div className="cal-dv">
+      <div className="cal-dv-row cal-dv-head" style={cols}>
+        <span />
+        {columns.map((c) => (
+          <span key={c.key} className="cal-dv-name">
+            <span className="cal-dot" style={{ ['--c' as any]: c.color }} />
+            <span className="cal-dv-name-text">{c.label}</span>
+          </span>
+        ))}
+      </div>
+      {allDay.length > 0 && (
+        <div className="cal-dv-row cal-dv-allday" style={cols}>
+          <span className="cal-dv-hour-label">ganzt.</span>
+          {columns.map((c) => (
+            <span key={c.key} className="cal-dv-allday-col">
+              {allDay
+                .filter((e) => keysOf(e).includes(c.key))
+                .map((e) => (
+                  <button key={e.calendarId + e.id} className="cal-dv-chip" style={{ background: bgOf(e) }} onClick={() => onOpen(e)}>
+                    {titleOf(e)}
+                  </button>
+                ))}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="cal-dv-scroll" ref={scroller}>
+        <div className="cal-dv-body" style={{ ...cols, height: 24 * HOUR_PX }}>
+          <div className="cal-dv-hours">
+            {Array.from({ length: 24 }, (_, h) => (
+              <span key={h} className="cal-dv-hour-label" style={{ top: h * HOUR_PX }}>
+                {h > 0 ? `${String(h).padStart(2, '0')}:00` : ''}
+              </span>
+            ))}
+          </div>
+          {columns.map((c) => (
+            <div key={c.key} className="cal-dv-col" data-col={c.key} style={{ backgroundSize: `100% ${HOUR_PX}px` }}>
+              {layout(timed.filter((e) => keysOf(e).includes(c.key))).map(({ e, s, en, lane, lanes }) => (
+                <button
+                  key={e.calendarId + e.id}
+                  className="cal-dv-ev"
+                  style={{
+                    top: (s / 60) * HOUR_PX,
+                    height: Math.max(20, ((en - s) / 60) * HOUR_PX - 2),
+                    left: `calc(${(lane / lanes) * 100}% + 1px)`,
+                    width: `calc(${100 / lanes}% - 2px)`,
+                    background: bgOf(e),
+                  }}
+                  onClick={() => onOpen(e)}
+                >
+                  <span className="cal-dv-ev-title">{titleOf(e)}</span>
+                  <span className="cal-dv-ev-time">{hm(new Date(e.start))}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+          {isToday && <div className="cal-dv-now" style={{ top: (nowMin / 60) * HOUR_PX }} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EventSheet({
   ev,
   title,
   who,
-  color,
+  bg,
   cal,
   online,
   ownerName,
@@ -429,7 +698,7 @@ function EventSheet({
   ev: CalEvent;
   title: string;
   who: string;
-  color: string;
+  bg: string;
   cal?: CalInfo;
   online: boolean;
   ownerName: string;
@@ -458,7 +727,8 @@ function EventSheet({
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h2 className="cal-detail-title" style={{ ['--c' as any]: color }}>
+        <h2 className="cal-detail-title">
+          <span className="cal-detail-stripe" style={{ background: bg }} />
           {title}
         </h2>
         <p className="cal-detail-row">🕒 {whenLabel(ev)}</p>

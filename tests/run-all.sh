@@ -4,6 +4,8 @@
 # Baut eine Testversion gegen einen Supabase-Nachbau und prüft die Bedienung mit Playwright
 # (Handy-Format, zwei simulierte Handys mit gemeinsamem Haushalt).
 cd "$(dirname "$0")/.." || exit 1
+# Gleiche Zeitzone wie der Test-Browser (sonst stimmen Uhrzeiten nicht)
+export TZ=Europe/Zurich
 # Abhängigkeiten: in Cowork liegen sie fertig in /opt/npm-tools, sonst per npm holen
 if [ -d /opt/npm-tools/node_modules ]; then
   ln -sfn /opt/npm-tools/node_modules node_modules
@@ -17,7 +19,7 @@ python3 -m http.server 8765 > /tmp/fp-web.log 2>&1 &
 WEB=$!
 sleep 1
 fail=0
-for t in ui-local start-page sync-two todo-link password calendar calendar-edit; do
+for t in ui-local start-page sync-two todo-link password calendar calendar-edit calendar-views; do
   echo "== $t"
   out=$(timeout 150 node tests/$t.mjs 2>&1 | grep -v "^\[{")
   echo "$out" | grep -E "^(OK|FAIL)" | sed 's/^OK   /  ok   /'
