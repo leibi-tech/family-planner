@@ -1,9 +1,9 @@
 // Seitenübergreifend öffnen: z.B. von der Startseite direkt zu einem Menü, einer Notiz oder einem ToDo.
 // Die Zielseite holt sich die Anfrage ab, sobald ihre Daten geladen sind.
-export type NavKind = 'note' | 'menu' | 'todo';
+export type NavKind = 'note' | 'menu' | 'todo' | 'event';
 
 /** Auf welcher Seite (Tab) wird das Ziel angezeigt? */
-export const TAB_FOR: Record<NavKind, string> = { note: 'notizen', menu: 'menues', todo: 'todo' };
+export const TAB_FOR: Record<NavKind, string> = { note: 'notizen', menu: 'menues', todo: 'todo', event: 'kalender' };
 
 export interface OpenRequest {
   kind: NavKind;

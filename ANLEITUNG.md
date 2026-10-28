@@ -215,6 +215,19 @@ Kein Datenbank-Update und nichts in Supabase nötig.
 - **Tag:** Zeitraster mit einer Spalte pro Person (und Familie). So siehst du sofort, wenn zwei gleichzeitig weg sind. Rote Linie = jetzt. Mit den farbigen Knöpfen blendest du Personen aus.
 - **Farben:** Termin für dich und Antonia = halb blau, halb orange. Termin mit **allen** Personen = grün wie «Familie».
 
+## T) Wer schaut auf die Kinder? Termine auf der Startseite (ab Version 0.17.0)
+Kein Datenbank-Update und nichts in Supabase nötig.
+1. Pull Request mergen (Link von Claude öffnen → **Merge pull request** → **Confirm merge**).
+2. 1–2 Minuten warten, App schliessen und neu öffnen. Unter Mehr → unten muss **0.17.0** stehen.
+
+**So geht es:**
+- **Startseite:** Oben erscheint **«⚠️ Wer schaut auf die Kinder?»**, wenn ihr beide in den nächsten 14 Tagen gleichzeitig einen Termin habt. Darunter **Termine** von heute und morgen. Antippen öffnet den Kalender beim richtigen Tag.
+- **Betreuung erfassen:** Warnung antippen → «Jemand betreut» (z.B. Grosi) oder «Kinder gehen mit» (mit wem) → Notiz → **Speichern**. Im Kalender steht dann ✅ beim Termin. Beide sehen das.
+- **Termin verschoben oder gelöscht?** Dann meldet die App «Termin geändert – Betreuung prüfen». Antippen, prüfen, speichern (oder löschen).
+- Keine Warnung gibt es, wenn alle Kinder bei einem der Termine dabei sind (z.B. «[Kind 1, Kind 2] Schwimmen»). Ganztägige Termine (Ferien) zählen nicht.
+- Die Warnung funktioniert, sobald **beide** Eltern ihren Google-Kalender verbunden haben («Mein Kalender»).
+- **Rückfrage:** Termin von Thadea antippen → **💬 Rückfrage an …** → Text → **Senden**. Sie bekommt ein ToDo mit dem Knopf **«📅 Termin öffnen»**.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

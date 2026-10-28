@@ -347,3 +347,46 @@ export function isoWeek(d: Date): number {
   const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
   return Math.ceil(((+t - +y0) / 86400000 + 1) / 7);
 }
+
+/** Hilfsfunktionen rund um Personen eines Termins (Kalender, Startseite, Betreuung). */
+export function calHelpers(calendars: CalInfo[], persons: Named[]) {
+  const calById = new Map(calendars.map((c) => [c.id, c]));
+  const personIds = persons.map((p) => p.id);
+  const personsOf = (e: CalEvent) => eventPersons(e, calById.get(e.calendarId), persons);
+  const keysOf = (e: CalEvent) => {
+    const ps = personsOf(e);
+    return ps.length ? ps : ['family'];
+  };
+  const colorsOf = (e: CalEvent) => eventColors(personIds, personsOf(e));
+  const bgOf = (e: CalEvent, dir: 'right' | 'bottom' = 'right') => stripes(colorsOf(e), dir);
+  const titleOf = (e: CalEvent) => parseTitle(e.title, persons).title;
+  const nameOf = (id: string | null | undefined) => persons.find((p) => p.id === id)?.name ?? '?';
+  const whoOf = (e: CalEvent) => {
+    const ps = personsOf(e);
+    if (!ps.length) return 'Familie';
+    if (ps.length > 1 && personIds.every((id) => ps.includes(id))) return 'Familie (alle)';
+    return ps.map(nameOf).join(', ');
+  };
+  return { calById, personIds, personsOf, keysOf, colorsOf, bgOf, titleOf, whoOf, nameOf };
+}
+export type CalHelpers = ReturnType<typeof calHelpers>;
+
+/** Eindeutiger Schlüssel eines Termins (auch einzelner Termine einer Serie). */
+export const eventKey = (e: { calendarId: string; id: string }) => `${e.calendarId}|${e.id}`;
+
+/** Beginn und Ende als Zeitpunkt (ganztägig: Mitternacht lokal). */
+export function eventRange(e: CalEvent): [Date, Date] {
+  if (e.allDay) {
+    const [s, en] = eventDays(e);
+    return [s, new Date(en.getFullYear(), en.getMonth(), en.getDate() + 1)];
+  }
+  return [new Date(e.start), new Date(e.end)];
+}
+
+// ---------- Von anderen Seiten öffnen (Startseite, ToDo «Termin öffnen») ----------
+/** Ziel für requestOpen('event', …): Tag und optional ein bestimmter Termin. */
+export const eventTarget = (day: string, e?: { calendarId: string; id: string }) => (e ? `${day}|${e.calendarId}|${e.id}` : day);
+export function parseEventTarget(t: string): { day: string; calendarId: string | null; eventId: string | null } {
+  const [day, calendarId, ...rest] = t.split('|');
+  return { day, calendarId: calendarId ?? null, eventId: rest.length ? rest.join('|') : null };
+}
