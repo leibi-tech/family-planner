@@ -13,8 +13,8 @@ Stand: 28.10.2026 · Version 0.15.0
 - ✅ **ToDos & Ämtli-Plan (v0.10.x)**: steht (26.10.2026).
 - ✅ **Kalender K1 – Google verbinden & ansehen (v0.14.0)**: läuft, Tobias hat verbunden (26.10.2026). Nötig war zusätzlich: Rechte für service_role (in update-0.14.sql ergänzt), Datenschutzseite `docs/datenschutz.html` für Google «In Produktion».
 - ✅ **Kalender K2 – Termine erfassen/ändern/löschen (v0.15.0)**: läuft auf dem Handy, von Tobias getestet (26.10.2026).
-- ⏳ **Passwort ändern (v0.13.0)**: gebaut und getestet. Tobias: hochladen und ausprobieren (ANLEITUNG O). Kein Datenbank-Update nötig. «Passwort vergessen» folgt danach (E-Mail-Dienst nötig).
-- ⏳ **Notizen & Listen (v0.11.0)**: gebaut und getestet, Tobias: hochladen und auf dem Handy ausprobieren (ANLEITUNG M). Kein Datenbank-Update nötig.
+- ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
+- ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
 ## Phase 1 – App lokal auf dem Handy (Ziel 1)
 | Schritt | Inhalt | Status |
@@ -36,7 +36,7 @@ Synchronisation über Supabase. Läuft: Konto, Haushalt mit Code, Rollen, automa
 ## Nächste Schritte (Stand 26.10.2026, mit Tobias abgesprochen)
 Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseite zeigt auf einen Blick, was für die Familie heute wichtig ist.
 
-1. ⏳ **v0.11.0 Gemeinsame Notizen & Listen** (neuer Menüpunkt «Notizen», 6. Knopf unten): gebaut und getestet (Handy-Format, zwei simulierte Handys).
+1. ✅ **v0.11.0 Gemeinsame Notizen & Listen** (neuer Menüpunkt «Notizen», 6. Knopf unten): gebaut und getestet (Handy-Format, zwei simulierte Handys).
    - **Notizen** (Titel + Text) und **Listen** (Punkte zum Abhaken, mit **Unterpunkten**, eine Ebene). Abgehakte rutschen nach unten, «Erledigte entfernen».
    - **Öffentlich** für die ganze Familie. Mit dem **Schloss oben rechts** auf **privat** umstellbar (nur die erfassende Person sieht es, in der Datenbank geschützt) und zurück.
    - **Anheften mit Pin** (📌): «Für mich anheften» oder «Für alle anheften» (📌📌). Jede Person kann bei sich selbst wieder lösen. Angeheftetes erscheint später auf der Startseite. Private Einträge können nur für mich angeheftet werden.
@@ -108,6 +108,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **28.10.2026 (2)**: Stand geklärt: Notizen & Listen laufen ✅. «Passwort ändern» noch nicht ausprobiert, zurückgestellt. Nächster Vorschlag: Kalender K3.
 - **28.10.2026**: Arbeiten von unterwegs vorbereitet (E34): `CLAUDE.md` mit den Projekt-Regeln für Claude Code im Web/Handy, Ideen-Eingang `IDEEN.md`, Tests laufen in beiden Umgebungen (`tests/pw.mjs`), `hochladen.bat` holt zuerst den Stand von GitHub. Tobias: hochladen und Claude Code einrichten (ANLEITUNG R). App unverändert.
 - **26.10.2026 (10)**: K1 bei Tobias eingerichtet und läuft (Google «In Produktion» mit Datenschutzseite; 403 behoben mit Rechten für service_role). K2 (v0.15.0) gebaut nach Tobias' Antworten: Erfassen/Ändern/Löschen, Serien «nur diesen/alle», Personen im Titel. Neue Tests `tests/calendar-edit.mjs`, Funktionstests für Schreiben.
 - **26.10.2026 (9)**: Kalender K1 (v0.14.0) gebaut: Supabase-Funktion `google-kalender` (Verbinden über Google, Schlüssel geschützt in `google_accounts`, Termine aller Konten des Haushalts), `update-0.14.sql`, Seite «Kalender» unter «Mehr» (Monatsraster, Tagesliste, Filter pro Person, Details, offline-Kopie). Tests: `tests/google-function.mjs` (Funktion gegen gefälschtes Google) und `tests/calendar.mjs`. Offene Fragen von Tobias beantwortet (siehe Konzept).
