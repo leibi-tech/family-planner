@@ -325,3 +325,25 @@ export function personColor(personIds: string[], id: string | null): string {
   const i = personIds.indexOf(id);
   return PALETTE[(i < 0 ? 0 : i) % PALETTE.length];
 }
+
+/** Farben eines Termins: eine pro betroffener Person. Betrifft er niemanden Bestimmten
+ *  oder alle Personen der Familie → nur Familien-Grün. */
+export function eventColors(allPersonIds: string[], ids: string[]): string[] {
+  if (!ids.length || allPersonIds.every((p) => ids.includes(p))) return [FAMILY_COLOR];
+  return ids.map((id) => personColor(allPersonIds, id));
+}
+/** Hintergrund mit harten Streifen, z.B. halb blau, halb orange. */
+export function stripes(colors: string[], dir: 'right' | 'bottom' = 'right'): string {
+  if (colors.length <= 1) return colors[0] ?? FAMILY_COLOR;
+  const step = 100 / colors.length;
+  const parts = colors.map((c, i) => `${c} ${(i * step).toFixed(2)}% ${((i + 1) * step).toFixed(2)}%`);
+  return `linear-gradient(to ${dir}, ${parts.join(', ')})`;
+}
+/** Kalenderwoche nach ISO (KW). */
+export function isoWeek(d: Date): number {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const wd = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - wd);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((+t - +y0) / 86400000 + 1) / 7);
+}

@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 28.10.2026 · Version 0.15.0
+Stand: 28.10.2026 · Version 0.16.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -13,6 +13,7 @@ Stand: 28.10.2026 · Version 0.15.0
 - ✅ **ToDos & Ämtli-Plan (v0.10.x)**: steht (26.10.2026).
 - ✅ **Kalender K1 – Google verbinden & ansehen (v0.14.0)**: läuft, Tobias hat verbunden (26.10.2026). Nötig war zusätzlich: Rechte für service_role (in update-0.14.sql ergänzt), Datenschutzseite `docs/datenschutz.html` für Google «In Produktion».
 - ✅ **Kalender K2 – Termine erfassen/ändern/löschen (v0.15.0)**: läuft auf dem Handy, von Tobias getestet (26.10.2026).
+- ⏳ **Kalender K3 – Monat / Woche / Tag (v0.16.0)**: gebaut und getestet. Tobias: Pull Request mergen und ausprobieren (ANLEITUNG S). Kein Datenbank-Update nötig.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -55,7 +56,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 3. **Kalender** in 5 Schritten (mit Tobias abgesprochen, 26.10.2026):
    - ✅ **K1 (v0.14.0) Verbinden & Ansehen:** Google-Konto verbinden (jede Person ihr eigenes), Kalender wählen («Mein Kalender» / «Familie» / nicht zeigen), Monatsraster + Tagesliste, Personen ein-/ausblenden, Termin-Details mit Link zu Google, offline lesbar. Unter «Mehr» → «Kalender». Tobias: ANLEITUNG P.
    - ✅ **K2 (v0.15.0)** Termine erfassen, ändern, löschen (nur eigene Kalender und Familienkalender, nur online). Wiederholungen einfach (täglich … jährlich, bis), «nur diesen» / «alle». Betroffene Personen im Titel «[Kind 1] …», auch bei eigenen Terminen. Erinnerungen = Google-Standard. Tobias: ANLEITUNG Q.
-   - **K3** Übersicht nebeneinander: alle Personen im gleichen Zeitraster (Überschneidungen sehen).
+   - ⏳ **K3 (v0.16.0)** Ansichten **Monat / Woche / Tag** (Knöpfe oben, springen immer auf heute, letzte Ansicht wird gemerkt). Woche = 7 Tage untereinander als Liste. Tag = Zeitraster mit **einer Spalte pro Person** (+ Familie), Überschneidungen sofort sichtbar. Termine mit mehreren Personen **mehrfarbig**, mit allen Personen **grün** (Familie). Tobias: ANLEITUNG S.
    - **K4** Betreuungs-Warnung («Wer schaut auf die Kinder?») und Rückfrage bei fremden Terminen. Zusatzinfos in der eigenen Datenbank, mit dem Google-Termin verknüpft.
    - **K5** Termine auf der Startseite.
 4. **Passwort** (mit Tobias abgesprochen, 26.10.2026): zuerst ✅ «Passwort ändern» (v0.13.0, ohne E-Mail-Dienst), dann «Passwort vergessen» mit kostenlosem E-Mail-Dienst (z.B. Brevo als SMTP in Supabase, Link in der Mail, Bildschirm «Neues Passwort»). Spätestens vor dem Play Store.
@@ -108,6 +109,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **28.10.2026 (3)**: v0.16.0 Kalender K3 nach Tobias' Wünschen (Antworten 1/1/1): Monat/Woche/Tag, immer auf heute, Ansicht gemerkt; Woche als Liste; Tag mit Spalte pro Person; mehrfarbige Termine, alle Personen = grün. Neuer Test `tests/calendar-views.mjs`. Tests in der Cloud: Playwright aus `/opt/node-tools`, Zeitzone Europe/Zurich in `run-all.sh`.
 - **28.10.2026 (2)**: Stand geklärt: Notizen & Listen laufen ✅. «Passwort ändern» noch nicht ausprobiert, zurückgestellt. Nächster Vorschlag: Kalender K3.
 - **28.10.2026**: Arbeiten von unterwegs vorbereitet (E34): `CLAUDE.md` mit den Projekt-Regeln für Claude Code im Web/Handy, Ideen-Eingang `IDEEN.md`, Tests laufen in beiden Umgebungen (`tests/pw.mjs`), `hochladen.bat` holt zuerst den Stand von GitHub. Tobias: hochladen und Claude Code einrichten (ANLEITUNG R). App unverändert.
 - **26.10.2026 (10)**: K1 bei Tobias eingerichtet und läuft (Google «In Produktion» mit Datenschutzseite; 403 behoben mit Rechten für service_role). K2 (v0.15.0) gebaut nach Tobias' Antworten: Erfassen/Ändern/Löschen, Serien «nur diesen/alle», Personen im Titel. Neue Tests `tests/calendar-edit.mjs`, Funktionstests für Schreiben.

@@ -11,6 +11,7 @@ Laufen in der Cloud-Umgebung, nicht auf dem PC. Aufruf im Projektordner: `bash t
 
 - `calendar.mjs` – Kalender: ohne Haushalt, Verbinden mit Rückkehr, Kalender wählen, Raster, Tagesliste (Reihenfolge, über Mitternacht), Filter, Details, offline aus der Kopie, Trennen.
 - `calendar-edit.mjs` – Kalender K2: Termin erfassen (Personen im Titel), Filter mit Kindern, Serie erstellen, «nur diesen» / «alle» ändern, löschen, fremde Termine gesperrt, offline gesperrt.
+- `calendar-views.mjs` – Kalender v0.16: Monat/Woche/Tag (immer auf heute, gemerkt), Spalte pro Person, nebeneinander bei Überschneidung, mehrfarbige Termine, alle = grün.
 - `google-function.mjs` – (separat: `node tests/google-function.mjs`) die Supabase-Funktion `google-kalender` gegen gefälschtes Google und gefälschte Datenbank: Anmeldung, manipulierter state, Rücksprung nur zur App, fremder Haushalt, Familienkalender nur einmal, abgelaufene Verbindung, Trennen.
 
 Neue Funktionen: passenden Test ergänzen und vor dem Ausliefern alles laufen lassen.

@@ -160,3 +160,10 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Gleichzeitig weiter mit Cowork am PC:** Vor jeder Cowork-Sitzung den Ordner mit GitHub abgleichen (Pull). `hochladen.bat` holt vor dem Hochladen den Stand von GitHub.
 - **Tests:** `tests/pw.mjs` findet Playwright in beiden Umgebungen; `run-all.sh` holt die Abhängigkeiten per npm, wenn sie nicht vorinstalliert sind.
 - **Massgebend** für ROADMAP, ENTSCHEIDUNGEN, ANLEITUNG ist das Repository; das claude.ai-Projekt wird in Cowork-Sitzungen nachgeführt.
+
+## E35 – Kalender K3: Monat / Woche / Tag, Farben (v0.16.0, 28.10.2026)
+- **Wunsch Tobias:** Termine mit mehreren Personen in allen Farben; mit allen Personen grün (Familie). Drei Ansichten Monat / Woche / Tag, jeder Tipp darauf springt auf heute.
+- **Entscheide Tobias:** Woche als Liste (7 Tage untereinander, auf dem Handy lesbar statt 7 schmale Spalten); Tag als Zeitraster mit einer Spalte pro Person (= K3, Überschneidungen sehen); letzte Ansicht wird gemerkt (nur auf dem Gerät, `localStorage`).
+- **Farben:** Eine Farbe pro betroffener Person, als harte Streifen (Balken im Monat: nebeneinander; Streifen in Listen: übereinander). Betrifft ein Termin niemand Bestimmten oder alle Personen der Familie → nur Familien-Grün; Anzeige «Familie (alle)».
+- **Tagesansicht:** Spalten = eingeblendete Personen aus dem Filter (+ Familie). Ein Termin erscheint in der Spalte jeder betroffenen Person. Gleichzeitige Termine einer Person liegen nebeneinander. Ganztägige oben, Start beim ersten Termin bzw. 7 Uhr.
+- **Tests:** Die Cloud-Umgebung hat Playwright fest unter `/opt/node-tools`; `run-all.sh` setzt die Zeitzone Europe/Zurich, damit Testzeiten und Browser übereinstimmen.
