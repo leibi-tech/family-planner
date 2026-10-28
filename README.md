@@ -6,6 +6,8 @@ Familien-App (PWA): Familie, Menüs, Wochenplan, Einkaufsliste. Läuft offline, 
 - Bedienung und Installation: [ANLEITUNG.md](ANLEITUNG.md)
 - Stand und nächste Schritte: [ROADMAP.md](ROADMAP.md)
 - Technische Entscheide: [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md)
+- Ideen-Eingang: [IDEEN.md](IDEEN.md)
+- Regeln für Claude Code: [CLAUDE.md](CLAUDE.md)
 
 ## Technik
 - `src/`: Quellcode (React + TypeScript)

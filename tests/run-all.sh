@@ -4,7 +4,12 @@
 # Baut eine Testversion gegen einen Supabase-Nachbau und prüft die Bedienung mit Playwright
 # (Handy-Format, zwei simulierte Handys mit gemeinsamem Haushalt).
 cd "$(dirname "$0")/.." || exit 1
-ln -sfn /opt/npm-tools/node_modules node_modules
+# Abhängigkeiten: in Cowork liegen sie fertig in /opt/npm-tools, sonst per npm holen
+if [ -d /opt/npm-tools/node_modules ]; then
+  ln -sfn /opt/npm-tools/node_modules node_modules
+elif [ ! -d node_modules/esbuild ]; then
+  npm install --no-audit --no-fund > /tmp/fp-npm.log 2>&1 || { echo "npm install fehlgeschlagen, siehe /tmp/fp-npm.log"; exit 1; }
+fi
 SUPABASE_URL=http://localhost:8766 OUT_DIR=docs-test node scripts/build.mjs | tail -1
 node tests/mock-supabase.mjs > /tmp/fp-mock.log 2>&1 &
 MOCK=$!

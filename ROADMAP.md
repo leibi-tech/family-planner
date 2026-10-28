@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 26.10.2026 · Version 0.15.0
+Stand: 28.10.2026 · Version 0.15.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -96,6 +96,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 - **Entscheide Tobias (26.10.2026, Sitzung 9):** Jede Person verbindet ihr eigenes Google-Konto; Kinder-/Familientermine in einem gemeinsamen Google-Familienkalender; ändern nur mit Internet; Wiederholungen «nur diesen» und «alle».
 
 ## Ideen für später (noch nicht entschieden)
+Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der Planungssitzung hierher übernommen.
 - **Preisvergleich über KI** (Idee von Tobias, 26.10.2026): Preise der Einkaufsliste bei verschiedenen Läden vergleichen. Steht als Idee, wird nicht weiterverfolgt.
 - **Menü-Vorlagen** (siehe «Zurückgestellt»).
 - **Menü-Wünsche der Kinder**: Lieblingsgerichte markieren, Vorschlag beim Planen, wenn lange nicht mehr dran.
@@ -107,6 +108,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **28.10.2026**: Arbeiten von unterwegs vorbereitet (E34): `CLAUDE.md` mit den Projekt-Regeln für Claude Code im Web/Handy, Ideen-Eingang `IDEEN.md`, Tests laufen in beiden Umgebungen (`tests/pw.mjs`), `hochladen.bat` holt zuerst den Stand von GitHub. Tobias: hochladen und Claude Code einrichten (ANLEITUNG R). App unverändert.
 - **26.10.2026 (10)**: K1 bei Tobias eingerichtet und läuft (Google «In Produktion» mit Datenschutzseite; 403 behoben mit Rechten für service_role). K2 (v0.15.0) gebaut nach Tobias' Antworten: Erfassen/Ändern/Löschen, Serien «nur diesen/alle», Personen im Titel. Neue Tests `tests/calendar-edit.mjs`, Funktionstests für Schreiben.
 - **26.10.2026 (9)**: Kalender K1 (v0.14.0) gebaut: Supabase-Funktion `google-kalender` (Verbinden über Google, Schlüssel geschützt in `google_accounts`, Termine aller Konten des Haushalts), `update-0.14.sql`, Seite «Kalender» unter «Mehr» (Monatsraster, Tagesliste, Filter pro Person, Details, offline-Kopie). Tests: `tests/google-function.mjs` (Funktion gegen gefälschtes Google) und `tests/calendar.mjs`. Offene Fragen von Tobias beantwortet (siehe Konzept).
 - **26.10.2026 (8)**: Kalender abgeklärt. Entscheide Tobias: kein Play Store (höchstens APK für Familie/Kollegen); Kalender nur mit echter Google-Verbindung und Bearbeiten in der App, iCal-Lesen gestrichen. Noch nichts gebaut.

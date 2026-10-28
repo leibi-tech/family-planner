@@ -1,4 +1,4 @@
-import { chromium } from '/opt/npm-tools/node_modules/playwright/index.mjs';
+import { chromium } from './pw.mjs';
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' });
 const page = await ctx.newPage();

@@ -2,16 +2,22 @@
 
 Diese Datei ist für Claude: So wird in einer neuen Sitzung weitergearbeitet. Tobias muss sie nicht lesen.
 
-## Ablauf jeder Sitzung
+## Zwei Arbeitswege
+- **Cowork am PC** (verbundener Ordner `C:\Users\tleibacher\Claude\Family-Planner`): Ablauf unten. Tobias lädt mit GitHub Desktop hoch.
+- **Claude Code im Web / Handy** (Repository `leibi-tech/family-planner` direkt von GitHub): Regeln und Ablauf in `CLAUDE.md`. Claude pusht selbst auf einen Branch und macht einen Pull Request, Tobias merged ihn.
+- Weil jetzt von beiden Seiten Änderungen kommen: **Vor jeder Cowork-Sitzung muss der Ordner auf dem PC den neusten Stand von GitHub haben.** Mit `device_bash` `git fetch && git status -sb` prüfen (falls Netzwerk erlaubt). Steht dort «behind» oder ist unklar: Tobias bitten, in GitHub Desktop **Fetch origin** und dann **Pull origin** zu klicken. Erst danach Dateien holen.
+- Ideen von unterwegs stehen in `IDEEN.md` (Eingang). In der Planungssitzung besprechen und in die ROADMAP übernehmen.
+
+## Ablauf jeder Sitzung (Cowork)
 1. ROADMAP.md lesen (Projekt-Dokument oder im verbundenen Ordner `C:\Users\tleibacher\Claude\Family-Planner`) und kurz vorschlagen, was als Nächstes kommt.
-2. Code holen: Der Quellcode liegt im verbundenen Ordner. Mit `device_list_dir` auflisten und `src/`, `public/`, `scripts/`, `package.json`, `tsconfig.json` und `supabase/` per `device_stage_files` in den Container kopieren, z.B. nach `/home/claude/family-planner`. `docs/` muss nicht mit, das wird neu gebaut.
+2. Code holen (erst nach dem Abgleich mit GitHub, siehe oben): Der Quellcode liegt im verbundenen Ordner. Mit `device_list_dir` auflisten und `src/`, `public/`, `scripts/`, `package.json`, `tsconfig.json` und `supabase/` per `device_stage_files` in den Container kopieren, z.B. nach `/home/claude/family-planner`. `docs/` muss nicht mit, das wird neu gebaut.
 3. Bauen im Container:
    - `ln -sfn /opt/npm-tools/node_modules node_modules` (enthält esbuild, react, react-dom)
    - `node scripts/build.mjs` baut nach `docs/`
    - Version in `package.json` vor jedem Build erhöhen
-   - npm, Supabase und github.io sind im Container gesperrt. Es gibt kein npm install.
+   - npm, Supabase und github.io sind im Cowork-Container gesperrt. Es gibt dort kein npm install. (In Claude Code im Web geht `npm install`.)
 4. Testen:
-   - Playwright liegt in `/opt/npm-tools/node_modules/playwright/index.mjs`, Chromium ist vorinstalliert
+   - Playwright: Die Tests laden es über `tests/pw.mjs` (zuerst `/opt/npm-tools/…`, sonst das npm-Paket `playwright`). In Cowork ist Chromium vorinstalliert. `tests/run-all.sh` verlinkt `/opt/npm-tools/node_modules`, wenn vorhanden, sonst `npm install`.
    - Testbuild gegen einen Supabase-Nachbau: `SUPABASE_URL=http://localhost:8766 OUT_DIR=docs-test node scripts/build.mjs`, dann mit `python3 -m http.server` unter `/family-planner/` ausliefern
    - Den Nachbau (`tests/mock-supabase.mjs`, Node, in-memory: `records` mit LWW und `owner_id`, `my_membership`) bei Bedarf erweitern. Er muss das Verhalten von `supabase/schema.sql` nachbilden.
    - **Alle automatischen Tests:** `bash tests/run-all.sh` (baut die Testversion, startet Nachbau und Webserver, lässt `ui-local`, `start-page`, `sync-two`, `todo-link` laufen). Vor jedem Ausliefern ausführen; für neue Funktionen einen Test ergänzen (siehe `tests/README.md`).
@@ -20,8 +26,8 @@ Diese Datei ist für Claude: So wird in einer neuen Sitzung weitergearbeitet. To
    - Geänderte Dateien nach `/mnt/user-data/outputs/family-planner/<pfad>` kopieren und mit `device_commit_files` (force) in den Ordner schreiben
    - **Danach immer mit `md5sum` im Container und per `device_bash` auf dem Gerät vergleichen.** Am 22.10. kam einmal eine `app.js` nicht an.
    - `docs/*` immer vollständig mitschicken: app.js, app.css, index.html, sw.js
-6. Tobias lädt mit GitHub Desktop hoch (Summary, «Commit to main», «Push origin»). GitHub Pages liefert aus `main` / `docs`.
-7. ROADMAP.md, ENTSCHEIDUNGEN.md und ANLEITUNG.md aktualisieren: im Ordner **und** im Projekt (`project_write` auf `claude/…`).
+6. Tobias lädt mit GitHub Desktop hoch (Summary, «Commit to main», «Push origin»; verlangt GitHub Desktop vorher «Pull origin», zuerst das). Alternative: `hochladen.bat`, holt zuerst den Stand von GitHub. GitHub Pages liefert aus `main` / `docs`.
+7. ROADMAP.md, ENTSCHEIDUNGEN.md und ANLEITUNG.md aktualisieren: im Ordner **und** im Projekt (`project_write` auf `claude/…`). Massgebend ist die Fassung im Repository: Wurden die Dateien in Claude Code (Web) geändert, die Projekt-Dokumente in der nächsten Cowork-Sitzung aus dem Ordner nachführen.
 
 ## Architektur in Kürze
 - **App:** PWA, React 19 und TypeScript, gebaut mit esbuild. Feste Dateinamen `app.js` und `app.css` mit `?v=hash`. Der Service Worker `sw.js` wird beim Build aus `public/sw.template.js` erzeugt.

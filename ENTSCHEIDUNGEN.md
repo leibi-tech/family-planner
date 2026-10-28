@@ -151,3 +151,12 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Zeiten:** Termine mit Zeit werden mit Zeitzone Europe/Zurich an Google geschickt (wichtig für Serien über die Zeitumstellung). Ganztägig: Ende in Google = Folgetag.
 - **Serien:** «Nur diesen» ändert/löscht den einzelnen Termin (Google merkt sich die Ausnahme). «Alle» ändert die Vorlage der Serie: Die Verschiebung des angetippten Termins (in Tagen) wird auf den Serienbeginn übertragen, Uhrzeit und Dauer neu gesetzt; gelöschte Einzeltermine (EXDATE) bleiben erhalten. Kompliziertere Google-Regeln (mehrere Wochentage, Anzahl) zeigt die App als «Wie bisher» und ändert sie nicht, ausser man wählt eine neue.
 - **Termine verschieben zwischen Kalendern** geht nicht (beim Ändern ist der Kalender fest); dafür löschen und neu erfassen.
+
+## E34 – Arbeiten von unterwegs mit Claude Code (28.10.2026)
+- **Wunsch Tobias:** Ideen und Änderungen auch vom Handy aus eingeben, ohne dass der PC läuft.
+- **Lösung:** Claude Code im Web / in der Claude-App, direkt mit dem GitHub-Repository verbunden. Die Projekt-Regeln stehen neu in `CLAUDE.md` im Repository (die Anweisungen des claude.ai-Projekts sieht Claude Code nicht).
+- **Ablauf:** Claude Code arbeitet auf einem eigenen Branch und macht einen Pull Request; Tobias merged ihn in der GitHub-App. Damit gibt es eine Kontrolle, bevor die App sich ändert. Immer nur ein offener Pull Request, weil `docs/` bei jedem Build neu entsteht.
+- **Ideen-Eingang:** `IDEEN.md`. Ideen werden nur notiert, gebaut wird erst nach Zustimmung.
+- **Gleichzeitig weiter mit Cowork am PC:** Vor jeder Cowork-Sitzung den Ordner mit GitHub abgleichen (Pull). `hochladen.bat` holt vor dem Hochladen den Stand von GitHub.
+- **Tests:** `tests/pw.mjs` findet Playwright in beiden Umgebungen; `run-all.sh` holt die Abhängigkeiten per npm, wenn sie nicht vorinstalliert sind.
+- **Massgebend** für ROADMAP, ENTSCHEIDUNGEN, ANLEITUNG ist das Repository; das claude.ai-Projekt wird in Cowork-Sitzungen nachgeführt.

@@ -1,6 +1,6 @@
 // Kalender K2 (v0.15): Termine erfassen, ändern (nur diesen / alle), löschen, Personen im Titel,
 // fremde Termine nicht änderbar, offline gesperrt.
-import { chromium } from '/opt/npm-tools/node_modules/playwright/index.mjs';
+import { chromium } from './pw.mjs';
 const b = await chromium.launch();
 const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
 const ctl = (path, body) => fetch('http://localhost:8766/__control/' + path, { method: 'POST', body: JSON.stringify(body ?? {}) }).then((r) => r.json());

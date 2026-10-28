@@ -182,6 +182,28 @@ Das ist der aufwendigste Teil bisher (ca. 20 Minuten), muss aber nur **einmal** 
 - **Erinnerungen:** wie in deinem Google Kalender eingestellt (Standard-Erinnerung).
 - Termine der anderen Person kannst du ansehen, aber nicht ändern. Ändern geht nur mit Internet.
 
+## R) Von unterwegs mit Claude arbeiten (Claude Code, einmalig einrichten)
+Damit kannst du vom Handy aus Ideen schicken oder Änderungen bauen lassen. Dein PC muss dafür nicht laufen.
+
+**Einmalig:**
+1. In der Claude-App auf dem Handy (oder im Browser auf claude.ai/code) den Bereich **Code** öffnen.
+2. **GitHub verbinden** wählen und mit deinem GitHub-Konto (leibi-tech) anmelden.
+3. Wenn GitHub fragt, welche Repositories Claude sehen darf: **Only select repositories** → **family-planner** → **Install** / **Save**.
+4. Neue Sitzung starten und als Repository **leibi-tech/family-planner** wählen.
+
+**Eine Idee festhalten:** Einfach schreiben, z.B. «Idee: Im Wochenplan Menüs per Ziehen verschieben». Claude trägt sie in `IDEEN.md` ein und baut nichts.
+
+**Etwas bauen lassen:** Schreiben, was du willst, und dazu «bitte bauen». Claude fragt nach, wenn etwas unklar ist, baut und testet.
+Danach bekommst du einen Link zu einem **Pull Request** (Vorschlag für die Änderung):
+1. Link öffnen (oder GitHub-App → family-planner → **Pull requests**).
+2. **Merge pull request** → **Confirm merge**.
+3. 1–2 Minuten warten, App auf dem Handy schliessen und neu öffnen, Version prüfen.
+
+**Wichtig:**
+- Immer nur **eine** Änderung gleichzeitig offen haben: erst mergen, dann die nächste Sache anfangen.
+- Wenn du danach wieder am PC mit Claude (Cowork) arbeitest: zuerst in **GitHub Desktop** auf **Fetch origin** und dann **Pull origin** klicken. So hat der PC den neusten Stand.
+- Datenbank-Updates und Supabase-Funktionen musst du weiterhin selbst in Supabase einspielen. Claude sagt dir, wenn das nötig ist.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

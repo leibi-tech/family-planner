@@ -19,6 +19,13 @@ git config user.name "leibi-tech"
 git config user.email "leibi-tech@users.noreply.github.com"
 git add -A
 git commit -q -m "Update %date% %time%"
+echo Hole zuerst den neusten Stand von GitHub ...
+git pull --rebase origin main
+if errorlevel 1 (
+  echo FEHLER beim Abgleich mit GitHub. Bitte ein Foto dieses Fensters an Claude schicken.
+  pause
+  exit /b 1
+)
 git push -u origin main
 echo.
 if errorlevel 1 (
