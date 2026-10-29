@@ -17,6 +17,7 @@ export interface Todo extends BaseRecord {
   choreId?: string; // stammt aus diesem Ämtli
   choreWeek?: string; // Montag der Ämtli-Woche
   noteId?: string; // als ToDo angeheftete Notiz/Liste (Link zurück zur Notiz)
+  eventRef?: { calendarId: string; eventId: string; day: string }; // Rückfrage zu einem Termin (Link «Termin öffnen»)
 }
 
 export type AssignMode = 'none' | 'fixed' | 'rotate';

@@ -1,4 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSync } from '../components/CloudCard';
+import { CareSheet, conflictWhen } from '../components/CareSheet';
+import {
+  calHelpers,
+  eventsFromCache,
+  eventTarget,
+  fetchMonths,
+  loadCache,
+  monthKey,
+  occursOn,
+  sortEvents,
+  STALE_MS,
+  timeLabel,
+  type CalCache,
+} from '../calendar';
+import { careLabel, careState, findConflicts, orphanedCare, parentsOf, type CareInfo, type Conflict } from '../care';
 import { put, type Person } from '../db';
 import { useRecords } from '../hooks';
 import { dateKey, type Menu, type PlanDay } from '../model';
@@ -25,6 +41,7 @@ const greeting = (h: number) => (h < 11 ? 'Guten Morgen' : h < 17 ? 'Guten Tag' 
 const MAX_TODOS = 5;
 const MAX_ITEMS = 5; // offene Punkte einer angehefteten Liste
 const MAX_RECENT = 4;
+const CARE_DAYS = 14; // Betreuungs-Warnungen für die nächsten 14 Tage
 
 export function StartPage({ goto }: { goto: (tab: string) => void }) {
   const persons = useRecords<Person>('persons');
@@ -33,6 +50,36 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
   const todos = useRecords<Todo>('todos');
   const notes = useRecords<Note>('notes');
   const me = useMe(persons);
+  const care = useRecords<CareInfo>('care');
+  const sync = useSync();
+  const household = sync.household?.id ?? null;
+  const [cache, setCache] = useState<CalCache | undefined>(undefined);
+  const [careOpen, setCareOpen] = useState<{ conflict?: Conflict; orphan?: CareInfo } | null>(null);
+
+  // Kalender: Kopie anzeigen, bei Bedarf (älter als 5 Min.) frisch holen
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const c = await loadCache();
+      if (alive) setCache(c);
+      if (!household || !navigator.onLine) return;
+      const t = new Date();
+      const keys = [monthKey(t.getFullYear(), t.getMonth()), monthKey(t.getFullYear(), t.getMonth() + 1)];
+      if (c && c.household === household && keys.every((k) => c.months[k] && Date.now() - c.months[k].at < STALE_MS)) return;
+      try {
+        const fresh = await fetchMonths(household, t.getFullYear(), t.getMonth(), 2);
+        if (alive) setCache(fresh);
+      } catch {
+        /* offline oder Google nicht erreichbar: Kopie bleibt */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [household]);
+  const sortedPersons = useMemo(() => [...(persons ?? [])].sort((a, b) => a.sort - b.sort), [persons]);
+  const calCache = cache && cache.household === household ? cache : undefined;
+  const h = useMemo(() => calHelpers(calCache?.calendars ?? [], sortedPersons), [calCache, sortedPersons]);
 
   // Datum und Uhrzeit laufend nachführen (Tageswechsel um Mitternacht)
   const [now, setNow] = useState(() => new Date());
@@ -70,6 +117,24 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
 
   const openNote = (n: Note) => requestOpen('note', n.id, 'start');
 
+  // ---- Termine heute und morgen ----
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const calEvents = calCache
+    ? eventsFromCache(calCache, [monthKey(now.getFullYear(), now.getMonth()), monthKey(now.getFullYear(), now.getMonth() + 1)])
+    : [];
+  const dayBlocks = [
+    { label: 'Heute', day: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
+    { label: 'Morgen', day: tomorrow },
+  ].map((b) => ({ ...b, events: sortEvents(calEvents.filter((e) => occursOn(e, b.day))) }));
+  const openDay = (d: Date) => requestOpen('event', eventTarget(dateKey(d)), 'start');
+
+  // ---- Wer schaut auf die Kinder? ----
+  const careTo = new Date(now.getFullYear(), now.getMonth(), now.getDate() + CARE_DAYS);
+  const conflicts = calCache ? findConflicts(calEvents, calCache.calendars, h, now, careTo) : [];
+  const careById = new Map((care ?? []).map((c) => [c.id, c]));
+  const openConflicts = conflicts.filter((c) => careState(c, careById.get(c.key)) !== 'ok');
+  const orphans = calCache ? orphanedCare(care ?? [], conflicts, now, careTo) : [];
+
   return (
     <section className="dash">
       <header className="dash-hello">
@@ -81,6 +146,78 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
           {DAYS[now.getDay()]}, {now.getDate()}. {MONTHS[now.getMonth()]}
         </p>
       </header>
+
+      {/* Wer schaut auf die Kinder? */}
+      {(openConflicts.length > 0 || orphans.length > 0) && (
+        <div className="dash-card care-card">
+          <div className="dash-head">
+            <h3>⚠️ Wer schaut auf die Kinder?</h3>
+          </div>
+          <ul className="dash-care">
+            {openConflicts.map((c) => {
+              const changed = careState(c, careById.get(c.key)) === 'changed';
+              return (
+                <li key={c.key}>
+                  <button className="dash-care-row" onClick={() => setCareOpen({ conflict: c })}>
+                    <span className="dash-care-when">{conflictWhen(c)}</span>
+                    <span className="dash-care-what">
+                      {c.events.map((e) => `${h.titleOf(e)} (${h.whoOf(e)})`).join(' + ')}
+                    </span>
+                    <span className={changed ? 'dash-care-changed' : 'dash-care-open'}>
+                      {changed ? 'Termin geändert – Betreuung prüfen' : 'Betreuung erfassen ›'}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+            {orphans.map((o) => (
+              <li key={o.id}>
+                <button className="dash-care-row" onClick={() => setCareOpen({ orphan: o })}>
+                  <span className="dash-care-what">«{careLabel(o)}»</span>
+                  <span className="dash-care-changed">Termin verschoben oder gelöscht – prüfen</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Termine heute und morgen */}
+      {calCache && calCache.calendars.length > 0 && (
+        <div className="dash-card">
+          <div className="dash-head">
+            <h3>📆 Termine</h3>
+            <button className="dash-link" onClick={() => goto('kalender')}>
+              Kalender ›
+            </button>
+          </div>
+          {dayBlocks.map((b) => (
+            <div key={b.label} className="dash-cal-day">
+              <button className="dash-cal-label" onClick={() => openDay(b.day)}>
+                {b.label}
+              </button>
+              {b.events.length === 0 ? (
+                <p className="muted dash-empty">Keine Termine.</p>
+              ) : (
+                <ul className="dash-cal">
+                  {b.events.map((e) => (
+                    <li key={e.calendarId + e.id}>
+                      <button className="dash-cal-row" onClick={() => openDay(b.day)}>
+                        <span className="cal-ev-stripe" style={{ background: h.bgOf(e, 'bottom') }} />
+                        <span className="dash-cal-time">{timeLabel(e, b.day)}</span>
+                        <span className="dash-cal-main">
+                          <span className="dash-cal-title">{h.titleOf(e)}</span>
+                          <span className="muted dash-cal-who">{h.whoOf(e)}</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Was kochen wir heute? */}
       <div className="dash-card">
@@ -148,6 +285,7 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
                       {t.private && <span aria-label="privat">🔒 </span>}
                       {t.choreId && <span aria-label="Ämtli">🔁 </span>}
                       {t.noteId && <span aria-label="mit Notiz">📝 </span>}
+                      {t.eventRef && <span aria-label="mit Termin">📅 </span>}
                       {t.title}
                     </span>
                     {t.due && (
@@ -225,6 +363,18 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
             })}
           </ul>
         </div>
+      )}
+
+      {careOpen && (
+        <CareSheet
+          conflict={careOpen.conflict}
+          orphan={careOpen.orphan}
+          care={careOpen.conflict ? careById.get(careOpen.conflict.key) : careOpen.orphan}
+          h={h}
+          parents={calCache ? parentsOf(calCache.calendars) : []}
+          me={me}
+          onClose={() => setCareOpen(null)}
+        />
       )}
     </section>
   );

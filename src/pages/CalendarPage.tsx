@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Person } from '../db';
+import { newId, put, type Person } from '../db';
+import { navBack, onOpenRequest, takePending } from '../nav';
+import type { Todo } from '../todos';
+import { careLabel, careState, findConflicts, orphanedCare, parentsOf, type CareInfo, type CareState, type Conflict } from '../care';
+import { CareSheet, conflictWhen } from '../components/CareSheet';
 import { useRecords } from '../hooks';
 import { dateKey } from '../model';
 import { useSync } from '../components/CloudCard';
@@ -7,10 +11,10 @@ import {
   buildTitle,
   createEvent,
   deleteEvent,
-  eventColors,
-  eventPersons,
+  calHelpers,
+  eventKey,
   isoWeek,
-  stripes,
+  parseEventTarget,
   eventToInput,
   isWritable,
   parseTitle,
@@ -20,6 +24,8 @@ import {
   type EventInput,
   type Repeat,
   disconnectGoogle,
+  eventDays,
+  type CalHelpers,
   eventsFromCache,
   fetchMonths,
   fetchStatus,
@@ -160,22 +166,39 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   }, [ym.y, ym.m, household]);
 
   const sortedPersons = useMemo(() => [...(persons ?? [])].sort((a, b) => a.sort - b.sort), [persons]);
-  const personIds = sortedPersons.map((p) => p.id);
-  const calById = useMemo(() => new Map((cache?.calendars ?? []).map((c) => [c.id, c])), [cache]);
+  const h = useMemo(() => calHelpers(cache?.calendars ?? [], sortedPersons), [cache, sortedPersons]);
+  const { personIds, calById, keysOf, bgOf, titleOf, whoOf } = h;
+  const careRows = useRecords<CareInfo>('care');
+  const [careOpen, setCareOpen] = useState<{ conflict?: Conflict; orphan?: CareInfo } | null>(null);
+  const me = sync.membership?.person_id ?? null;
 
-  const personsOf = (e: CalEvent) => eventPersons(e, calById.get(e.calendarId), sortedPersons);
-  const keysOf = (e: CalEvent) => {
-    const ps = personsOf(e);
-    return ps.length ? ps : ['family'];
-  };
-  const colorsOf = (e: CalEvent) => eventColors(personIds, personsOf(e));
-  const bgOf = (e: CalEvent, dir: 'right' | 'bottom' = 'right') => stripes(colorsOf(e), dir);
-  const titleOf = (e: CalEvent) => parseTitle(e.title, sortedPersons).title;
-  const whoOf = (e: CalEvent) => {
-    const ps = personsOf(e);
-    if (!ps.length) return 'Familie';
-    if (ps.length > 1 && personIds.every((id) => ps.includes(id))) return 'Familie (alle)';
-    return ps.map((id) => sortedPersons.find((p) => p.id === id)?.name ?? '?').join(', ');
+  // Von aussen geöffnet (Startseite, ToDo «Termin öffnen»): Tagesansicht, evtl. mit dem Termin
+  const fromRef = useRef<string | null>(null);
+  const [openReq, setOpenReq] = useState(0);
+  useEffect(() => onOpenRequest((k) => k === 'event' && setOpenReq((x) => x + 1)), []);
+  useEffect(() => {
+    if (cache === undefined) return;
+    const p = takePending('event');
+    if (!p) return;
+    const t = parseEventTarget(p.id);
+    const [y, m, d] = t.day.split('-').map(Number);
+    const day = new Date(y, m - 1, d);
+    setView('day');
+    setSelDay(day);
+    setYm({ y: day.getFullYear(), m: day.getMonth() });
+    fromRef.current = p.from;
+    if (t.eventId) {
+      const ev = eventsFromCache(cache, [monthKey(y, m - 1)]).find((e) => e.calendarId === t.calendarId && e.id === t.eventId);
+      if (ev) setDetail(ev);
+      else setFlash('Der Termin ist nicht mehr im Kalender (verschoben oder gelöscht).');
+    }
+  }, [cache, openReq]);
+  const closeDetail = () => {
+    setDetail(null);
+    if (fromRef.current) {
+      navBack(fromRef.current);
+      fromRef.current = null;
+    }
   };
 
   if (!household) {
@@ -211,6 +234,26 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   // Sichtbar, solange mindestens eine betroffene Person eingeblendet ist
   const all = monthEvents.filter((e) => keysOf(e).some((k) => !hidden.has(k)));
   const writableCals = (cache?.calendars ?? []).filter(isWritable);
+
+  // Betreuung: Überschneidungen beider Eltern (unabhängig vom Filter)
+  const parents = parentsOf(cache?.calendars ?? []);
+  const rangeFrom = new Date(ym.y, ym.m - 1, 1);
+  const rangeTo = new Date(ym.y, ym.m + 2, 1);
+  const conflicts = findConflicts(monthEvents, cache?.calendars ?? [], h, rangeFrom, rangeTo);
+  const careById = new Map((careRows ?? []).map((c) => [c.id, c]));
+  const conflictsOf = (e: CalEvent) => conflicts.filter((c) => c.events.some((x) => eventKey(x) === eventKey(e)));
+  const stateOf = (c: Conflict) => careState(c, careById.get(c.key));
+  const worst = (list: Conflict[]): CareState | null => {
+    if (!list.length) return null;
+    const st = list.map(stateOf);
+    return st.includes('open') ? 'open' : st.includes('changed') ? 'changed' : 'ok';
+  };
+  const careIcon = (e: CalEvent) => {
+    const w = worst(conflictsOf(e));
+    return w === null ? '' : w === 'ok' ? '✅ ' : '⚠️ ';
+  };
+  const now0 = new Date();
+  const orphans = orphanedCare(careRows ?? [], conflicts, now0 > rangeFrom ? now0 : rangeFrom, rangeTo);
 
   // Raster: Montag vor dem 1. bis Sonntag nach dem Monatsende
   const first = new Date(ym.y, ym.m, 1);
@@ -290,6 +333,11 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
                 {e.location ? ` · ${e.location}` : ''}
               </span>
             </span>
+            {careIcon(e) && (
+              <span className="cal-ev-care" aria-label={careIcon(e).startsWith('✅') ? 'Betreuung geregelt' : 'Wer schaut auf die Kinder?'}>
+                {careIcon(e).trim()}
+              </span>
+            )}
           </button>
         </li>
       ))}
@@ -303,6 +351,11 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
           {flash}
         </p>
       )}
+      {orphans.map((o) => (
+        <button key={o.id} className="import-banner care-orphan" onClick={() => setCareOpen({ orphan: o })}>
+          ⚠️ Termin geändert – Betreuung prüfen: «{careLabel(o)}»
+        </button>
+      ))}
       {(notConnected || noCalendars) && (
         <div className="import-banner cal-banner">
           {notConnected ? 'Verbinde deinen Google Kalender, damit deine Termine hier erscheinen.' : 'Noch keine Kalender ausgewählt.'}
@@ -373,7 +426,8 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
             'cal-cell' +
             (d.getMonth() !== ym.m ? ' other' : '') +
             (k === todayKey ? ' today' : '') +
-            (k === dateKey(selDay) ? ' sel' : '');
+            (k === dateKey(selDay) ? ' sel' : '') +
+            (evs.some((e) => { const w = worst(conflictsOf(e)); return w === 'open' || w === 'changed'; }) ? ' care' : '');
           return (
             <button key={k} className={cls} onClick={() => setSelDay(d)} aria-label={`${d.getDate()}. ${MONTHS[d.getMonth()]}, ${evs.length} Termine`}>
               <span className="cal-num">{d.getDate()}</span>
@@ -437,7 +491,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
             columns={columns.length ? columns : [{ key: 'family', label: 'Familie', color: personColor(personIds, null) }]}
             events={eventsOn(selDay)}
             keysOf={keysOf}
-            titleOf={titleOf}
+            titleOf={(e) => careIcon(e) + titleOf(e)}
             bgOf={bgOf}
             onOpen={setDetail}
           />
@@ -505,7 +559,39 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
             const c = calById.get(detail.calendarId);
             return sortedPersons.find((p) => p.id === c?.personId)?.name ?? c?.email ?? 'die andere Person';
           })()}
-          onClose={() => setDetail(null)}
+          onClose={closeDetail}
+          conflicts={conflictsOf(detail).map((c) => ({ c, state: stateOf(c), care: careById.get(c.key) }))}
+          h={h}
+          onCare={(c) => {
+            setDetail(null);
+            setCareOpen({ conflict: c });
+          }}
+          ownerPersonId={(() => {
+            const c = calById.get(detail.calendarId);
+            return c?.kind === 'own' && c.personId && c.personId !== me ? c.personId : null;
+          })()}
+          onAsk={async (text) => {
+            const c = calById.get(detail.calendarId)!;
+            const day = dateKey(eventDays(detail)[0]);
+            await put<Todo>('todos', {
+              id: newId(),
+              title: `Rückfrage: ${titleOf(detail)} (${eventDays(detail)[0].toLocaleDateString('de-CH', { day: 'numeric', month: 'numeric' })})`,
+              note: text,
+              due: null,
+              assignees: [c.personId!],
+              private: false,
+              createdBy: me,
+              createdAt: Date.now(),
+              done: false,
+              doneAt: null,
+              doneBy: null,
+              eventRef: { calendarId: detail.calendarId, eventId: detail.id, day },
+              updatedAt: 0,
+              deleted: false,
+            });
+            setFlash(`Rückfrage als ToDo an ${h.nameOf(c.personId)} geschickt ✓`);
+            closeDetail();
+          }}
           onEdit={(scope) => {
             setEditor({ ev: detail, scope, day: selDay });
             setDetail(null);
@@ -515,6 +601,17 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
             setFlash('Termin gelöscht ✓');
             await refresh(ym.y, ym.m - 1, 3, true);
           }}
+        />
+      )}
+      {careOpen && (
+        <CareSheet
+          conflict={careOpen.conflict}
+          orphan={careOpen.orphan}
+          care={careOpen.conflict ? careById.get(careOpen.conflict.key) : careOpen.orphan}
+          h={h}
+          parents={parents}
+          me={me}
+          onClose={() => setCareOpen(null)}
         />
       )}
       {editor && (
@@ -694,7 +791,17 @@ function EventSheet({
   onClose,
   onEdit,
   onDeleted,
+  conflicts,
+  h,
+  onCare,
+  ownerPersonId,
+  onAsk,
 }: {
+  conflicts: Array<{ c: Conflict; state: CareState; care?: CareInfo }>;
+  h: CalHelpers;
+  onCare: (c: Conflict) => void;
+  ownerPersonId: string | null;
+  onAsk: (text: string) => Promise<void>;
   ev: CalEvent;
   title: string;
   who: string;
@@ -706,7 +813,8 @@ function EventSheet({
   onEdit: (scope: 'one' | 'all') => void;
   onDeleted: () => Promise<void>;
 }) {
-  const [ask, setAsk] = useState<null | 'edit' | 'delete'>(null);
+  const [ask, setAsk] = useState<null | 'edit' | 'delete' | 'question'>(null);
+  const [question, setQuestion] = useState('Dein Termin geht bei mir nicht. Bitte besprechen.');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const writable = isWritable(cal);
@@ -740,7 +848,63 @@ function EventSheet({
         {ev.location && <p className="cal-detail-row">📍 {ev.location}</p>}
         {ev.description && <p className="cal-detail-desc">{ev.description.replace(/<[^>]+>/g, ' ')}</p>}
 
+        {conflicts.map(({ c, state, care }) => {
+          const other = c.events.find((x) => eventKey(x) !== eventKey(ev));
+          return (
+            <div key={c.key} className={'care-box ' + state}>
+              <p>
+                {state === 'ok' ? '✅ ' : '⚠️ '}
+                {other ? (
+                  <>
+                    Gleichzeitig mit «{h.titleOf(other)}» ({h.whoOf(other)}), {conflictWhen(c)}.
+                  </>
+                ) : (
+                  <>Beide Eltern sind weg, {conflictWhen(c)}.</>
+                )}
+              </p>
+              {state === 'ok' && care ? (
+                <p className="care-ok">
+                  <b>{careLabel(care)}</b>
+                  {care.note ? <span className="muted"> · {care.note}</span> : null}
+                </p>
+              ) : state === 'changed' ? (
+                <p className="care-changed">Termin geändert – Betreuung prüfen.</p>
+              ) : (
+                <p className="care-q">Wer schaut auf die Kinder?</p>
+              )}
+              <button className={'btn' + (state === 'ok' ? '' : ' btn-primary')} onClick={() => onCare(c)}>
+                {state === 'open' ? 'Betreuung erfassen' : state === 'changed' ? 'Betreuung prüfen' : 'Betreuung ändern'}
+              </button>
+            </div>
+          );
+        })}
+
         {!writable && <p className="muted small-note">Diesen Termin kann nur {ownerName} ändern.</p>}
+        {!writable && ownerPersonId && ask === null && (
+          <button className="btn btn-block" onClick={() => setAsk('question')}>
+            💬 Rückfrage an {ownerName}
+          </button>
+        )}
+        {ask === 'question' && (
+          <div className="cal-ask">
+            <b>Rückfrage an {ownerName}</b>
+            <textarea rows={3} value={question} onChange={(e) => setQuestion(e.target.value)} />
+            <span className="small-hint muted">Kommt bei {ownerName} als ToDo an, mit Knopf «Termin öffnen».</span>
+            <button
+              className="btn btn-primary"
+              disabled={busy || !question.trim()}
+              onClick={async () => {
+                setBusy(true);
+                await onAsk(question.trim());
+              }}
+            >
+              Senden
+            </button>
+            <button className="btn" onClick={() => setAsk(null)}>
+              Abbrechen
+            </button>
+          </div>
+        )}
         {writable && !online && <p className="warn">Ändern und Löschen geht nur mit Internet.</p>}
 
         {ask === 'edit' && (

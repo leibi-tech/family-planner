@@ -4,6 +4,7 @@ import { useRecords } from '../hooks';
 import { useSync } from '../components/CloudCard';
 import type { Note } from '../notes';
 import { navBack, onOpenRequest, requestOpen, takePending } from '../nav';
+import { eventTarget } from '../calendar';
 import { addDays, dateKey, fmtDay, isoWeek, mondayOf } from '../model';
 import {
   choreRuleLabel,
@@ -249,6 +250,7 @@ function TodoList({
                     {t.private && <span aria-label="privat">🔒 </span>}
                     {t.choreId && <span aria-label="Ämtli">🔁 </span>}
                     {t.noteId && <span aria-label="mit Notiz">📝 </span>}
+                    {t.eventRef && <span aria-label="mit Termin">📅 </span>}
                     {t.title}
                   </span>
                   <span className="todo-meta">
@@ -389,6 +391,19 @@ function TodoSheet({
             ) : (
               <span className="muted">📝 Die verknüpfte Notiz ist nicht mehr verfügbar (gelöscht oder privat).</span>
             )}
+          </div>
+        )}
+        {todo.eventRef && (
+          <div className="import-banner note-link">
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                onClose();
+                requestOpen('event', eventTarget(todo.eventRef!.day, { calendarId: todo.eventRef!.calendarId, id: todo.eventRef!.eventId }), 'todo');
+              }}
+            >
+              📅 Termin öffnen
+            </button>
           </div>
         )}
         {fromChore && <p className="import-banner">🔁 Aus dem Ämtli-Plan (Woche ab {fmtDay(parseDate(todo.choreWeek!))})</p>}
