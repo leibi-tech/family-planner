@@ -22,7 +22,7 @@ http.createServer(async (req, res) => {
 
   if (p === '/__control/members') { Object.assign(members, body); return send(res, 200, {}); }
   if (p === '/__control/dump') return send(res, 200, records);
-  if (p === '/__control/reset') { records.length = 0; return send(res, 200, {}); }
+  if (p === '/__control/reset') { records.length = 0; delete members.__list; return send(res, 200, {}); }
   if (p === '/__control/passwords') { Object.assign(passwords, body); return send(res, 200, {}); }
   if (p === '/__control/log') return send(res, 200, log);
   if (p === '/__control/gcal') { Object.assign(gcal, body); return send(res, 200, {}); }
@@ -102,6 +102,7 @@ http.createServer(async (req, res) => {
     passwords[email] = body.password;
     return send(res, 200, { id: uid, email });
   }
+  if (p.startsWith('/rest/v1/rpc/household_members') && members.__list) return send(res, 200, Object.entries(members).filter(([u]) => u !== '__list').map(([u, m]) => ({ user_id: u, role: m.role, person_id: m.person_id ?? null, email: null, joined_at: '2026-01-01' })));
   if (p.startsWith('/rest/v1/rpc/my_membership')) return send(res, 200, members[uid] ? [members[uid]] : []);
   if (p === '/rest/v1/records' && req.method === 'POST') {
     const rows = Array.isArray(body) ? body : [body];

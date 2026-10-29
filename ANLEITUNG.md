@@ -225,7 +225,7 @@ Kein Datenbank-Update und nichts in Supabase nötig.
 - **Betreuung erfassen:** Warnung antippen → «Jemand betreut» (z.B. Grosi) oder «Kinder gehen mit» (mit wem) → Notiz → **Speichern**. Im Kalender steht dann ✅ beim Termin. Beide sehen das.
 - **Termin verschoben oder gelöscht?** Dann meldet die App «Termin geändert – Betreuung prüfen». Antippen, prüfen, speichern (oder löschen).
 - Keine Warnung gibt es, wenn alle Kinder bei einem der Termine dabei sind (z.B. «[Kind 1, Kind 2] Schwimmen»). Ganztägige Termine (Ferien) zählen nicht.
-- Die Warnung funktioniert, sobald **beide** Eltern ihren Google-Kalender verbunden haben («Mein Kalender»).
+- Als Eltern zählen alle Personen mit eigenem App-Konto oder eigenem Google-Kalender (ab 0.17.1). Thadeas Termine erscheinen aber erst, wenn sie ihren Google-Kalender verbindet. Bis dahin warnt die App nur bei deinen Terminen, in denen sie mit dabei ist (z.B. «[Thadea] Essen»).
 - **Rückfrage:** Termin von Thadea antippen → **💬 Rückfrage an …** → Text → **Senden**. Sie bekommt ein ToDo mit dem Knopf **«📅 Termin öffnen»**.
 
 ## F) Meine Daten

@@ -14,7 +14,7 @@ import {
   timeLabel,
   type CalCache,
 } from '../calendar';
-import { careLabel, careState, findConflicts, orphanedCare, parentsOf, type CareInfo, type Conflict } from '../care';
+import { careLabel, careState, findConflicts, orphanedCare, parentsOf, useAccountPersons, type CareInfo, type Conflict } from '../care';
 import { put, type Person } from '../db';
 import { useRecords } from '../hooks';
 import { dateKey, type Menu, type PlanDay } from '../model';
@@ -54,6 +54,7 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
   const sync = useSync();
   const household = sync.household?.id ?? null;
   const [cache, setCache] = useState<CalCache | undefined>(undefined);
+  const accountPersons = useAccountPersons(household);
   const [careOpen, setCareOpen] = useState<{ conflict?: Conflict; orphan?: CareInfo } | null>(null);
 
   // Kalender: Kopie anzeigen, bei Bedarf (älter als 5 Min.) frisch holen
@@ -130,7 +131,7 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
 
   // ---- Wer schaut auf die Kinder? ----
   const careTo = new Date(now.getFullYear(), now.getMonth(), now.getDate() + CARE_DAYS);
-  const conflicts = calCache ? findConflicts(calEvents, calCache.calendars, h, now, careTo) : [];
+  const conflicts = calCache ? findConflicts(calEvents, parentsOf(calCache.calendars, accountPersons), h, now, careTo) : [];
   const careById = new Map((care ?? []).map((c) => [c.id, c]));
   const openConflicts = conflicts.filter((c) => careState(c, careById.get(c.key)) !== 'ok');
   const orphans = calCache ? orphanedCare(care ?? [], conflicts, now, careTo) : [];
@@ -371,7 +372,7 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
           orphan={careOpen.orphan}
           care={careOpen.conflict ? careById.get(careOpen.conflict.key) : careOpen.orphan}
           h={h}
-          parents={calCache ? parentsOf(calCache.calendars) : []}
+          parents={parentsOf(calCache?.calendars ?? [], accountPersons)}
           me={me}
           onClose={() => setCareOpen(null)}
         />

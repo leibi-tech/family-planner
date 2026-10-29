@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 28.10.2026 · Version 0.17.0
+Stand: 29.10.2026 · Version 0.17.1
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -110,6 +110,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **29.10.2026**: v0.17.1: Warnung erschien nicht, weil Thadeas Google-Kalender noch nicht verbunden ist (nur 1 Elternteil erkannt). Jetzt zählen auch Personen mit App-Konto als Eltern.
 - **28.10.2026 (4)**: v0.17.0 Kalender K4 + K5 nach Tobias' OK zu allen Vorschlägen: Betreuungs-Warnung mit Betreuung erfassen, Änderungs-Erkennung, Rückfrage als ToDo, Termine und Warnungen auf der Startseite. Neue Tabelle `care` (IndexedDB Version 8, kein Supabase-Update). Neuer Test `tests/calendar-care.mjs`.
 - **28.10.2026 (3)**: v0.16.0 Kalender K3 nach Tobias' Wünschen (Antworten 1/1/1): Monat/Woche/Tag, immer auf heute, Ansicht gemerkt; Woche als Liste; Tag mit Spalte pro Person; mehrfarbige Termine, alle Personen = grün. Neuer Test `tests/calendar-views.mjs`. Tests in der Cloud: Playwright aus `/opt/node-tools`, Zeitzone Europe/Zurich in `run-all.sh`.
 - **28.10.2026 (2)**: Stand geklärt: Notizen & Listen laufen ✅. «Passwort ändern» noch nicht ausprobiert, zurückgestellt. Nächster Vorschlag: Kalender K3.

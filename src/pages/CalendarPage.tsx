@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { newId, put, type Person } from '../db';
 import { navBack, onOpenRequest, takePending } from '../nav';
 import type { Todo } from '../todos';
-import { careLabel, careState, findConflicts, orphanedCare, parentsOf, type CareInfo, type CareState, type Conflict } from '../care';
+import { careLabel, careState, findConflicts, orphanedCare, parentsOf, useAccountPersons, type CareInfo, type CareState, type Conflict } from '../care';
 import { CareSheet, conflictWhen } from '../components/CareSheet';
 import { useRecords } from '../hooks';
 import { dateKey } from '../model';
@@ -169,6 +169,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   const h = useMemo(() => calHelpers(cache?.calendars ?? [], sortedPersons), [cache, sortedPersons]);
   const { personIds, calById, keysOf, bgOf, titleOf, whoOf } = h;
   const careRows = useRecords<CareInfo>('care');
+  const accountPersons = useAccountPersons(household);
   const [careOpen, setCareOpen] = useState<{ conflict?: Conflict; orphan?: CareInfo } | null>(null);
   const me = sync.membership?.person_id ?? null;
 
@@ -236,10 +237,10 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
   const writableCals = (cache?.calendars ?? []).filter(isWritable);
 
   // Betreuung: Überschneidungen beider Eltern (unabhängig vom Filter)
-  const parents = parentsOf(cache?.calendars ?? []);
+  const parents = parentsOf(cache?.calendars ?? [], accountPersons);
   const rangeFrom = new Date(ym.y, ym.m - 1, 1);
   const rangeTo = new Date(ym.y, ym.m + 2, 1);
-  const conflicts = findConflicts(monthEvents, cache?.calendars ?? [], h, rangeFrom, rangeTo);
+  const conflicts = findConflicts(monthEvents, parents, h, rangeFrom, rangeTo);
   const careById = new Map((careRows ?? []).map((c) => [c.id, c]));
   const conflictsOf = (e: CalEvent) => conflicts.filter((c) => c.events.some((x) => eventKey(x) === eventKey(e)));
   const stateOf = (c: Conflict) => careState(c, careById.get(c.key));

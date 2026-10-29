@@ -149,5 +149,16 @@ await p.click('text=Kalender');
 await p.click('.cal-views >> text=Monat');
 ok(!(await overflow()), 'Kalender nicht breiter als der Bildschirm');
 
+// 8) Thadea hat ein App-Konto, aber ihren Google-Kalender noch nicht verbunden → zählt trotzdem als Elternteil
+await ctl('members', { uB: { role: 'member', person_id: frau.id }, __list: true });
+await ctl('gcal', { accounts: { uA: { email: T, selected: [{ id: T, name: 'Tobias', kind: 'own' }] } }, events: { [T]: [{ id: 'k1', title: `[${frau.name}] Kino`, allDay: false, start: at(1, 20), end: at(1, 22) }] } });
+await p.click('.tabbar >> text=Mehr');
+await p.click('text=Kalender');
+await p.click('button:has-text("Aktualisieren")');
+await p.waitForTimeout(800);
+await p.click('.tabbar >> text=Start');
+await p.waitForSelector('.care-card', { timeout: 5000 }).catch(() => {});
+ok((await p.locator('.care-card .dash-care-row:has-text("Kino")').count()) === 1, 'Warnung auch ohne Thadeas Google-Kalender (Konto genügt)');
+
 ok(errs.length === 0, 'keine Fehler im Browser: ' + errs.join(' | '));
 await b.close();
