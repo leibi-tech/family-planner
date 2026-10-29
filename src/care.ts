@@ -1,7 +1,9 @@
 // Betreuungs-Warnung (K4, v0.17): Haben beide Eltern gleichzeitig einen Termin, fragt die App
 // «Wer schaut auf die Kinder?». Die Antwort wird in der eigenen Datenbank gespeichert (Tabelle «care»),
 // verknüpft mit den Google-Terminen. Verschiebt oder löscht jemand einen Termin, merkt es die App.
-import type { BaseRecord } from './db';
+import { useEffect, useState } from 'react';
+import { getMeta, setMeta, type BaseRecord } from './db';
+import { householdMembers } from './cloud';
 import { eventKey, eventRange, type CalEvent, type CalHelpers, type CalInfo } from './calendar';
 
 export interface CareSnap {
@@ -32,16 +34,43 @@ export type CareState = 'open' | 'ok' | 'changed';
 
 export const conflictKey = (events: CalEvent[]) => events.map(eventKey).sort().join('+');
 
-/** Eltern = Personen mit eigenem Google-Kalender. Kinder = alle anderen. */
-export function parentsOf(calendars: CalInfo[]): string[] {
+/** Eltern = Personen mit eigenem App-Konto oder eigenem Google-Kalender. Kinder = alle anderen.
+ *  (So zählt z.B. Thadea auch dann, wenn ihr Google-Kalender noch nicht verbunden ist.) */
+export function parentsOf(calendars: CalInfo[], accountPersons: string[] = []): string[] {
   const ids: string[] = [];
   for (const c of calendars) if (c.kind === 'own' && c.personId && !ids.includes(c.personId)) ids.push(c.personId);
+  for (const id of accountPersons) if (!ids.includes(id)) ids.push(id);
+  return ids;
+}
+
+const ACCOUNTS_KEY = 'accountPersons';
+/** Personen mit eigenem App-Konto (aus der Mitgliederliste, offline aus der Kopie). */
+export function useAccountPersons(household: string | null): string[] {
+  const [ids, setIds] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const saved = await getMeta<{ household: string; ids: string[] }>(ACCOUNTS_KEY);
+      if (alive && saved && saved.household === household) setIds(saved.ids);
+      if (!household || !navigator.onLine) return;
+      try {
+        const list = (await householdMembers(household)).map((m) => m.person_id).filter((x): x is string => !!x);
+        await setMeta(ACCOUNTS_KEY, { household, ids: list });
+        if (alive) setIds(list);
+      } catch {
+        /* offline: Kopie bleibt */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [household]);
   return ids;
 }
 
 /** Überschneidungen im Zeitraum [from, to). Nur Termine mit Uhrzeit. Gilt (vorerst) für genau 2 Eltern. */
-export function findConflicts(events: CalEvent[], calendars: CalInfo[], h: CalHelpers, from: Date, to: Date): Conflict[] {
-  const parents = parentsOf(calendars);
+export function findConflicts(events: CalEvent[], allParents: string[], h: CalHelpers, from: Date, to: Date): Conflict[] {
+  const parents = allParents.filter((id) => h.personIds.includes(id));
   if (parents.length !== 2) return [];
   const [A, B] = parents;
   const kids = h.personIds.filter((id) => !parents.includes(id));
