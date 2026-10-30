@@ -289,10 +289,40 @@ Die Einstellung gilt für dein Handy. Thadea richtet ihre Leiste auf ihrem Handy
 **Hell oder dunkel**
 - **Mehr → Aussehen → Hell / Dunkel.** Die App ist immer hell, ausser du wählst hier «Dunkel». Der Dunkel-Modus des Handys spielt keine Rolle mehr.
 
+## W) Liebesgruss (ab Version 0.20.0)
+Du kannst Thadea (oder sie dir) einen kleinen Gruss auf den Startbildschirm schicken, mit Text, Foto oder beidem. Kein Datenbank-Update nötig.
+
+**Gruss senden**
+1. Auf der **Startseite** zur Karte **💌 Liebesgruss**.
+2. **Gruss an … senden** tippen.
+3. Text schreiben und/oder **📷 Foto aufnehmen oder wählen** (das Handy fragt: Kamera oder Galerie).
+4. **Senden 💌** tippen.
+5. Bei dir steht jetzt «wartet auf Reaktion». Solange kannst du dieser Person keinen weiteren Gruss schicken. Mit **Zurücknehmen** ziehst du ihn zurück.
+
+**Gruss bekommen**
+- Beim nächsten Öffnen der App erscheint der Gruss über den ganzen Bildschirm. Erst nach einem Tipp auf ❤️ 😘 😂 oder 👍 geht die App auf.
+- Ist die App gerade offen, erscheint er nach spätestens etwa 30 Sekunden. Eine Meldung aufs Handy gibt es nicht.
+
+**Reaktion sehen**
+- Auf deiner Startseite steht dann z.B. «Thadea hat mit ❤️ reagiert». Mit **✕** blendest du das aus.
+
+**Album**
+- **Album ›** in der Karte (oder Mehr → **Unsere Grüsse**): alle Grüsse, die neusten zuerst. Antippen zeigt sie gross, dort kannst du einen auch löschen.
+- Es bleiben die letzten 100. Kommen mehr dazu, verschwindet bei den älteren jeder zweite. So bleiben auch ein paar alte erhalten.
+
+**Zum Testen**
+1. Pull Request mergen, 1–2 Minuten warten, App auf beiden Handys schliessen und neu öffnen (Version 0.20.0, Mehr → unten).
+2. Du schickst Thadea einen Gruss mit Foto.
+3. Thadea öffnet die App: Gruss erscheint, sie tippt ein Emoji.
+4. Bei dir erscheint die Reaktion auf der Startseite (evtl. App kurz schliessen und wieder öffnen).
+
+Hinweis: Die Karte erscheint nur, wenn beide mit «Gemeinsam nutzen» angemeldet sind und unter «Familie» festgelegt ist, wer man ist. Hat Thadea die App noch nicht auf 0.20.0, kommt der Gruss erst nach ihrem Update an.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
 - **Kalender:** Die Termine bleiben bei Google. Der Zugangsschlüssel zu Google liegt geschützt in Supabase; die App selbst kann ihn nicht lesen. «Verbindung trennen» löscht ihn und meldet die App bei Google ab.
+- **Liebesgrüsse (ab 0.20.0):** liegen wie die anderen Daten in Supabase. Fotos werden vorher verkleinert (ca. 100–200 KB pro Foto).
 - **Dokumente (Test, ab 0.18.0):** Fotos und PDFs liegen nur auf deinem NAS, nicht in Supabase. Die Anmeldung beim NAS bleibt auf dem Handy.
 - ⚠️ Gelöschtes wird auch auf den anderen Handys gelöscht. Ein Export-Knopf als zusätzliche Sicherung kommt noch (Wunschliste).
 

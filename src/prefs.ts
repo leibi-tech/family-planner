@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 /** Seiten, die man in der Menüleiste anheften kann (alles andere steht unter «Mehr»). */
-export const PINNABLE = ['einkauf', 'todo', 'notizen', 'kalender', 'plan', 'menues', 'dokumente', 'familie'] as const;
+export const PINNABLE = ['einkauf', 'todo', 'notizen', 'kalender', 'plan', 'menues', 'gruesse', 'dokumente', 'familie'] as const;
 export type PinTab = (typeof PINNABLE)[number];
 
 /** Freie Plätze: zwei links von Start, einer rechts (dann Mehr). So bleibt Start in der Mitte. */

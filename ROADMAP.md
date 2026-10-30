@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 30.10.2026 · Version 0.19.0
+Stand: 30.10.2026 · Version 0.20.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -17,6 +17,7 @@ Stand: 30.10.2026 · Version 0.19.0
 - ⏳ **Kalender K4 + K5 – Betreuung, Rückfrage, Termine auf der Startseite (v0.17.0)**: gebaut und getestet. Tobias: Pull Request mergen und ausprobieren (ANLEITUNG T). Kein Datenbank-Update nötig.
 - ⏳ **Dokumente auf dem NAS – Machbarkeitstest (v0.18.0)**: Anmeldung beim Synology NAS, Foto/PDF hochladen, ansehen, löschen (Mehr → «Dokumente (Test)»). Tobias: NAS einrichten und testen (ANLEITUNG U). Erst wenn das klappt, kommt die richtige Dokumenten-Seite (E37).
 - ⏳ **Neues Aussehen, Schritt 1 (v0.19.0)**: hell und farbig (Violett, Familienfarben), neue Schrift, Symbole statt Emojis in Menüleiste und «Mehr», Menüleiste selber einrichten (Mehr → Menüleiste anpassen), Hell/Dunkel wählbar (E38). Tobias: Pull Request mergen und ausprobieren (ANLEITUNG V). Kein Datenbank-Update nötig.
+- ⏳ **Liebesgruss (v0.20.0)**: Text/Foto an Thadea (oder umgekehrt) auf den Startbildschirm, Empfängerin reagiert mit ❤️ 😘 😂 👍, erst dann geht die App auf; Reaktion auf der Startseite des Absenders; Album «Unsere Grüsse» (max. 100, ältere ausgedünnt) (E39). Tobias: Pull Request mergen und mit Thadea ausprobieren (ANLEITUNG W). Kein Datenbank-Update nötig.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -73,6 +74,8 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - **Schritt 2:** Startseite mit bunten Kacheln (Heute kochen, ToDos, Einkauf, Betreuung), Familie mit Personenfarben, Termine «Heute» als Zeitleiste.
    - **Schritt 3:** übrige Seiten (Einkauf, ToDo, Notizen, Kalender, Wochenplan, Menüs, Familie): Emojis durch Symbole ersetzen, Listen und Knöpfe im neuen Stil.
 
+8. **Liebesgruss** (Idee Tobias 30.10.2026, E39): ⏳ v0.20.0 gebaut. Mögliche Erweiterungen später (nicht beschlossen): Push-Meldung, kleine Animation beim Reagieren.
+
 ### Zurückgestellt
 - **Menü-Vorlagen** (eingebaute Sammlung typischer Familienmenüs): vorerst weggelassen, Tobias entscheidet später.
 - **Datensicherung (Export/Import)**: Die Daten liegen ohnehin in der Supabase-Datenbank und auf beiden Handys. Eine Sicherungsdatei schützt nur vor Sonderfällen (versehentlich gelöscht und auf alle Geräte übertragen; Supabase-Gratisprojekt wird nach längerer Inaktivität pausiert; Fehler beim Update). Darum nicht dringend, aber vor dem Play Store sinnvoll.
@@ -120,6 +123,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **30.10.2026 (2)**: Idee «Liebesgruss» (Claude Code, Handy) besprochen, Antworten Tobias 1a / 2b (Album 100, ältere ausdünnen) / 3b + 2 (Senden erst nach Reaktion). v0.20.0 gebaut: `src/greetings.ts`, `src/components/Greetings.tsx` (Vollbild, Startseiten-Karte, Senden, Album), Tabelle `greetings` (IndexedDB 9, kein Supabase-Update), Seite «Unsere Grüsse» unter Mehr (anheftbar). Neuer Test `tests/greetings.mjs`.
 - **30.10.2026**: Idee Dokumente/NAS besprochen (Antworten Tobias: Variante B, NAS von überall erreichbar, DS220j, QuickConnect, Anmeldung beim NAS gewünscht). v0.18.0 Machbarkeitstest gebaut: Seite «Dokumente (Test)», `src/nas.ts`, Hilfsprogramm `nas/` (nginx), Test `tests/nas-docs.mjs` gegen NAS-Nachbau hinter dem echten Hilfsprogramm. Kein Supabase-Update.
 - **29.10.2026**: v0.17.1: Warnung erschien nicht, weil Thadeas Google-Kalender noch nicht verbunden ist (nur 1 Elternteil erkannt). Jetzt zählen auch Personen mit App-Konto als Eltern.
 - **28.10.2026 (4)**: v0.17.0 Kalender K4 + K5 nach Tobias' OK zu allen Vorschlägen: Betreuungs-Warnung mit Betreuung erfassen, Änderungs-Erkennung, Rückfrage als ToDo, Termine und Warnungen auf der Startseite. Neue Tabelle `care` (IndexedDB Version 8, kein Supabase-Update). Neuer Test `tests/calendar-care.mjs`.

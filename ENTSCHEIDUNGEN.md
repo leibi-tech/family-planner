@@ -183,6 +183,14 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Verworfen:** Supabase-Funktion als Umweg (Dateien liefen durch Supabase); eigenes Programm mit Supabase-Anmeldung (Tobias wollte die NAS-Anmeldung); Supabase Storage.
 - **Test:** `tests/mock-nas.mjs` (Nachbau DSM) hinter dem echten `nas/nginx.conf` (`tests/nas-proxy.sh`). Am echten NAS ungeprüft, darum zuerst Machbarkeitstest. Nächster Schritt nach Erfolg: richtige Dokumenten-Seite (Kategorien, Garantie bis, Erinnerung; Angaben in Supabase, Datei auf dem NAS).
 
+## E39 – Liebesgruss (v0.20.0, 30.10.2026)
+- **Wunsch Tobias:** Einem Familienmitglied einen Text oder ein Foto auf den Startbildschirm schicken. Die Person muss zuerst mit einem Emoji reagieren (❤️ 😘 😂 👍), vorher geht die App nicht. Die Reaktion erscheint beim Absender auf der Startseite. Nicht zum Nerven, sondern als liebliche Spielerei.
+- **Entscheide Tobias:** Nur zwischen Personen mit App-Konto (1a). Album «Unsere Grüsse» mit höchstens 100 Grüssen; darüber wird bei den älteren jeder zweite gelöscht, damit auch ein paar alte bleiben (2b). Pro Person nur ein offener Gruss; Senden erst wieder, wenn reagiert wurde (3b, 2).
+- **Technik:** Neue Tabelle `greetings` (IndexedDB Version 9) in der gemeinsamen Tabelle `records` → kein Supabase-Update. Foto im Gerät auf 1080 px verkleinert (JPEG, ca. 100–200 KB) und als data-URL im Eintrag gespeichert, statt Supabase Storage (bräuchte Bucket und Regeln). 100 Fotos = ca. 10–20 MB, gut im Gratis-Kontingent.
+- **Ausdünnen:** Sind es mehr als 100, wird von allen ausser den neusten 50 jeder zweite (mit Reaktion) gelöscht, bis es höchstens 100 sind. Offene Grüsse nie. Gelöschte Einträge verlieren Text und Foto. Jedes Handy rechnet gleich.
+- **Keine Push-Meldung:** Der Gruss erscheint beim nächsten Öffnen bzw. beim Abgleich (alle 30 s, solange die App offen ist). Push wäre viel aufwendiger und passt nicht zur «Überraschung beim Öffnen».
+- Für alle Konten des Haushalts sichtbar (wie andere Einträge). Mit nur zwei Konten unproblematisch.
+
 ## E38 – Neues Aussehen und eigene Menüleiste (v0.19.0, 30.10.2026)
 - **Wunsch Tobias:** Die App wirkte karg, dunkel und altbacken. Gewünscht: frisch, modern, familienfreundlich, intuitiv. Jede Person soll selber festlegen, welche Seiten in der Menüleiste angeheftet sind und in welcher Reihenfolge. Start bleibt in der Mitte, Mehr rechts.
 - **Vorgehen:** Zuerst drei Entwürfe als Vorschau-Seite (A «Sonnenschein», B «Frische Brise», C «Familienfarben»), dann ein Mix-Entwurf über vier Seiten. **Entscheid Tobias:** Kacheln und Farben von C, Menüleiste von A (in den Farben von C), einheitliche Symbole statt Emojis, hell als Standard, dunkel nur auf Wunsch, 3 freie Plätze.
