@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSync } from '../components/CloudCard';
 import { CareSheet, conflictWhen } from '../components/CareSheet';
+import { GreetingCard } from '../components/Greetings';
 import {
   calHelpers,
   eventsFromCache,
@@ -147,6 +148,8 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
           {DAYS[now.getDay()]}, {now.getDate()}. {MONTHS[now.getMonth()]}
         </p>
       </header>
+
+      <GreetingCard onAlbum={() => goto('gruesse')} />
 
       {/* Wer schaut auf die Kinder? */}
       {(openConflicts.length > 0 || orphans.length > 0) && (

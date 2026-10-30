@@ -10,6 +10,7 @@ import { NotesPage } from './pages/NotesPage';
 import { StartPage } from './pages/StartPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { DocsPage } from './pages/DocsPage';
+import { GreetingGate, GreetingsPage, useThinAlbum } from './components/Greetings';
 import { readReturnFromGoogle } from './calendar';
 import { onNavBack, onOpenRequest, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
@@ -18,7 +19,7 @@ import { generateChoreTodos, isMine, type Todo } from './todos';
 import { Icon } from './icons';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
-type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse';
 
 const TITLES: Record<Tab, string> = {
   start: 'Start',
@@ -32,6 +33,7 @@ const TITLES: Record<Tab, string> = {
   kalender: 'Kalender',
   dokumente: 'Dokumente',
   leiste: 'Menüleiste',
+  gruesse: 'Unsere Grüsse',
 };
 
 /** Name in der Menüleiste und auf «Mehr», mit Beschreibung und Kachelfarbe. */
@@ -42,10 +44,11 @@ const PAGE_INFO: Record<PinTab, { label: string; sub: string; color: number }> =
   kalender: { label: 'Kalender', sub: 'Termine aus Google Kalender', color: 3 },
   plan: { label: 'Wochenplan', sub: 'Menüs für die Woche planen', color: 1 },
   menues: { label: 'Menüs', sub: 'Gerichte erfassen und importieren', color: 2 },
+  gruesse: { label: 'Unsere Grüsse', sub: 'Album mit Liebesgrüssen', color: 4 },
   dokumente: { label: 'Dokumente (Test)', sub: 'Fotos und PDFs auf dem NAS speichern', color: 4 },
   familie: { label: 'Familie', sub: 'Personen, Portionen, gemeinsam nutzen', color: 5 },
 };
-const shortLabel = (id: PinTab) => (id === 'dokumente' ? 'Dokumente' : PAGE_INFO[id].label);
+const shortLabel = (id: PinTab) => (id === 'dokumente' ? 'Dokumente' : id === 'gruesse' ? 'Grüsse' : PAGE_INFO[id].label);
 
 declare const __APP_VERSION__: string;
 
@@ -58,6 +61,7 @@ export function App() {
   };
   const [persistent, setPersistent] = useState<boolean | null>(null);
   const sync = useSync();
+  useThinAlbum();
   const [online, setOnline] = useState(navigator.onLine);
 
   // Ämtli: fällige Wochen automatisch als ToDo eröffnen (beim Start, bei Änderungen, beim Zurückkehren)
@@ -146,6 +150,8 @@ export function App() {
           <NotesPage />
         ) : tab === 'dokumente' ? (
           <DocsPage />
+        ) : tab === 'gruesse' ? (
+          <GreetingsPage />
         ) : tab === 'kalender' ? (
           <CalendarPage goto={(t) => setTab(t as Tab)} />
         ) : tab === 'leiste' ? (
@@ -163,6 +169,7 @@ export function App() {
       </main>
 
       <WhoAmIPrompt />
+      <GreetingGate />
 
       <TabBar pinned={pinned} tab={tab} inMore={inMore} myOpen={myOpen} onTab={setTab} />
     </div>

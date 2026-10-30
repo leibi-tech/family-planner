@@ -9,6 +9,7 @@ const PATHS: Record<string, string> = {
   menues: '<path d="M7 3v18M4 3v5a3 3 0 006 0V3M17 21V3c-2.2 1.6-3.5 4.6-3.5 8H17"/>',
   dokumente: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
   familie: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15.5 14.5c3 0 5.5 2 5.5 5.5"/>',
+  gruesse: '<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0112 7.4 4.3 4.3 0 0119.5 10c0 5.4-7.5 10-7.5 10z"/>',
   leiste: '<rect x="3" y="14" width="18" height="6" rx="3"/><path d="M7 9h10M9 5h6"/>',
   aussehen: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 010 16z" fill="currentColor"/>',
   wolke: '<path d="M7 18h10a4 4 0 00.5-8 6 6 0 00-11.3 1.5A3.3 3.3 0 007 18z"/>',
