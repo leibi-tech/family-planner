@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 30.10.2026 · Version 0.18.0
+Stand: 30.10.2026 · Version 0.19.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -16,6 +16,7 @@ Stand: 30.10.2026 · Version 0.18.0
 - ⏳ **Kalender K3 – Monat / Woche / Tag (v0.16.0)**: von Tobias gemergt (28.10.2026), Rückmeldung vom Handy offen.
 - ⏳ **Kalender K4 + K5 – Betreuung, Rückfrage, Termine auf der Startseite (v0.17.0)**: gebaut und getestet. Tobias: Pull Request mergen und ausprobieren (ANLEITUNG T). Kein Datenbank-Update nötig.
 - ⏳ **Dokumente auf dem NAS – Machbarkeitstest (v0.18.0)**: Anmeldung beim Synology NAS, Foto/PDF hochladen, ansehen, löschen (Mehr → «Dokumente (Test)»). Tobias: NAS einrichten und testen (ANLEITUNG U). Erst wenn das klappt, kommt die richtige Dokumenten-Seite (E37).
+- ⏳ **Neues Aussehen, Schritt 1 (v0.19.0)**: hell und farbig (Violett, Familienfarben), neue Schrift, Symbole statt Emojis in Menüleiste und «Mehr», Menüleiste selber einrichten (Mehr → Menüleiste anpassen), Hell/Dunkel wählbar (E38). Tobias: Pull Request mergen und ausprobieren (ANLEITUNG V). Kein Datenbank-Update nötig.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -66,6 +67,11 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 6. **Dokumente** (Idee Tobias 30.10.2026, E37): Versicherungsdokumente, Garantiescheine, Quittungen. Dateien nur auf Tobias' Synology NAS, Anmeldung mit NAS-Konto.
    - ⏳ **D1 (v0.18.0) Machbarkeitstest:** anmelden (mit 2-Schritt-Code), Foto/PDF hochladen, Vorschau, öffnen, löschen. Ordner `Familien-Dokumente/Test`. Hilfsprogramm `nas/` für den Container Manager. Tobias: ANLEITUNG U.
    - **D2 (danach, noch abzusprechen):** richtige Seite «Dokumente»: Kategorien (Versicherung, Garantie, Quittung …), Angaben wie Produkt, Kaufdatum, «Garantie bis», Erinnerung vor Ablauf als ToDo; Angaben gemeinsam über Supabase, Datei auf dem NAS.
+
+7. **Neues Aussehen** (Wunsch Tobias 30.10.2026, E38): Entwürfe angeschaut, Mix gewählt (Kacheln und Farben von «Familienfarben», Menüleiste von «Sonnenschein»).
+   - ⏳ **Schritt 1 (v0.19.0):** Farben, Schrift, Symbole, eigene Menüleiste (Start Mitte, Mehr rechts, 3 freie Plätze), «Mehr» als Kacheln, Hell/Dunkel. Tobias: ANLEITUNG V.
+   - **Schritt 2:** Startseite mit bunten Kacheln (Heute kochen, ToDos, Einkauf, Betreuung), Familie mit Personenfarben, Termine «Heute» als Zeitleiste.
+   - **Schritt 3:** übrige Seiten (Einkauf, ToDo, Notizen, Kalender, Wochenplan, Menüs, Familie): Emojis durch Symbole ersetzen, Listen und Knöpfe im neuen Stil.
 
 ### Zurückgestellt
 - **Menü-Vorlagen** (eingebaute Sammlung typischer Familienmenüs): vorerst weggelassen, Tobias entscheidet später.

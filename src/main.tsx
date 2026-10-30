@@ -2,6 +2,10 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles.css';
 import { startSync } from './sync';
+import { applyTheme } from './prefs';
+
+// Aussehen (hell/dunkel) sofort setzen, bevor die App erscheint
+applyTheme();
 
 createRoot(document.getElementById('root')!).render(<App />);
 startSync();

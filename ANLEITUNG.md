@@ -273,6 +273,22 @@ Am PC im Browser bei deinem NAS (DSM) geht es am einfachsten. Rechne mit etwa 30
 - Über Port 8443 erreicht man nur die Datei-Schnittstelle, nicht die NAS-Oberfläche. Diese bleibt wie bisher (QuickConnect).
 - Ohne Internet oder wenn der NAS aus ist, sind die Dateien nicht erreichbar.
 
+## V) Neues Aussehen und eigene Menüleiste (ab Version 0.19.0)
+Die App ist jetzt hell und farbig, mit runden Symbolen statt Emojis. Die Menüleiste unten richtest du selber ein.
+
+**Menüleiste anpassen**
+1. Unten auf **Mehr** tippen.
+2. Unter «Einstellungen» auf **Menüleiste anpassen** tippen.
+3. Oben siehst du eine Vorschau der Leiste. **Start** bleibt in der Mitte, **Mehr** ganz rechts. Dazu kommen 3 freie Plätze.
+4. Mit **✕** löst du einen Knopf aus der Leiste. Er steht dann unter «Mehr».
+5. Unten bei «Unter «Mehr»» auf **Anheften** tippen, um eine Seite in die Leiste zu holen.
+6. Mit **‹** und **›** verschiebst du einen Knopf nach links oder rechts.
+
+Die Einstellung gilt für dein Handy. Thadea richtet ihre Leiste auf ihrem Handy selber ein.
+
+**Hell oder dunkel**
+- **Mehr → Aussehen → Hell / Dunkel.** Die App ist immer hell, ausser du wählst hier «Dunkel». Der Dunkel-Modus des Handys spielt keine Rolle mehr.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
