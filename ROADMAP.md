@@ -15,7 +15,7 @@ Stand: 30.10.2026 · Version 0.18.0
 - ✅ **Kalender K2 – Termine erfassen/ändern/löschen (v0.15.0)**: läuft auf dem Handy, von Tobias getestet (26.10.2026).
 - ⏳ **Kalender K3 – Monat / Woche / Tag (v0.16.0)**: von Tobias gemergt (28.10.2026), Rückmeldung vom Handy offen.
 - ⏳ **Kalender K4 + K5 – Betreuung, Rückfrage, Termine auf der Startseite (v0.17.0)**: gebaut und getestet. Tobias: Pull Request mergen und ausprobieren (ANLEITUNG T). Kein Datenbank-Update nötig.
-- ⏳ **Dokumente auf dem NAS – Machbarkeitstest (v0.18.0)**: Anmeldung beim Synology NAS, Foto/PDF hochladen, ansehen, löschen (Mehr → «Dokumente (Test)»). Tobias: NAS einrichten und testen (ANLEITUNG U). Erst wenn das klappt, kommt die richtige Dokumenten-Seite (E37).
+- ⏸️ **Dokumente auf dem NAS – Machbarkeitstest (v0.18.0)**: gebaut und in der App (Mehr → «Dokumente (Test)»), aber **zurückgestellt (30.10.2026)**: Leucom lässt keinen Zugriff auf den Router, die Portweiterleitung geht nicht. Mögliche Wege später: Leucom um Weiterleitung bitten, Tailscale (Empfehlung) oder Cloudflare-Tunnel.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -64,7 +64,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 4. **Passwort** (mit Tobias abgesprochen, 26.10.2026): zuerst ✅ «Passwort ändern» (v0.13.0, ohne E-Mail-Dienst), dann «Passwort vergessen» mit kostenlosem E-Mail-Dienst (z.B. Brevo als SMTP in Supabase, Link in der Mail, Bildschirm «Neues Passwort»). Spätestens vor dem Play Store.
 5. Kleinigkeiten, wenn Zeit: Export-Knopf (siehe Datensicherung).
 6. **Dokumente** (Idee Tobias 30.10.2026, E37): Versicherungsdokumente, Garantiescheine, Quittungen. Dateien nur auf Tobias' Synology NAS, Anmeldung mit NAS-Konto.
-   - ⏳ **D1 (v0.18.0) Machbarkeitstest:** anmelden (mit 2-Schritt-Code), Foto/PDF hochladen, Vorschau, öffnen, löschen. Ordner `Familien-Dokumente/Test`. Hilfsprogramm `nas/` für den Container Manager. Tobias: ANLEITUNG U.
+   - ⏸️ **D1 (v0.18.0) Machbarkeitstest** (zurückgestellt, siehe oben): anmelden (mit 2-Schritt-Code), Foto/PDF hochladen, Vorschau, öffnen, löschen. Ordner `Familien-Dokumente/Test`. Hilfsprogramm `nas/` für den Container Manager. Tobias: ANLEITUNG U.
    - **D2 (danach, noch abzusprechen):** richtige Seite «Dokumente»: Kategorien (Versicherung, Garantie, Quittung …), Angaben wie Produkt, Kaufdatum, «Garantie bis», Erinnerung vor Ablauf als ToDo; Angaben gemeinsam über Supabase, Datei auf dem NAS.
 
 ### Zurückgestellt
@@ -114,6 +114,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **30.10.2026 (2)**: NAS-Test zurückgestellt: Leucom (Huawei-Router) gibt keinen Zugriff auf den Router. Besprochene Alternativen: Leucom fragen, Tailscale (privates Netz, nichts offen im Internet), Cloudflare-Tunnel (eigene Domain, Daten über Cloudflare). Tobias: «wir lassen das mal».
 - **30.10.2026**: Idee Dokumente/NAS besprochen (Antworten Tobias: Variante B, NAS von überall erreichbar, DS220j, QuickConnect, Anmeldung beim NAS gewünscht). v0.18.0 Machbarkeitstest gebaut: Seite «Dokumente (Test)», `src/nas.ts`, Hilfsprogramm `nas/` (nginx), Test `tests/nas-docs.mjs` gegen NAS-Nachbau hinter dem echten Hilfsprogramm. Kein Supabase-Update.
 - **29.10.2026**: v0.17.1: Warnung erschien nicht, weil Thadeas Google-Kalender noch nicht verbunden ist (nur 1 Elternteil erkannt). Jetzt zählen auch Personen mit App-Konto als Eltern.
 - **28.10.2026 (4)**: v0.17.0 Kalender K4 + K5 nach Tobias' OK zu allen Vorschlägen: Betreuungs-Warnung mit Betreuung erfassen, Änderungs-Erkennung, Rückfrage als ToDo, Termine und Warnungen auf der Startseite. Neue Tabelle `care` (IndexedDB Version 8, kein Supabase-Update). Neuer Test `tests/calendar-care.mjs`.
