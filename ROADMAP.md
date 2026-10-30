@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 30.10.2026 · Version 0.20.0
+Stand: 30.10.2026 · Version 0.20.2
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -18,6 +18,7 @@ Stand: 30.10.2026 · Version 0.20.0
 - ⏳ **Dokumente auf dem NAS – Machbarkeitstest (v0.18.0)**: Anmeldung beim Synology NAS, Foto/PDF hochladen, ansehen, löschen (Mehr → «Dokumente (Test)»). Tobias: NAS einrichten und testen (ANLEITUNG U). Erst wenn das klappt, kommt die richtige Dokumenten-Seite (E37).
 - ⏳ **Neues Aussehen, Schritt 1 (v0.19.0)**: hell und farbig (Violett, Familienfarben), neue Schrift, Symbole statt Emojis in Menüleiste und «Mehr», Menüleiste selber einrichten (Mehr → Menüleiste anpassen), Hell/Dunkel wählbar (E38). Tobias: Pull Request mergen und ausprobieren (ANLEITUNG V). Kein Datenbank-Update nötig.
 - ⏳ **Liebesgruss (v0.20.0)**: Text/Foto an Thadea (oder umgekehrt) auf den Startbildschirm, Empfängerin reagiert mit ❤️ 😘 😂 👍, erst dann geht die App auf; Reaktion auf der Startseite des Absenders; Album «Unsere Grüsse» (max. 100, ältere ausgedünnt) (E39). Tobias: Pull Request mergen und mit Thadea ausprobieren (ANLEITUNG W). Kein Datenbank-Update nötig.
+- ⏳ **Neues App-Symbol (v0.20.2)**: nach Tobias' Skizze: grosses Herz, die Eltern umarmen die Kinder (ihre Arme bilden ein Herz). Violetter Hintergrund, Eltern mit Verlauf blau → rosa, Kinder orange → violett (E40). Tobias: mergen, prüfen (ANLEITUNG X).
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -123,6 +124,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **30.10.2026 (3)**: v0.20.0 von Tobias gemergt. Neues App-Symbol: erster Entwurf (runde Köpfe mit Glanz) gefiel Tobias nicht («Wasserballone»). Er schickte eine Skizze (Herz, Eltern umarmen Kinder); 4 Vorschläge in diesem Stil, Tobias wählte 4 «Bunt auf Violett» → v0.20.2. Erzeugt mit `scripts/make-icons.mjs` (SVG → PNG über Playwright).
 - **30.10.2026 (2)**: Idee «Liebesgruss» (Claude Code, Handy) besprochen, Antworten Tobias 1a / 2b (Album 100, ältere ausdünnen) / 3b + 2 (Senden erst nach Reaktion). v0.20.0 gebaut: `src/greetings.ts`, `src/components/Greetings.tsx` (Vollbild, Startseiten-Karte, Senden, Album), Tabelle `greetings` (IndexedDB 9, kein Supabase-Update), Seite «Unsere Grüsse» unter Mehr (anheftbar). Neuer Test `tests/greetings.mjs`.
 - **30.10.2026**: Idee Dokumente/NAS besprochen (Antworten Tobias: Variante B, NAS von überall erreichbar, DS220j, QuickConnect, Anmeldung beim NAS gewünscht). v0.18.0 Machbarkeitstest gebaut: Seite «Dokumente (Test)», `src/nas.ts`, Hilfsprogramm `nas/` (nginx), Test `tests/nas-docs.mjs` gegen NAS-Nachbau hinter dem echten Hilfsprogramm. Kein Supabase-Update.
 - **29.10.2026**: v0.17.1: Warnung erschien nicht, weil Thadeas Google-Kalender noch nicht verbunden ist (nur 1 Elternteil erkannt). Jetzt zählen auch Personen mit App-Konto als Eltern.

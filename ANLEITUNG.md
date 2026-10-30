@@ -318,6 +318,13 @@ Du kannst Thadea (oder sie dir) einen kleinen Gruss auf den Startbildschirm schi
 
 Hinweis: Die Karte erscheint nur, wenn beide mit «Gemeinsam nutzen» angemeldet sind und unter «Familie» festgelegt ist, wer man ist. Hat Thadea die App noch nicht auf 0.20.0, kommt der Gruss erst nach ihrem Update an.
 
+## X) Neues App-Symbol (ab Version 0.20.2)
+Die App hat ein neues Symbol nach deiner Skizze: ein Herz, darin umarmen die Eltern die zwei Kinder, auf violettem Hintergrund.
+
+1. Pull Request mergen, 1–2 Minuten warten, App schliessen und neu öffnen (Version 0.20.2).
+2. Android übernimmt das neue Symbol auf dem Startbildschirm von selbst, das kann aber **bis zu einem Tag** dauern. Evtl. fragt Chrome kurz, ob das neue Symbol übernommen werden soll: «Aktualisieren» tippen.
+3. Ist es nach einem Tag noch das alte grüne Klemmbrett: App-Symbol lange drücken → **Deinstallieren** (die Daten bleiben in Supabase), dann https://leibi-tech.github.io/family-planner/ in Chrome öffnen → ⋮ → **App installieren**. Danach unter «Familie» wieder anmelden, falls nötig.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

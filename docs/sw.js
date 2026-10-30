@@ -1,7 +1,7 @@
 // Service Worker: macht die App offline nutzbar.
 // Version und Dateiliste werden beim Bauen automatisch eingesetzt.
-const CACHE = 'family-planner-2c25648344';
-const ASSETS = ["./","./index.html","./app.js?v=686a8335","./app.css?v=f1c82222","./datenschutz.html","./font-fredoka-600.woff2","./font-nunito-sans-400.woff2","./font-nunito-sans-600.woff2","./font-nunito-sans-700.woff2","./font-nunito-sans-800.woff2","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./manifest.webmanifest"];
+const CACHE = 'family-planner-20d5c5003a';
+const ASSETS = ["./","./index.html","./app.js?v=f29ae760","./app.css?v=f1c82222","./apple-touch-icon.png","./datenschutz.html","./font-fredoka-600.woff2","./font-nunito-sans-400.woff2","./font-nunito-sans-600.woff2","./font-nunito-sans-700.woff2","./font-nunito-sans-800.woff2","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest"];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
