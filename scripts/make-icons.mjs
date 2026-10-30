@@ -2,7 +2,11 @@
 // Grosses Herz, darin die Eltern, die mit ihren Armen ein Herz um die zwei Kinder legen.
 // Eltern mit Verlauf blau (Tobias) → rosa (Thadea), Kinder orange (Kind 1) → violett (Kind 2), wie die Kalenderfarben.
 // Aufruf: node scripts/make-icons.mjs   (braucht Playwright, siehe tests/pw.mjs)
-import { writeFileSync } from 'node:fs';
+// Die PNG-Dateien bekommen eine Kennung im Namen (z.B. icon-1a2b3c4d-512.png). Ändert sich das Symbol,
+// ändert sich der Name; so merkt Chrome auf Android die Änderung und ersetzt das Symbol auf dem Startbildschirm.
+// manifest.webmanifest und index.html werden automatisch nachgeführt.
+import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { chromium } from '../tests/pw.mjs';
 
 const HEART = 'M256 462 C 148 392, 44 306, 44 190 C 44 112, 100 56, 170 56 C 210 56, 240 76, 256 106 C 272 76, 302 56, 342 56 C 412 56, 468 112, 468 190 C 468 306, 364 392, 256 462 Z';
@@ -56,9 +60,24 @@ async function png(src, size, file) {
   await p.waitForFunction(() => document.querySelector('img').complete);
   await p.screenshot({ path: file, omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
 }
-await png(any, 512, 'public/icon-512.png');
-await png(any, 192, 'public/icon-192.png');
-await png(mask, 512, 'public/icon-maskable-512.png');
-await png(mask, 180, 'public/apple-touch-icon.png');
+const tag = createHash('sha1').update(any + mask).digest('hex').slice(0, 8);
+for (const f of readdirSync('public')) if (/^(icon-.*\.png|apple-touch-icon.*\.png)$/.test(f)) rmSync('public/' + f);
+const n = { any192: `icon-${tag}-192.png`, any512: `icon-${tag}-512.png`, mask512: `icon-${tag}-maskable-512.png`, apple: `apple-touch-icon-${tag}.png` };
+await png(any, 512, 'public/' + n.any512);
+await png(any, 192, 'public/' + n.any192);
+await png(mask, 512, 'public/' + n.mask512);
+await png(mask, 180, 'public/' + n.apple);
 await b.close();
-console.log('Symbole erzeugt: public/icon.svg, icon-512.png, icon-192.png, icon-maskable-512.png, apple-touch-icon.png');
+
+const man = JSON.parse(readFileSync('public/manifest.webmanifest', 'utf8'));
+man.icons = [
+  { src: n.any192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+  { src: n.any512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+  { src: n.mask512, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+];
+writeFileSync('public/manifest.webmanifest', JSON.stringify(man, null, 2) + '\n');
+const html = readFileSync('public/index.html', 'utf8')
+  .replace(/href="\.\/icon[^"]*\.png"/, `href="./${n.any192}"`)
+  .replace(/href="\.\/apple-touch-icon[^"]*\.png"/, `href="./${n.apple}"`);
+writeFileSync('public/index.html', html);
+console.log('Symbole erzeugt (Kennung ' + tag + '): ' + Object.values(n).join(', ') + ', icon.svg');

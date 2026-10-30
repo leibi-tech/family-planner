@@ -318,12 +318,16 @@ Du kannst Thadea (oder sie dir) einen kleinen Gruss auf den Startbildschirm schi
 
 Hinweis: Die Karte erscheint nur, wenn beide mit «Gemeinsam nutzen» angemeldet sind und unter «Familie» festgelegt ist, wer man ist. Hat Thadea die App noch nicht auf 0.20.0, kommt der Gruss erst nach ihrem Update an.
 
-## X) Neues App-Symbol (ab Version 0.20.2)
+## X) Neues App-Symbol (ab Version 0.20.2, verbessert in 0.20.3)
 Die App hat ein neues Symbol nach deiner Skizze: ein Herz, darin umarmen die Eltern die zwei Kinder, auf violettem Hintergrund.
 
-1. Pull Request mergen, 1–2 Minuten warten, App schliessen und neu öffnen (Version 0.20.2).
-2. Android übernimmt das neue Symbol auf dem Startbildschirm von selbst, das kann aber **bis zu einem Tag** dauern. Evtl. fragt Chrome kurz, ob das neue Symbol übernommen werden soll: «Aktualisieren» tippen.
-3. Ist es nach einem Tag noch das alte grüne Klemmbrett: App-Symbol lange drücken → **Deinstallieren** (die Daten bleiben in Supabase), dann https://leibi-tech.github.io/family-planner/ in Chrome öffnen → ⋮ → **App installieren**. Danach unter «Familie» wieder anmelden, falls nötig.
+Android übernimmt ein neues Symbol einer installierten Web-App nur langsam (oft erst nach Tagen). Wurde die App mit «Zum Startbildschirm hinzufügen» angelegt, übernimmt Android es nie. Ab 0.20.3 merkt Chrome die Änderung besser. Schnellster Weg: neu installieren.
+
+1. Pull Request mergen, 1–2 Minuten warten, App schliessen und neu öffnen. Unter Mehr ganz unten muss **0.20.3** stehen.
+2. Oben rechts das Wolken-Symbol prüfen: kein Warnzeichen, dann ist alles abgeglichen.
+3. Ist noch das alte grüne Klemmbrett da: App-Symbol lange drücken → **Deinstallieren**.
+4. In Chrome https://leibi-tech.github.io/family-planner/ öffnen → **⋮** → **App installieren**.
+5. Jetzt erscheint das Herz-Symbol. Die Daten bleiben erhalten. Falls die App nach der Anmeldung fragt: Familie → Gemeinsam nutzen → anmelden.
 
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
