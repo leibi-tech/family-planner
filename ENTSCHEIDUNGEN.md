@@ -183,6 +183,11 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Verworfen:** Supabase-Funktion als Umweg (Dateien liefen durch Supabase); eigenes Programm mit Supabase-Anmeldung (Tobias wollte die NAS-Anmeldung); Supabase Storage.
 - **Test:** `tests/mock-nas.mjs` (Nachbau DSM) hinter dem echten `nas/nginx.conf` (`tests/nas-proxy.sh`). Am echten NAS ungeprüft, darum zuerst Machbarkeitstest. Nächster Schritt nach Erfolg: richtige Dokumenten-Seite (Kategorien, Garantie bis, Erinnerung; Angaben in Supabase, Datei auf dem NAS).
 
+## E40 – Neues App-Symbol (v0.20.1, 30.10.2026)
+- **Wunsch Tobias:** Silhouette einer 4-köpfigen Familie, passend zu den App-Farben, Köpfe in den Farben vom Kalender mit Verlauf.
+- **Umsetzung:** Hintergrund hell Lavendel → Rosa (wie die App), Körper in App-Violett (hell → dunkel), Köpfe mit Verlauf in den Kalenderfarben: Tobias blau, Thadea rosa, Kind 1 orange, Kind 2 violett (Reihenfolge der Personen wie in `PALETTE`, `src/calendar.ts`). Eltern hinten, Kinder vorne, heller Rand trennt die Figuren. Ein erster Versuch mit Kopffarbe → Violett im Körper gab beim orangen Kind ein trübes Braun, darum Körper einheitlich violett.
+- **Technik:** `scripts/make-icons.mjs` zeichnet das Symbol als SVG (`public/icon.svg`) und erzeugt die PNG-Dateien (192, 512, maskable 512 mit Inhalt in der sicheren Mitte, apple-touch-icon 180). Farben oder Anordnung dort ändern und neu erzeugen.
+
 ## E39 – Liebesgruss (v0.20.0, 30.10.2026)
 - **Wunsch Tobias:** Einem Familienmitglied einen Text oder ein Foto auf den Startbildschirm schicken. Die Person muss zuerst mit einem Emoji reagieren (❤️ 😘 😂 👍), vorher geht die App nicht. Die Reaktion erscheint beim Absender auf der Startseite. Nicht zum Nerven, sondern als liebliche Spielerei.
 - **Entscheide Tobias:** Nur zwischen Personen mit App-Konto (1a). Album «Unsere Grüsse» mit höchstens 100 Grüssen; darüber wird bei den älteren jeder zweite gelöscht, damit auch ein paar alte bleiben (2b). Pro Person nur ein offener Gruss; Senden erst wieder, wenn reagiert wurde (3b, 2).

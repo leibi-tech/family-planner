@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3eeff"/><stop offset="0.6" stop-color="#ebe3ff"/><stop offset="1" stop-color="#ffe3ef"/></linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.38" r="0.5"><stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+<clipPath id="c"><rect width="512" height="512" rx="112"/></clipPath>
+<linearGradient id="h-tobias" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#7fb6f0"/><stop offset="1" stop-color="#2f7dd1"/></linearGradient>
+<linearGradient id="b-tobias" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5cf6"/><stop offset="1" stop-color="#4327c4"/></linearGradient>
+<linearGradient id="h-thadea" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#f39abb"/><stop offset="1" stop-color="#d0477a"/></linearGradient>
+<linearGradient id="b-thadea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5cf6"/><stop offset="1" stop-color="#4327c4"/></linearGradient>
+<linearGradient id="h-kind1" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#ffc560"/><stop offset="1" stop-color="#e08a00"/></linearGradient>
+<linearGradient id="b-kind1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5cf6"/><stop offset="1" stop-color="#4327c4"/></linearGradient>
+<linearGradient id="h-kind2" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#b9a3f5"/><stop offset="1" stop-color="#7a5bd6"/></linearGradient>
+<linearGradient id="b-kind2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5cf6"/><stop offset="1" stop-color="#4327c4"/></linearGradient>
+</defs>
+<g clip-path="url(#c)">
+<rect width="512" height="512" fill="url(#bg)"/>
+<circle cx="256" cy="200" r="230" fill="url(#glow)"/>
+<g transform="translate(0 18) scale(1)">
+<g>
+<rect x="92" y="261.88" width="160" height="338.12" rx="73.60000000000001" fill="url(#b-tobias)" stroke="#fff6fb" stroke-width="7"/>
+<circle cx="172" cy="196" r="54" fill="url(#h-tobias)" stroke="#fff6fb" stroke-width="7"/>
+<ellipse cx="154.72" cy="175.48" rx="15.120000000000001" ry="9.719999999999999" fill="#fff" opacity="0.35" transform="rotate(-30 154.72 175.48)"/>
+</g>
+<g>
+<rect x="267" y="269.78" width="146" height="330.22" rx="67.16" fill="url(#b-thadea)" stroke="#fff6fb" stroke-width="7"/>
+<circle cx="340" cy="210" r="49" fill="url(#h-thadea)" stroke="#fff6fb" stroke-width="7"/>
+<ellipse cx="324.32" cy="191.38" rx="13.72" ry="8.82" fill="#fff" opacity="0.35" transform="rotate(-30 324.32 191.38)"/>
+</g>
+<g>
+<rect x="164" y="352.36" width="112" height="247.64" rx="51.52" fill="url(#b-kind1)" stroke="#fff6fb" stroke-width="7"/>
+<circle cx="220" cy="306" r="38" fill="url(#h-kind1)" stroke="#fff6fb" stroke-width="7"/>
+<ellipse cx="207.84" cy="291.56" rx="10.64" ry="6.84" fill="#fff" opacity="0.35" transform="rotate(-30 207.84 291.56)"/>
+</g>
+<g>
+<rect x="245" y="359.48" width="102" height="240.51999999999998" rx="46.92" fill="url(#b-kind2)" stroke="#fff6fb" stroke-width="7"/>
+<circle cx="296" cy="318" r="34" fill="url(#h-kind2)" stroke="#fff6fb" stroke-width="7"/>
+<ellipse cx="285.12" cy="305.08" rx="9.520000000000001" ry="6.12" fill="#fff" opacity="0.35" transform="rotate(-30 285.12 305.08)"/>
+</g>
+</g>
+</g>
+</svg>
