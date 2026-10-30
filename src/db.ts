@@ -17,8 +17,8 @@ export interface Person extends BaseRecord {
 }
 
 const DB_NAME = 'family-planner';
-const DB_VERSION = 9;
-export const STORES = ['persons', 'menus', 'days', 'shopping', 'manual', 'recurring', 'suggest', 'todos', 'chores', 'notes', 'care', 'greetings'] as const;
+const DB_VERSION = 10;
+export const STORES = ['persons', 'menus', 'days', 'shopping', 'manual', 'recurring', 'suggest', 'todos', 'chores', 'notes', 'care', 'greetings', 'docs'] as const;
 export type StoreName = (typeof STORES)[number];
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -51,11 +51,15 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('shopping')) {
         db.createObjectStore('shopping', { keyPath: 'id' });
       }
-      for (const name of ['manual', 'recurring', 'suggest', 'todos', 'chores', 'notes', 'care', 'greetings']) {
+      for (const name of ['manual', 'recurring', 'suggest', 'todos', 'chores', 'notes', 'care', 'greetings', 'docs']) {
         if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
       }
       if (!db.objectStoreNames.contains('meta')) {
         db.createObjectStore('meta');
+      }
+      // Dateien der Dokumente (nur auf diesem Gerät, nicht im Abgleich)
+      if (!db.objectStoreNames.contains('files')) {
+        db.createObjectStore('files');
       }
     };
     req.onsuccess = () => {
@@ -190,4 +194,31 @@ export async function requestPersistentStorage(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// ---------- Dateien (Dokumente): nur lokal, Schlüssel = Dokument-ID ----------
+export interface LocalFile {
+  blob: Blob;
+  pending: boolean; // noch nicht in die Cloud hochgeladen
+}
+
+export async function getFile(id: string): Promise<LocalFile | undefined> {
+  const db = await openDb();
+  return req(db.transaction('files', 'readonly').objectStore('files').get(id)) as Promise<LocalFile | undefined>;
+}
+
+export async function putFile(id: string, f: LocalFile | undefined): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction('files', 'readwrite');
+    if (f === undefined) tx.objectStore('files').delete(id);
+    else tx.objectStore('files').put(f, id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function fileKeys(): Promise<string[]> {
+  const db = await openDb();
+  return (await req(db.transaction('files', 'readonly').objectStore('files').getAllKeys())) as string[];
 }

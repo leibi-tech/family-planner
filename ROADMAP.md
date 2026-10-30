@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 30.10.2026 · Version 0.20.3
+Stand: 30.10.2026 · Version 0.21.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -15,7 +15,8 @@ Stand: 30.10.2026 · Version 0.20.3
 - ✅ **Kalender K2 – Termine erfassen/ändern/löschen (v0.15.0)**: läuft auf dem Handy, von Tobias getestet (26.10.2026).
 - ⏳ **Kalender K3 – Monat / Woche / Tag (v0.16.0)**: von Tobias gemergt (28.10.2026), Rückmeldung vom Handy offen.
 - ⏳ **Kalender K4 + K5 – Betreuung, Rückfrage, Termine auf der Startseite (v0.17.0)**: gebaut und getestet. Tobias: Pull Request mergen und ausprobieren (ANLEITUNG T). Kein Datenbank-Update nötig.
-- ⏳ **Dokumente auf dem NAS – Machbarkeitstest (v0.18.0)**: Anmeldung beim Synology NAS, Foto/PDF hochladen, ansehen, löschen (Mehr → «Dokumente (Test)»). Tobias: NAS einrichten und testen (ANLEITUNG U). Erst wenn das klappt, kommt die richtige Dokumenten-Seite (E37).
+- ❌ **Dokumente auf dem NAS – Machbarkeitstest (v0.18.0)**: abgelöst (Entscheid Tobias 30.10.2026): Dokumente kommen in die App-Cloud, nicht aufs NAS. In v0.21.0 entfernt.
+- ⏳ **Dokumente scannen und speichern (v0.21.0)**: Mehr → Dokumente. Eigener Scanner (Blatt finden, Ecken verschieben, gerade ziehen, aufhellen, mehrere Seiten → PDF), PDF/Foto wählen, «Teilen» aus anderen Apps, Angaben (Art, Datum, Garantie/gültig bis, Notiz), Suche, Filter, Hinweis «läuft bald ab». Datei in Supabase Storage (E41). Tobias: **update-0.21.sql in Supabase ausführen**, Pull Request mergen, ausprobieren (ANLEITUNG Y).
 - ⏳ **Neues Aussehen, Schritt 1 (v0.19.0)**: hell und farbig (Violett, Familienfarben), neue Schrift, Symbole statt Emojis in Menüleiste und «Mehr», Menüleiste selber einrichten (Mehr → Menüleiste anpassen), Hell/Dunkel wählbar (E38). Tobias: Pull Request mergen und ausprobieren (ANLEITUNG V). Kein Datenbank-Update nötig.
 - ⏳ **Liebesgruss (v0.20.0)**: Text/Foto an Thadea (oder umgekehrt) auf den Startbildschirm, Empfängerin reagiert mit ❤️ 😘 😂 👍, erst dann geht die App auf; Reaktion auf der Startseite des Absenders; Album «Unsere Grüsse» (max. 100, ältere ausgedünnt) (E39). Tobias: Pull Request mergen und mit Thadea ausprobieren (ANLEITUNG W). Kein Datenbank-Update nötig.
 - ⏳ **Neues App-Symbol (v0.20.2)**: nach Tobias' Skizze: grosses Herz, die Eltern umarmen die Kinder (ihre Arme bilden ein Herz). Violetter Hintergrund, Eltern mit Verlauf blau → rosa, Kinder orange → violett (E40). v0.20.3: Bilddateien mit Kennung im Namen, damit Android das neue Symbol eher übernimmt. Tobias: mergen, App neu installieren, falls das alte Symbol bleibt (ANLEITUNG X).
@@ -66,9 +67,10 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - ⏳ **K5 (v0.17.0)** Startseite: Warnungen (nächste 14 Tage) und Termine heute/morgen; Antippen öffnet die Tagesansicht.
 4. **Passwort** (mit Tobias abgesprochen, 26.10.2026): zuerst ✅ «Passwort ändern» (v0.13.0, ohne E-Mail-Dienst), dann «Passwort vergessen» mit kostenlosem E-Mail-Dienst (z.B. Brevo als SMTP in Supabase, Link in der Mail, Bildschirm «Neues Passwort»). Spätestens vor dem Play Store.
 5. Kleinigkeiten, wenn Zeit: Export-Knopf (siehe Datensicherung).
-6. **Dokumente** (Idee Tobias 30.10.2026, E37): Versicherungsdokumente, Garantiescheine, Quittungen. Dateien nur auf Tobias' Synology NAS, Anmeldung mit NAS-Konto.
-   - ⏳ **D1 (v0.18.0) Machbarkeitstest:** anmelden (mit 2-Schritt-Code), Foto/PDF hochladen, Vorschau, öffnen, löschen. Ordner `Familien-Dokumente/Test`. Hilfsprogramm `nas/` für den Container Manager. Tobias: ANLEITUNG U.
-   - **D2 (danach, noch abzusprechen):** richtige Seite «Dokumente»: Kategorien (Versicherung, Garantie, Quittung …), Angaben wie Produkt, Kaufdatum, «Garantie bis», Erinnerung vor Ablauf als ToDo; Angaben gemeinsam über Supabase, Datei auf dem NAS.
+6. **Dokumente** (Idee Tobias 30.10.2026, E37, E41): Versicherungsdokumente, Garantiescheine, Quittungen.
+   - ❌ D1 (v0.18.0) Machbarkeitstest NAS: abgelöst, Tobias will die Dokumente vorerst in der App-Cloud (30.10.2026).
+   - ⏳ **D2 (v0.21.0) Seite «Dokumente»:** scannen (eigener Scanner, PDF), PDF/Foto wählen, «Teilen» aus anderen Apps, Arten (Versicherung, Garantie, Quittung/Rechnung, Vertrag, Gesundheit, Steuern, Schule/Kinder, Anderes), Datum, «Garantie bis / Gültig bis», Notiz, Suche, Hinweis 30 Tage vor Ablauf. Datei in Supabase Storage, Kopie auf dem Handy (offline). Tobias: ANLEITUNG Y.
+   - **Mögliche nächste Schritte (nicht beschlossen):** Erinnerung vor Ablauf als ToDo, private Dokumente, Personen zuordnen, Texterkennung (Suche im Inhalt), in einer späteren APK der Google-Scanner.
 
 7. **Neues Aussehen** (Wunsch Tobias 30.10.2026, E38): Entwürfe angeschaut, Mix gewählt (Kacheln und Farben von «Familienfarben», Menüleiste von «Sonnenschein»).
    - ⏳ **Schritt 1 (v0.19.0):** Farben, Schrift, Symbole, eigene Menüleiste (Start Mitte, Mehr rechts, 3 freie Plätze), «Mehr» als Kacheln, Hell/Dunkel. Tobias: ANLEITUNG V.
@@ -124,6 +126,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **30.10.2026 (5)**: Tobias (Handy): Dokumente vorerst über die App mit Ablage in der App-Cloud statt NAS, mit Scanner. v0.21.0 gebaut: `src/scan.ts` (Blatt finden, entzerren, aufhellen, PDF schreiben/lesen), `src/components/Scanner.tsx`, `src/docs.ts` (Ablage, Hochladen später, Teilen-Ziel), `src/pages/DocsPage.tsx` neu, `supabase/update-0.21.sql` (Bucket + Regeln, mit PostgreSQL geprüft), Manifest `share_target`, Service Worker nimmt geteilte Dateien an. NAS-Test entfernt (`src/nas.ts`, `nas/`, Tests). Neue Tests `tests/docs-scan.mjs`, `tests/docs-cloud.mjs` (Nachbau Storage in `mock-supabase.mjs`).
 - **30.10.2026 (4)**: v0.20.2 gemergt, Symbol kam auf Tobias' Handy nicht an (Android übernimmt Symbol-Änderungen installierter Web-Apps nur langsam). v0.20.3: `make-icons.mjs` gibt den PNG-Dateien eine Kennung (Hash) im Namen und führt Manifest und index.html nach.
 - **30.10.2026 (3)**: v0.20.0 von Tobias gemergt. Neues App-Symbol: erster Entwurf (runde Köpfe mit Glanz) gefiel Tobias nicht («Wasserballone»). Er schickte eine Skizze (Herz, Eltern umarmen Kinder); 4 Vorschläge in diesem Stil, Tobias wählte 4 «Bunt auf Violett» → v0.20.2. Erzeugt mit `scripts/make-icons.mjs` (SVG → PNG über Playwright).
 - **30.10.2026 (2)**: Idee «Liebesgruss» (Claude Code, Handy) besprochen, Antworten Tobias 1a / 2b (Album 100, ältere ausdünnen) / 3b + 2 (Senden erst nach Reaktion). v0.20.0 gebaut: `src/greetings.ts`, `src/components/Greetings.tsx` (Vollbild, Startseiten-Karte, Senden, Album), Tabelle `greetings` (IndexedDB 9, kein Supabase-Update), Seite «Unsere Grüsse» unter Mehr (anheftbar). Neuer Test `tests/greetings.mjs`.

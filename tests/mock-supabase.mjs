@@ -6,6 +6,8 @@ const records = []; // {household_id, store, id, data, updated_at, deleted, owne
 let tick = 0;
 const members = {}; // token -> {role, person_id}
 const log = [];
+const storage = new Map(); // Pfad -> {type, data}
+let storageFail = false;
 const passwords = {}; // E-Mail -> Passwort
 const gcal = { accounts: {}, googleList: [], events: {}, personOf: {}, errors: [], connectUrl: '', writes: [], repeats: {}, seq: 0 }; // Kalender-Nachbau
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' };
@@ -15,14 +17,47 @@ const uidOf = (req) => (req.headers.authorization || '').replace('Bearer ', '').
 http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
   const url = new URL(req.url, 'http://x');
-  let raw = ''; for await (const c of req) raw += c;
-  const body = raw ? JSON.parse(raw) : null;
+  const chunks = []; for await (const c of req) chunks.push(c);
+  const buf = Buffer.concat(chunks);
   const uid = uidOf(req);
   const p = url.pathname;
 
+  // Nachbau Supabase Storage (v0.21): Ordner = Haushalt, nur Mitglieder (hier: angemeldet + Haushalt «hh1»)
+  if (p === '/__control/storage') return send(res, 200, Object.fromEntries([...storage].map(([k, v]) => [k, { type: v.type, size: v.data.length }])));
+  if (p === '/__control/storage-fail') { storageFail = !!JSON.parse(buf.toString() || '{}').on; return send(res, 200, {}); }
+  if (p.startsWith('/storage/v1/object/')) {
+    if (!uid) return send(res, 400, { statusCode: '403', error: 'Unauthorized', message: 'Invalid JWT' });
+    let rest = decodeURIComponent(p.slice('/storage/v1/object/'.length));
+    if (req.method === 'DELETE' && rest === 'dokumente') {
+      const { prefixes } = JSON.parse(buf.toString());
+      prefixes.forEach((k) => storage.delete(k));
+      log.push({ uid, op: 'storage-delete', paths: prefixes });
+      return send(res, 200, prefixes.map((name) => ({ name })));
+    }
+    const auth = rest.startsWith('authenticated/');
+    if (auth) rest = rest.slice('authenticated/'.length);
+    if (!rest.startsWith('dokumente/')) return send(res, 400, { statusCode: '404', error: 'Bucket not found', message: 'Bucket not found' });
+    const key = rest.slice('dokumente/'.length);
+    if (key.split('/')[0] !== 'hh1') return send(res, 400, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' });
+    if (req.method === 'POST') {
+      if (storageFail) return send(res, 400, { statusCode: '404', error: 'Bucket not found', message: 'Bucket not found' });
+      storage.set(key, { type: req.headers['content-type'], data: buf });
+      log.push({ uid, op: 'storage-upload', path: key, size: buf.length });
+      return send(res, 200, { Key: rest });
+    }
+    if (req.method === 'GET' && auth) {
+      const f = storage.get(key);
+      if (!f) return send(res, 400, { statusCode: '404', error: 'not_found', message: 'Object not found' });
+      log.push({ uid, op: 'storage-download', path: key });
+      res.writeHead(200, { ...cors, 'Content-Type': f.type }); return res.end(f.data);
+    }
+  }
+  const raw = buf.toString();
+  const body = raw ? JSON.parse(raw) : null;
+
   if (p === '/__control/members') { Object.assign(members, body); return send(res, 200, {}); }
   if (p === '/__control/dump') return send(res, 200, records);
-  if (p === '/__control/reset') { records.length = 0; delete members.__list; return send(res, 200, {}); }
+  if (p === '/__control/reset') { records.length = 0; storage.clear(); storageFail = false; delete members.__list; return send(res, 200, {}); }
   if (p === '/__control/passwords') { Object.assign(passwords, body); return send(res, 200, {}); }
   if (p === '/__control/log') return send(res, 200, log);
   if (p === '/__control/gcal') { Object.assign(gcal, body); return send(res, 200, {}); }
