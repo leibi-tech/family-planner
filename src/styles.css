@@ -629,6 +629,9 @@ button, input { font: inherit; color: inherit; }
 .docs-up { font-size: 13px; color: var(--primary); }
 .docs-soon { background: #fff4e0; color: #7a4a00; padding: 10px 12px; border-radius: 10px; margin: 0 0 12px; font-size: 15px; }
 .docs-empty { margin-top: 24px; }
+.docs-form-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.docs-form-head h2 { margin: 0; }
+.docs-vis { margin: 8px 0 14px; font-size: 14.5px; }
 .docs-form h2, .docs-view h2 { margin: 0 0 8px; font-size: 22px; overflow-wrap: anywhere; }
 .docs-form-file { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .docs-form-file img { width: 64px; height: 84px; object-fit: cover; object-position: top; border-radius: 8px; border: 1px solid var(--border); }
