@@ -21,7 +21,7 @@ WEB=$!
 [ "$(bash tests/nas-proxy.sh start)" = "ohne-nginx" ] && export NAS_CTL_PORT=8767
 sleep 1
 fail=0
-for t in ui-local start-page sync-two todo-link password calendar calendar-edit calendar-views calendar-care nas-docs; do
+for t in ui-local look-nav start-page sync-two todo-link password calendar calendar-edit calendar-views calendar-care nas-docs; do
   echo "== $t"
   out=$(timeout 150 node tests/$t.mjs 2>&1 | grep -v "^\[{")
   echo "$out" | grep -E "^(OK|FAIL)" | sed 's/^OK   /  ok   /'
