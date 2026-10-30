@@ -7,4 +7,5 @@ Bereits gesammelte, noch nicht entschiedene Ideen stehen in der ROADMAP unter «
 
 ## Eingang
 <!-- Format: - **TT.MM.JJJJ** – Idee in Tobias' Worten. (Rückfragen von Claude: …) -->
-_(noch leer)_
+- **30.10.2026** – «Liebesgruss» auf den Startbildschirm: Einem Familienmitglied eine Nachricht schicken (Foto oder Text). Die Person sieht sie beim Öffnen der App gross und muss zuerst mit einem Emoji reagieren (❤️ Herz, 😘 Kuss, 😂 Lachen, 👍 Daumen hoch), vorher kann sie die App nicht nutzen. Die Reaktion erscheint danach auf meiner Startseite. Nicht zum Nerven, sondern als kleine liebliche Spielerei.
+  (Vorschlag Claude: läuft über die bestehende Supabase-Verbindung, Foto wird verkleinert. Kommt an, sobald die Person die App öffnet, keine Push-Meldung. Rückfragen: Wer darf senden/empfangen (auch Kinder)? Verlauf als kleines Album behalten oder nach der Reaktion verschwinden lassen? Mehrere Grüsse gleichzeitig möglich?)
