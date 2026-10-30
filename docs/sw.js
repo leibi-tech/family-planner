@@ -1,7 +1,7 @@
 // Service Worker: macht die App offline nutzbar.
 // Version und Dateiliste werden beim Bauen automatisch eingesetzt.
-const CACHE = 'family-planner-cbb62cc193';
-const ASSETS = ["./","./index.html","./app.js?v=2724c47c","./app.css?v=cf7f6787","./datenschutz.html","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./manifest.webmanifest"];
+const CACHE = 'family-planner-c7cbe1202c';
+const ASSETS = ["./","./index.html","./app.js?v=2158657b","./app.css?v=3a08f8bf","./datenschutz.html","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./manifest.webmanifest"];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

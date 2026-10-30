@@ -9,16 +9,17 @@ import { TodoPage, useMe } from './pages/TodoPage';
 import { NotesPage } from './pages/NotesPage';
 import { StartPage } from './pages/StartPage';
 import { CalendarPage } from './pages/CalendarPage';
+import { DocsPage } from './pages/DocsPage';
 import { readReturnFromGoogle } from './calendar';
 import { onNavBack, onOpenRequest, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
 import { onChange, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 
-type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente';
 
 /** Seiten, die unter «Mehr» liegen (der Knopf «Mehr» bleibt dann hervorgehoben). */
-const MORE_PAGES: Tab[] = ['kalender', 'plan', 'menues', 'familie'];
+const MORE_PAGES: Tab[] = ['kalender', 'dokumente', 'plan', 'menues', 'familie'];
 
 const TITLES: Record<Tab, string> = {
   start: 'Start',
@@ -30,6 +31,7 @@ const TITLES: Record<Tab, string> = {
   menues: 'Menüs',
   familie: 'Familie',
   kalender: 'Kalender',
+  dokumente: 'Dokumente',
 };
 
 // Menüleiste unten: Start liegt in der Mitte und ist hervorgehoben (grösseres Symbol, Bogen in der Trennlinie), Wochenplan/Menüs/Familie liegen unter «Mehr».
@@ -136,6 +138,8 @@ export function App() {
           <TodoPage />
         ) : tab === 'notizen' ? (
           <NotesPage />
+        ) : tab === 'dokumente' ? (
+          <DocsPage />
         ) : tab === 'kalender' ? (
           <CalendarPage goto={(t) => setTab(t as Tab)} />
         ) : (
@@ -179,6 +183,7 @@ export function App() {
 function MorePage({ goto }: { goto: (t: Tab) => void }) {
   const items: Array<{ id: Tab; icon: string; label: string; sub: string }> = [
     { id: 'kalender', icon: '📆', label: 'Kalender', sub: 'Termine aus Google Kalender' },
+    { id: 'dokumente', icon: '🗂️', label: 'Dokumente (Test)', sub: 'Fotos und PDFs auf dem NAS speichern' },
     { id: 'plan', icon: '📅', label: 'Wochenplan', sub: 'Menüs für die Woche planen' },
     { id: 'menues', icon: '🍲', label: 'Menüs', sub: 'Gerichte erfassen und importieren' },
     { id: 'familie', icon: '👪', label: 'Familie', sub: 'Personen, Portionen, gemeinsam nutzen' },
