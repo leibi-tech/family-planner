@@ -12,6 +12,7 @@ import { CalendarPage } from './pages/CalendarPage';
 import { DocsPage } from './pages/DocsPage';
 import { GreetingGate, GreetingsPage, useThinAlbum } from './components/Greetings';
 import { readReturnFromGoogle } from './calendar';
+import { readShareStart } from './docs';
 import { onNavBack, onOpenRequest, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
 import { onChange, type Person } from './db';
@@ -45,7 +46,7 @@ const PAGE_INFO: Record<PinTab, { label: string; sub: string; color: number }> =
   plan: { label: 'Wochenplan', sub: 'Menüs für die Woche planen', color: 1 },
   menues: { label: 'Menüs', sub: 'Gerichte erfassen und importieren', color: 2 },
   gruesse: { label: 'Unsere Grüsse', sub: 'Album mit Liebesgrüssen', color: 4 },
-  dokumente: { label: 'Dokumente (Test)', sub: 'Fotos und PDFs auf dem NAS speichern', color: 4 },
+  dokumente: { label: 'Dokumente', sub: 'Scannen: Versicherungen, Garantien, Quittungen', color: 4 },
   familie: { label: 'Familie', sub: 'Personen, Portionen, gemeinsam nutzen', color: 5 },
 };
 const shortLabel = (id: PinTab) => (id === 'dokumente' ? 'Dokumente' : id === 'gruesse' ? 'Grüsse' : PAGE_INFO[id].label);
@@ -53,8 +54,10 @@ const shortLabel = (id: PinTab) => (id === 'dokumente' ? 'Dokumente' : id === 'g
 declare const __APP_VERSION__: string;
 
 export function App() {
-  // Die App startet immer mit der Startseite – ausser nach der Rückkehr von der Google-Anmeldung.
-  const [tab, setTabState] = useState<Tab>(() => (readReturnFromGoogle() ? 'kalender' : 'start'));
+  // Die App startet immer mit der Startseite – ausser nach der Rückkehr von der Google-Anmeldung
+  // oder wenn eine andere App ein Dokument geteilt hat.
+  const [shared] = useState(readShareStart);
+  const [tab, setTabState] = useState<Tab>(() => (shared ? 'dokumente' : readReturnFromGoogle() ? 'kalender' : 'start'));
   const setTab = (t: Tab) => {
     setTabState(t);
     window.scrollTo(0, 0);
@@ -149,7 +152,7 @@ export function App() {
         ) : tab === 'notizen' ? (
           <NotesPage />
         ) : tab === 'dokumente' ? (
-          <DocsPage />
+          <DocsPage shared={shared} />
         ) : tab === 'gruesse' ? (
           <GreetingsPage />
         ) : tab === 'kalender' ? (

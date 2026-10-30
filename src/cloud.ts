@@ -277,3 +277,55 @@ export async function calendarCall<T = any>(action: string, args: Record<string,
     throw e;
   }
 }
+
+// ---------- Dokumente: Dateiablage in Supabase Storage (v0.21) ----------
+// Ordner im Speicher = Haushalt, darin eine Datei pro Dokument. Nur Mitglieder des Haushalts
+// dürfen lesen und schreiben (Regeln in supabase/update-0.21.sql).
+export const DOC_BUCKET = 'dokumente';
+
+async function storageCall(path: string, init: RequestInit): Promise<Response> {
+  const s = await validSession();
+  let res: Response;
+  try {
+    res = await fetch(SUPABASE_URL + '/storage/v1/object/' + path, {
+      ...init,
+      headers: { apikey: KEY, Authorization: `Bearer ${s.access_token}`, ...(init.headers as any) },
+    });
+  } catch {
+    throw new CloudError('Keine Verbindung zum Internet.');
+  }
+  if (res.ok) return res;
+  let body: any = null;
+  try {
+    body = await res.json();
+  } catch {
+    /* keine Angaben */
+  }
+  const msg = String(body?.message ?? body?.error ?? '');
+  if (/bucket not found/i.test(msg) || /row-level security|violates|Unauthorized/i.test(msg) || res.status === 403)
+    throw new CloudError('Die Dokumenten-Ablage ist in Supabase noch nicht eingerichtet: bitte «update-0.21.sql» ausführen (Anleitung Y).');
+  if (/exceeded the maximum|too large|Payload too large/i.test(msg) || res.status === 413) throw new CloudError('Die Datei ist zu gross (höchstens 20 MB).');
+  if (/mime type|invalid_mime/i.test(msg)) throw new CloudError('Diese Art Datei kann nicht gespeichert werden (nur PDF und Fotos).');
+  if (res.status === 404 || /not found/i.test(msg)) throw new CloudError('Die Datei gibt es in der Ablage nicht (mehr).');
+  throw new CloudError(msg || `Fehler ${res.status}`);
+}
+
+const encPath = (p: string) => p.split('/').map(encodeURIComponent).join('/');
+
+export async function uploadDocFile(path: string, blob: Blob): Promise<void> {
+  await storageCall(`${DOC_BUCKET}/${encPath(path)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': blob.type || 'application/octet-stream', 'x-upsert': 'true', 'cache-control': '3600' },
+    body: blob,
+  });
+}
+
+export async function downloadDocFile(path: string): Promise<Blob> {
+  const res = await storageCall(`authenticated/${DOC_BUCKET}/${encPath(path)}`, { method: 'GET' });
+  return res.blob();
+}
+
+export async function deleteDocFiles(paths: string[]): Promise<void> {
+  if (!paths.length) return;
+  await storageCall(DOC_BUCKET, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prefixes: paths }) });
+}

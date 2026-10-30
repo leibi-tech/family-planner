@@ -3,12 +3,14 @@ import { App } from './App';
 import './styles.css';
 import { startSync } from './sync';
 import { applyTheme } from './prefs';
+import { startDocUploads } from './docs';
 
 // Aussehen (hell/dunkel) sofort setzen, bevor die App erscheint
 applyTheme();
 
 createRoot(document.getElementById('root')!).render(<App />);
 startSync();
+startDocUploads();
 
 // Offline-Fähigkeit: Service Worker registrieren (nur auf https / installierter App).
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

@@ -1,7 +1,7 @@
 {
   "name": "Family-Planner",
   "short_name": "Family",
-  "description": "Familie organisieren: Wochenmenü und Einkaufsliste",
+  "description": "Familie organisieren: Wochenmenü, Einkauf, ToDos, Kalender, Dokumente",
   "lang": "de-CH",
   "start_url": "./",
   "scope": "./",
@@ -28,5 +28,24 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "./teilen",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "files": [
+        {
+          "name": "file",
+          "accept": [
+            "application/pdf",
+            ".pdf",
+            "image/*"
+          ]
+        }
+      ]
+    }
+  }
 }

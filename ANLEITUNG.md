@@ -228,50 +228,13 @@ Kein Datenbank-Update und nichts in Supabase nötig.
 - Als Eltern zählen alle Personen mit eigenem App-Konto oder eigenem Google-Kalender (ab 0.17.1). Thadeas Termine erscheinen aber erst, wenn sie ihren Google-Kalender verbindet. Bis dahin warnt die App nur bei deinen Terminen, in denen sie mit dabei ist (z.B. «[Thadea] Essen»).
 - **Rückfrage:** Termin von Thadea antippen → **💬 Rückfrage an …** → Text → **Senden**. Sie bekommt ein ToDo mit dem Knopf **«📅 Termin öffnen»**.
 
-## U) Dokumente auf dem NAS – Test (ab Version 0.18.0)
-Ziel: Die App speichert Fotos und PDFs (Quittungen, Garantiescheine, Policen) **nur auf deinem Synology NAS**. Angemeldet wird mit einem NAS-Konto. Dieser Schritt ist ein Test: anmelden, Foto hochladen, wieder ansehen, löschen.
-Am PC im Browser bei deinem NAS (DSM) geht es am einfachsten. Rechne mit etwa 30–45 Minuten. Bleibst du irgendwo hängen: Screenshot an Claude.
-
-**Teil 1 – Ordner und Konto (Systemsteuerung im DSM)**
-1. **Systemsteuerung → Gemeinsamer Ordner → Erstellen.** Name genau: `Familien-Dokumente`. Haken bei «Papierkorb aktivieren». Weiter bis Fertig (Verschlüsselung nicht nötig).
-2. **Systemsteuerung → Benutzer und Gruppe → Benutzer → Erstellen.** Name z.B. `familienapp`, langes Passwort (notieren!). Nicht in die Gruppe «administrators».
-   - Bei **Berechtigungen für gemeinsame Ordner**: `Familien-Dokumente` = **Lesen/Schreiben**, alle anderen = **Kein Zugriff**.
-   - Bei **Anwendungsberechtigungen**: nur **File Station** = Zulassen, alle anderen = Verweigern.
-3. **Abmelden** und dich mit `familienapp` beim NAS anmelden. Oben rechts auf das Personen-Symbol → **Persönlich → Sicherheit → 2-Faktor-Authentifizierung** einschalten. Als Methode den **Bestätigungscode (OTP)** mit einer Authenticator-App wählen (z.B. Google Authenticator oder Synology Secure SignIn). Die App muss einen 6-stelligen Code zeigen. Danach wieder abmelden und mit deinem normalen Konto anmelden.
-4. **Systemsteuerung → Sicherheit → Schutz:** «Automatische Blockierung aktivieren» einschalten (z.B. 5 Fehlversuche in 5 Minuten).
-
-**Teil 2 – Eigene Adresse mit Zertifikat**
-5. **Systemsteuerung → Externer Zugriff → DDNS → Hinzufügen.** Dienstanbieter **Synology**, Hostname z.B. `leibi-familie` (ergibt `leibi-familie.synology.me`). Haken bei **«Zertifikat von Let's Encrypt erhalten und als Standard festlegen»**. OK.
-   Gibt es dort schon eine Adresse, nimm diese. Klappt das Zertifikat nicht: Screenshot an Claude (manchmal muss dafür kurz Port 80 im Router offen sein).
-
-**Teil 3 – Hilfsprogramm installieren**
-6. **Paket-Zentrum → Container Manager → Installieren.**
-7. Die zwei Dateien holen: am PC **github.com/leibi-tech/family-planner** → Ordner **nas** → Datei `docker-compose.yml` öffnen → oben rechts **Download** (Pfeil). Dasselbe für `nginx.conf`.
-8. **File Station** → Ordner **docker** → neuer Ordner `family-planner-nas` → beide Dateien dort hineinziehen (Namen nicht ändern).
-9. **Container Manager → Projekt → Erstellen.** Projektname `family-planner-nas`, Pfad: `/docker/family-planner-nas` wählen, Quelle: **«Vorhandene docker-compose.yml verwenden»**. Weiter (Web-Portal **nicht** einrichten) → Fertig. Nach kurzer Zeit steht das Projekt auf **grün / läuft**.
-
-**Teil 4 – Von aussen erreichbar machen**
-10. **Systemsteuerung → Anmeldeportal → Erweitert → Reverse Proxy → Erstellen.**
-    - Beschreibung: `Family-Planner`
-    - Quelle: Protokoll **HTTPS**, Hostname `leibi-familie.synology.me` (deine Adresse aus Schritt 5), Port **8443**
-    - Ziel: Protokoll **HTTP**, Hostname `localhost`, Port **8890**
-    - Speichern.
-11. **Systemsteuerung → Sicherheit → Zertifikat → Einstellungen:** beim Eintrag `leibi-familie.synology.me:8443` das Let's-Encrypt-Zertifikat wählen → OK.
-12. **Router:** Port **8443** (TCP) an die Adresse deines NAS weiterleiten. Wie das geht, hängt vom Router ab (z.B. Swisscom Internet-Box: Einstellungen → Netzwerk → NAT/Portweiterleitung). Sag Claude, welchen Router du hast, dann gibt es eine genaue Anleitung. Hast du auf dem NAS die Firewall eingeschaltet, dort Port 8443 erlauben.
-13. **Prüfen** (Handy, mobile Daten statt WLAN): im Browser öffnen
-    `https://leibi-familie.synology.me:8443/webapi/entry.cgi?api=SYNO.API.Info&version=1&method=query`
-    Richtig ist: Schloss-Symbol in der Adresszeile und eine Textseite mit `"success":true`.
-
-**Teil 5 – In der App ausprobieren**
-14. Pull Request mergen (Link von Claude öffnen → **Merge pull request** → **Confirm merge**). 1–2 Minuten warten, App schliessen und neu öffnen. Unter Mehr → unten muss **0.18.0** stehen.
-15. **Mehr → Dokumente (Test).** Adresse `https://leibi-familie.synology.me:8443`, Benutzer `familienapp`, Passwort → **Beim NAS anmelden** → Code aus der Authenticator-App.
-16. **📷 Foto oder PDF hinzufügen** → Foto machen oder PDF wählen. Es erscheint in der Liste mit Vorschau. Antippen öffnet es. **Löschen** löscht es auf dem NAS.
-17. Am PC in File Station nachsehen: Die Datei liegt in `Familien-Dokumente/Test`.
-
-**Gut zu wissen**
-- Dein Passwort speichert die App nicht. Auf dem Handy bleibt nur die Anmeldung. Ist sie abgelaufen, fragt die App nochmals nach dem Passwort. Den Code braucht es auf diesem Handy nur beim ersten Mal.
-- Über Port 8443 erreicht man nur die Datei-Schnittstelle, nicht die NAS-Oberfläche. Diese bleibt wie bisher (QuickConnect).
-- Ohne Internet oder wenn der NAS aus ist, sind die Dateien nicht erreichbar.
+## U) Dokumente auf dem NAS – Test (ab Version 0.18.0) – nicht mehr nötig
+Ab Version 0.21.0 speichert die App die Dokumente in der App-Cloud (Supabase), nicht auf dem NAS (siehe **Y**). Die NAS-Anleitung entfällt.
+Falls du schon etwas eingerichtet hast, darfst du es wieder entfernen (nicht dringend):
+1. **Container Manager → Projekt → family-planner-nas → Aktion → Stoppen**, danach **Löschen**.
+2. **Systemsteuerung → Anmeldeportal → Erweitert → Reverse Proxy:** den Eintrag `Family-Planner` löschen.
+3. Im **Router** die Weiterleitung von Port **8443** wieder löschen.
+Das Konto `familienapp` und den Ordner `Familien-Dokumente` kannst du behalten oder löschen.
 
 ## V) Neues Aussehen und eigene Menüleiste (ab Version 0.19.0)
 Die App ist jetzt hell und farbig, mit runden Symbolen statt Emojis. Die Menüleiste unten richtest du selber ein.
@@ -329,12 +292,47 @@ Android übernimmt ein neues Symbol einer installierten Web-App nur langsam (oft
 4. In Chrome https://leibi-tech.github.io/family-planner/ öffnen → **⋮** → **App installieren**.
 5. Jetzt erscheint das Herz-Symbol. Die Daten bleiben erhalten. Falls die App nach der Anmeldung fragt: Familie → Gemeinsam nutzen → anmelden.
 
+## Y) Dokumente scannen und speichern (ab Version 0.21.0)
+Unter **Mehr → Dokumente** scannst du Quittungen, Garantiescheine, Policen usw. Die App findet das Blatt im Foto, zieht es gerade, hellt es auf und macht ein PDF daraus. Gespeichert wird in eurer App-Cloud (Supabase), so sehen Thadea und du alle Dokumente.
+
+**Einmalig: Ablage in Supabase einrichten (ca. 3 Minuten, am PC einfacher)**
+1. **supabase.com** öffnen und anmelden → euer Projekt öffnen.
+2. Links **SQL Editor** → oben **+** (bzw. «New query»).
+3. Oben rechts muss **Database** stehen (nicht «Logs»).
+4. Auf GitHub die Datei **supabase/update-0.21.sql** öffnen (github.com/leibi-tech/family-planner → Ordner `supabase`), ganzen Inhalt kopieren und im SQL Editor einfügen.
+5. **Run** klicken. Unten erscheint «Success. No rows returned».
+6. Kontrolle: links **Storage** → dort gibt es jetzt **dokumente**.
+
+**Scannen**
+1. **Mehr → Dokumente → Scannen.** Die Kamera geht auf. Blatt auf einen dunklen Untergrund legen (Tisch), von oben fotografieren.
+2. Die App zeigt das Foto mit vier Punkten an den Ecken des Blatts. Stimmen sie nicht, die Punkte mit dem Finger verschieben. **↻ Drehen** dreht das Bild.
+3. Filter wählen: **Farbe** (Standard, Stempel und Logos bleiben farbig), **Schwarz-weiss** (für reinen Text) oder **Original**.
+4. **Seite übernehmen.** Für mehrseitige Dokumente **Weitere Seite scannen**, sonst **Fertig**.
+5. Titel eingeben (z.B. «Waschmaschine»), Art wählen (Versicherung, Garantie, Quittung …), Datum und freiwillig **Garantie bis / Gültig bis** und eine Notiz → **Speichern**.
+
+**PDF oder Foto, das schon auf dem Handy ist**
+- **PDF oder Foto wählen** → Datei aussuchen. Ein Foto geht durch den Scanner, ein PDF direkt zu den Angaben.
+- Oder aus einer anderen App: dort **Teilen → Family** wählen (z.B. ein Scan aus Google Drive oder eine Rechnung aus dem Mail). Das klappt erst, wenn Android die App-Angaben aufgefrischt hat (kann 1–2 Tage dauern). Schneller: App deinstallieren und neu installieren (siehe X, Schritte 3–5).
+
+**Ansehen und weitergeben**
+- Antippen zeigt alle Seiten. **Teilen / öffnen mit …** schickt das PDF z.B. per WhatsApp oder Mail. **Herunterladen** legt es in den Download-Ordner.
+- Oben suchen oder nach Art filtern. Läuft eine Garantie in den nächsten 30 Tagen ab, steht oben ein Hinweis.
+- Ohne Internet: Dokumente, die auf diesem Handy schon einmal offen waren, gehen trotzdem. Neue Scans werden hochgeladen, sobald wieder Internet da ist («wird hochgeladen …»).
+- **Löschen** löscht das Dokument für alle.
+
+**Zum Testen**
+1. Zuerst die Ablage in Supabase einrichten (oben).
+2. Pull Request mergen, 1–2 Minuten warten, App schliessen und neu öffnen (Version **0.21.0**, Mehr → unten).
+3. Eine Quittung scannen und speichern. In der Ansicht muss stehen «in der Cloud gespeichert ✓».
+4. Auf Thadeas Handy: Mehr → Dokumente → das Dokument öffnen.
+Steht «Die Dokumenten-Ablage ist in Supabase noch nicht eingerichtet», fehlt Schritt 1. Danach wird automatisch hochgeladen.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
 - **Kalender:** Die Termine bleiben bei Google. Der Zugangsschlüssel zu Google liegt geschützt in Supabase; die App selbst kann ihn nicht lesen. «Verbindung trennen» löscht ihn und meldet die App bei Google ab.
 - **Liebesgrüsse (ab 0.20.0):** liegen wie die anderen Daten in Supabase. Fotos werden vorher verkleinert (ca. 100–200 KB pro Foto).
-- **Dokumente (Test, ab 0.18.0):** Fotos und PDFs liegen nur auf deinem NAS, nicht in Supabase. Die Anmeldung beim NAS bleibt auf dem Handy.
+- **Dokumente (ab 0.21.0):** Die PDFs liegen in eurer Supabase-Ablage in Zürich, nur Konten eures Haushalts kommen daran. Zusätzlich bleibt eine Kopie auf dem Handy, das sie erfasst oder geöffnet hat. Gratis-Kontingent: 1 GB, ein gescanntes Blatt braucht etwa 100–300 KB (also mehrere tausend Seiten).
 - ⚠️ Gelöschtes wird auch auf den anderen Handys gelöscht. Ein Export-Knopf als zusätzliche Sicherung kommt noch (Wunschliste).
 
 ## Wenn etwas nicht klappt
