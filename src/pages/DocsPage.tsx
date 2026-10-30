@@ -8,7 +8,9 @@ import { extractJpegs, thumbOf, loadImage } from '../scan';
 import {
   CATEGORIES,
   catLabel,
+  changeVisibility,
   deleteDoc,
+  docConcerns,
   fmtDate,
   fmtSize,
   loadDocFile,
@@ -45,6 +47,7 @@ export function DocsPage({ shared }: { shared?: boolean }) {
   const [editing, setEditing] = useState<Doc | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
   const [cat, setCat] = useState<Category | 'alle'>('alle');
+  const [who, setWho] = useState<string>('alle');
   const [q, setQ] = useState('');
   const [error, setError] = useState<string | null>(null);
   const camRef = useRef<HTMLInputElement>(null);
@@ -90,6 +93,8 @@ export function DocsPage({ shared }: { shared?: boolean }) {
   }, [shared]);
 
   if (!docs || !persons) return <p className="muted center">Lade …</p>;
+  const sortedPersons = [...persons].sort((a, b) => a.sort - b.sort);
+  const nameOf = (id: string) => persons.find((p) => p.id === id)?.name ?? '?';
 
   if (scanFile)
     return (
@@ -108,13 +113,23 @@ export function DocsPage({ shared }: { shared?: boolean }) {
       <DocForm
         doc={editing}
         draft={draft}
+        persons={sortedPersons}
         onCancel={() => {
           setDraft(null);
           setEditing(null);
         }}
         onSave={async (meta) => {
           if (editing) {
-            await updateDoc(editing, meta);
+            if (!!meta.private !== !!editing.private) {
+              // Privat ↔ für alle: neues Dokument, altes ohne Inhalt löschen
+              try {
+                const d = await changeVisibility(editing, meta);
+                setViewId(d.id);
+              } catch (e) {
+                alert((e as Error)?.message || 'Das ging nicht. Bitte mit Internet nochmals versuchen.');
+                return;
+              }
+            } else await updateDoc(editing, meta);
             setEditing(null);
           } else if (draft) {
             const d = await saveNewDoc({ ...meta, thumb: draft.thumb, by: me }, draft.blob, draft.pages);
@@ -136,7 +151,7 @@ export function DocsPage({ shared }: { shared?: boolean }) {
         onClose={() => setViewId(null)}
         onEdit={() => setEditing(view)}
         onDelete={async () => {
-          if (!confirm(`«${view.title}» löschen? Die Datei wird für alle gelöscht.`)) return;
+          if (!confirm(view.private ? `«${view.title}» löschen?` : `«${view.title}» löschen? Die Datei wird für alle gelöscht.`)) return;
           await deleteDoc(view);
           setViewId(null);
         }}
@@ -148,9 +163,11 @@ export function DocsPage({ shared }: { shared?: boolean }) {
   docs.forEach((d) => counts.set(d.category, (counts.get(d.category) ?? 0) + 1));
   const list = docs
     .filter((d) => cat === 'alle' || d.category === cat)
-    .filter((d) => !needle || `${d.title} ${d.note} ${catLabel(d.category)}`.toLowerCase().includes(needle))
+    .filter((d) => who === 'alle' || docConcerns(d, who))
+    .filter((d) => !needle || `${d.title} ${d.note} ${catLabel(d.category)} ${(d.persons ?? []).map(nameOf).join(' ')}`.toLowerCase().includes(needle))
     .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '') || b.createdAt - a.createdAt);
   const soon = docs.filter((d) => untilState(d.until) === 'bald');
+  const personCounts = sortedPersons.map((p) => [p, docs.filter((d) => docConcerns(d, p.id)).length] as const).filter(([, n]) => n > 0);
 
   return (
     <section className="docs">
@@ -196,6 +213,18 @@ export function DocsPage({ shared }: { shared?: boolean }) {
               </button>
             ))}
           </div>
+          {personCounts.length > 0 && (
+            <div className="chips docs-chips" aria-label="Nach Person filtern">
+              <button className={'chip small' + (who === 'alle' ? ' on' : '')} onClick={() => setWho('alle')}>
+                Alle Personen
+              </button>
+              {personCounts.map(([p, n]) => (
+                <button key={p.id} className={'chip small' + (who === p.id ? ' on' : '')} onClick={() => setWho(p.id)}>
+                  {p.name} <span className="chip-count">{n}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -212,10 +241,14 @@ export function DocsPage({ shared }: { shared?: boolean }) {
                 <button className="docs-row" onClick={() => setViewId(d.id)}>
                   <span className="docs-thumb">{d.thumb ? <img src={d.thumb} alt="" /> : <span className="docs-pdf">{d.file.type === 'application/pdf' ? 'PDF' : 'Bild'}</span>}</span>
                   <span className="docs-main">
-                    <span className="docs-title">{d.title}</span>
+                    <span className="docs-title">
+                      {d.private && <span aria-label="privat">🔒 </span>}
+                      {d.title}
+                    </span>
                     <span className="docs-sub">
                       {catLabel(d.category)}
                       {d.date ? ' · ' + fmtDate(d.date) : ''}
+                      {!d.private && (d.persons ?? []).length > 0 ? ' · ' + (d.persons ?? []).map(nameOf).join(', ') : ''}
                     </span>
                     {d.until && (
                       <span className={'docs-until' + (st ? ' ' + st : '')}>
@@ -235,7 +268,11 @@ export function DocsPage({ shared }: { shared?: boolean }) {
   );
 }
 
-function DocForm({ doc, draft, onSave, onCancel }: { doc: Doc | null; draft: Draft | null; onSave: (m: Pick<Doc, 'title' | 'category' | 'date' | 'until' | 'note'>) => Promise<void>; onCancel: () => void }) {
+type DocMeta = Pick<Doc, 'title' | 'category' | 'date' | 'until' | 'note' | 'private' | 'persons'>;
+
+function DocForm({ doc, draft, persons, onSave, onCancel }: { doc: Doc | null; draft: Draft | null; persons: Person[]; onSave: (m: DocMeta) => Promise<void>; onCancel: () => void }) {
+  const [priv, setPriv] = useState(!!doc?.private);
+  const [who, setWho] = useState<string[]>(doc?.persons ?? []);
   const [title, setTitle] = useState(doc?.title ?? '');
   const [category, setCategory] = useState<Category>(doc?.category ?? 'rechnung');
   const [date, setDate] = useState(doc ? doc.date ?? '' : today());
@@ -247,7 +284,19 @@ function DocForm({ doc, draft, onSave, onCancel }: { doc: Doc | null; draft: Dra
   const size = doc?.file.size ?? draft?.blob.size ?? 0;
   return (
     <section className="docs-form">
-      <h2>{doc ? 'Dokument bearbeiten' : 'Neues Dokument'}</h2>
+      <div className="docs-form-head">
+        <h2>{doc ? 'Dokument bearbeiten' : 'Neues Dokument'}</h2>
+        <button
+          type="button"
+          className={'icon-btn' + (priv ? ' on' : '')}
+          aria-label={priv ? 'Privat – nur für dich' : 'Für alle sichtbar'}
+          aria-pressed={priv}
+          onClick={() => setPriv(!priv)}
+        >
+          {priv ? '🔒' : '🔓'}
+        </button>
+      </div>
+      <p className="hint docs-vis">{priv ? '🔒 Privat: nur du siehst dieses Dokument.' : '🔓 Für alle in der Familie sichtbar. Mit dem Schloss oben rechts auf privat stellen.'}</p>
       <div className="docs-form-file">
         {thumb ? <img src={thumb} alt="Vorschau" /> : <span className="docs-pdf">PDF</span>}
         <span className="muted">
@@ -268,6 +317,24 @@ function DocForm({ doc, draft, onSave, onCancel }: { doc: Doc | null; draft: Dra
           ))}
         </div>
       </div>
+      {!priv && (
+        <div className="field">
+          <span>Betrifft (freiwillig)</span>
+          <div className="chips docs-who">
+            {persons.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={'chip small' + (who.includes(p.id) ? ' on' : '')}
+                aria-pressed={who.includes(p.id)}
+                onClick={() => setWho(who.includes(p.id) ? who.filter((x) => x !== p.id) : [...who, p.id])}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <label className="field">
         <span>{category === 'rechnung' || category === 'garantie' ? 'Kaufdatum / Datum' : 'Datum'}</span>
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -286,7 +353,9 @@ function DocForm({ doc, draft, onSave, onCancel }: { doc: Doc | null; draft: Dra
           disabled={busy || !title.trim()}
           onClick={async () => {
             setBusy(true);
-            await onSave({ title: title.trim(), category, date: date || null, until: until || null, note: note.trim() });
+            // Reihenfolge der Personen wie in der Familie
+            const order = persons.map((p) => p.id);
+            await onSave({ title: title.trim(), category, date: date || null, until: until || null, note: note.trim(), private: priv, persons: priv ? [] : order.filter((id) => who.includes(id)) });
           }}
         >
           Speichern
@@ -362,6 +431,11 @@ function DocView({ doc, persons, pending, cloud, onClose, onEdit, onDelete }: { 
           {fmtDate(doc.until)}
         </p>
       )}
+      {doc.private ? (
+        <p className="docs-sub">🔒 Privat: nur du siehst dieses Dokument.</p>
+      ) : (doc.persons ?? []).length > 0 ? (
+        <p className="docs-sub">Betrifft: {(doc.persons ?? []).map((id) => persons.find((p) => p.id === id)?.name ?? '?').join(', ')}</p>
+      ) : null}
       {doc.note && <p className="docs-note">{doc.note}</p>}
       <p className="muted docs-by">
         {by ? `Erfasst von ${by}` : 'Erfasst'} am {new Date(doc.createdAt).toLocaleDateString('de-CH')}

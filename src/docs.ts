@@ -2,7 +2,7 @@
 // Abgleich (Tabelle «docs»), die Datei selbst liegt in der Supabase-Ablage (Storage) und als Kopie
 // auf dem Handy. Ohne Internet wird die Datei später hochgeladen.
 import { useEffect, useState } from 'react';
-import { fileKeys, getAllRaw, getFile, getMeta, newId, put, putFile, remove, setMeta, type BaseRecord } from './db';
+import { fileKeys, getAllRaw, getFile, getMeta, newId, put, putFile, setMeta, type BaseRecord } from './db';
 import { CloudError, deleteDocFiles, downloadDocFile, getSession, uploadDocFile } from './cloud';
 import { getSyncState, onSyncChange } from './sync';
 
@@ -37,7 +37,12 @@ export interface Doc extends BaseRecord {
   file: DocFile;
   createdAt: number;
   by: string | null; // Person, die es erfasst hat
+  private?: boolean; // nur für die erfassende Person (Schloss), auch in der Cloud geschützt
+  persons?: string[]; // betrifft diese Personen (zum Filtern), nur bei «für alle»
 }
+
+/** Gehört das Dokument zu dieser Person? Private zählen bei der Person, die sie erfasst hat. */
+export const docConcerns = (d: Doc, person: string) => (d.private ? d.by === person : (d.persons ?? []).includes(person));
 
 export const MAX_SIZE = 20 * 1024 * 1024;
 
@@ -76,8 +81,25 @@ export async function updateDoc(doc: Doc, patch: Partial<Doc>) {
   await put('docs', next);
 }
 
+/**
+ * Privat ↔ für alle: als neues Dokument speichern (neuer Ort in der Ablage) und das alte ohne Inhalt
+ * löschen. So bleibt bei den anderen nichts Privates liegen.
+ */
+export async function changeVisibility(doc: Doc, patch: Partial<Doc>): Promise<Doc> {
+  const blob = await loadDocFile(doc);
+  const id = newId();
+  const priv = !!patch.private;
+  const next: Doc = { ...doc, ...patch, id, private: priv, persons: priv ? [] : patch.persons ?? doc.persons ?? [], updatedAt: 0, deleted: false };
+  next.file = { ...doc.file, name: fileNameFor(next, doc.file.type), path: null };
+  await putFile(id, { blob, pending: true });
+  await put('docs', next);
+  await deleteDoc(doc);
+  return next;
+}
+
 export async function deleteDoc(doc: Doc) {
-  await remove<Doc>('docs', { ...doc, thumb: null });
+  // Löschvermerk ohne Inhalt (Titel, Notiz, Vorschau bleiben nirgends liegen)
+  await put('docs', { id: doc.id, updatedAt: doc.updatedAt, deleted: true, private: !!doc.private });
   await putFile(doc.id, undefined);
   if (doc.file.path) {
     const q = (await getMeta<string[]>('docDeletes')) ?? [];
@@ -143,7 +165,9 @@ async function uploadOnce() {
       const f = await getFile(id);
       const d = docs.get(id);
       if (!f?.pending || !d || d.deleted) continue;
-      const path = `${hh.id}/${id}.${extOf(f.blob.type)}`;
+      // private Dateien in einem eigenen Ordner, den nur dieses Konto lesen darf
+      const uid = (await getSession())!.user.id;
+      const path = d.private ? `${hh.id}/privat/${uid}/${id}.${extOf(f.blob.type)}` : `${hh.id}/${id}.${extOf(f.blob.type)}`;
       await uploadDocFile(path, f.blob);
       await putFile(id, { blob: f.blob, pending: false });
       // frisch lesen: Angaben könnten inzwischen geändert worden sein

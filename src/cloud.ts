@@ -303,7 +303,7 @@ async function storageCall(path: string, init: RequestInit): Promise<Response> {
   }
   const msg = String(body?.message ?? body?.error ?? '');
   if (/bucket not found/i.test(msg) || /row-level security|violates|Unauthorized/i.test(msg) || res.status === 403)
-    throw new CloudError('Die Dokumenten-Ablage ist in Supabase noch nicht eingerichtet: bitte «update-0.21.sql» ausführen (Anleitung Y).');
+    throw new CloudError('Die Dokumenten-Ablage ist in Supabase noch nicht eingerichtet: bitte «update-0.21.sql» und «update-0.22.sql» ausführen (Anleitung Y).');
   if (/exceeded the maximum|too large|Payload too large/i.test(msg) || res.status === 413) throw new CloudError('Die Datei ist zu gross (höchstens 20 MB).');
   if (/mime type|invalid_mime/i.test(msg)) throw new CloudError('Diese Art Datei kann nicht gespeichert werden (nur PDF und Fotos).');
   if (res.status === 404 || /not found/i.test(msg)) throw new CloudError('Die Datei gibt es in der Ablage nicht (mehr).');

@@ -109,5 +109,67 @@ await A.p.waitForTimeout(500);
 ok(await A.p.locator('.docs-row:has-text("Quittung Velo")').count() === 0, 'A: Dokument verschwunden');
 ok(!(await A.p.evaluate(() => window.__files())).some((f) => f.key === doc1.id), 'A: Kopie auf dem Handy aufgeräumt');
 
+
+// 6) Privat (Schloss) und «Betrifft» mit Personen-Filter (v0.22)
+const nameB = persons[1].name, nameK = persons[2].name;
+const scanWith = async (p, title, fn) => {
+  const photo = await p.evaluate(() => window.__photo());
+  await p.setInputFiles('[data-testid=docs-camera]', { name: 'IMG.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(photo, 'base64') });
+  await p.click('text=Seite übernehmen');
+  await p.click('text=Fertig (1 Seite)');
+  await p.fill('.docs-form input[maxlength="120"]', title);
+  await fn(p);
+  await p.click('button:has-text("Speichern")');
+  await p.waitForSelector('.docs-view');
+};
+await A.p.click('text=‹ Alle Dokumente').catch(() => {});
+ok((await A.p.locator('.docs-add').count()) === 1, 'A: Liste offen');
+await scanWith(A.p, 'Police Thadea', async (p) => {
+  ok((await p.locator('.docs-vis').innerText()).includes('Für alle'), 'Standard: für alle sichtbar (offenes Schloss)');
+  await p.click(`.docs-who .chip:has-text("${nameB}")`);
+  await p.click('.docs-form .chip:has-text("Versicherung")');
+});
+ok((await A.p.locator('.docs-view').innerText()).includes(`Betrifft: ${nameB}`), 'Ansicht: «Betrifft: …»');
+await A.p.click('text=‹ Alle Dokumente');
+await scanWith(A.p, 'Mein Arztbericht', async (p) => {
+  await p.click('.docs-form-head .icon-btn');
+  ok((await p.locator('.docs-vis').innerText()).includes('Privat'), 'Schloss: privat');
+  ok(await p.locator('.docs-who').count() === 0, 'Privat: keine Personen-Auswahl');
+});
+await A.p.waitForSelector('.docs-view >> text=in der Cloud gespeichert ✓', { timeout: 5000 });
+const privDoc = (await A.p.evaluate(() => window.__all('docs'))).find((d) => d.title === 'Mein Arztbericht');
+ok(privDoc.private === true && privDoc.file.path === `hh1/privat/uA/${privDoc.id}.pdf`, 'Private Datei im eigenen Ordner: ' + privDoc.file.path);
+await A.p.click('text=‹ Alle Dokumente');
+ok(await A.p.locator('.docs-row:has-text("🔒")').count() === 1, 'A: Schloss in der Liste');
+await sync(A.p, B.p);
+const recs = await fetch('http://localhost:8766/__control/dump').then((r) => r.json());
+ok(recs.find((r) => r.id === privDoc.id)?.owner_id === 'uA', 'Cloud: privater Eintrag gehört nur A');
+await B.p.reload(); await B.p.waitForSelector('.tabbar'); await openDocs(B.p);
+await B.p.waitForSelector('.docs-row:has-text("Police Thadea")');
+ok(await B.p.locator('.docs-row:has-text("Mein Arztbericht")').count() === 0, 'B sieht das private Dokument nicht');
+const r = await fetch(`http://localhost:8766/storage/v1/object/authenticated/dokumente/hh1/privat/uA/${privDoc.id}.pdf`, { headers: { authorization: 'Bearer uB:tok' } });
+ok(r.status >= 400, 'Ablage: B darf die private Datei nicht laden');
+await B.p.click(`.docs-chips .chip:has-text("${nameB}")`);
+ok(await B.p.locator('.docs-row').count() === 1 && (await B.p.locator('.docs-row').innerText()).includes('Police Thadea'), `B: Filter «${nameB}» zeigt die Police`);
+ok(await B.p.locator(`.docs-chips .chip:has-text("${nameK}")`).count() === 0, 'Personen ohne Dokumente erscheinen nicht im Filter');
+await A.p.click(`.docs-chips .chip:has-text("${persons[0].name}")`);
+ok(await A.p.locator('.docs-row').count() === 1 && (await A.p.locator('.docs-row').innerText()).includes('Mein Arztbericht'), 'A: eigene private Dokumente unter dem eigenen Namen');
+await A.p.click('.docs-chips .chip:has-text("Alle Personen")');
+
+// privat → für alle
+await A.p.click('.docs-row:has-text("Mein Arztbericht")');
+await A.p.click('text=Angaben bearbeiten');
+await A.p.click('.docs-form-head .icon-btn');
+await A.p.click(`.docs-who .chip:has-text("${persons[0].name}")`);
+await A.p.click('button:has-text("Speichern")');
+await A.p.waitForSelector('.docs-view >> text=in der Cloud gespeichert ✓', { timeout: 5000 });
+const pub = (await A.p.evaluate(() => window.__all('docs'))).find((d) => !d.deleted && d.title === 'Mein Arztbericht');
+const st2 = await store();
+ok(pub.id !== privDoc.id && !pub.private && st2[`hh1/${pub.id}.pdf`] && !st2[`hh1/privat/uA/${privDoc.id}.pdf`], 'Für alle freigegeben: neue Datei im Haushalt, private gelöscht');
+await sync(A.p, B.p);
+await B.p.click('.docs-chips .chip:has-text("Alle Personen")');
+await B.p.waitForSelector('.docs-row:has-text("Mein Arztbericht")', { timeout: 4000 });
+ok(true, 'B sieht es jetzt');
+
 ok(errs.length === 0, 'keine Fehler im Browser ' + errs.join(' | '));
 await b.close();

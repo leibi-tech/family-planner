@@ -29,7 +29,8 @@ http.createServer(async (req, res) => {
     if (!uid) return send(res, 400, { statusCode: '403', error: 'Unauthorized', message: 'Invalid JWT' });
     let rest = decodeURIComponent(p.slice('/storage/v1/object/'.length));
     if (req.method === 'DELETE' && rest === 'dokumente') {
-      const { prefixes } = JSON.parse(buf.toString());
+      const { prefixes: all } = JSON.parse(buf.toString());
+      const prefixes = all.filter((k) => k.split('/')[1] !== 'privat' || k.split('/')[2] === uid);
       prefixes.forEach((k) => storage.delete(k));
       log.push({ uid, op: 'storage-delete', paths: prefixes });
       return send(res, 200, prefixes.map((name) => ({ name })));
@@ -38,7 +39,9 @@ http.createServer(async (req, res) => {
     if (auth) rest = rest.slice('authenticated/'.length);
     if (!rest.startsWith('dokumente/')) return send(res, 400, { statusCode: '404', error: 'Bucket not found', message: 'Bucket not found' });
     const key = rest.slice('dokumente/'.length);
-    if (key.split('/')[0] !== 'hh1') return send(res, 400, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' });
+    const seg = key.split('/');
+    if (seg[1] === 'privat' && seg[2] !== uid) return send(res, 400, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' });
+    if (seg[0] !== 'hh1') return send(res, 400, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' });
     if (req.method === 'POST') {
       if (storageFail) return send(res, 400, { statusCode: '404', error: 'Bucket not found', message: 'Bucket not found' });
       storage.set(key, { type: req.headers['content-type'], data: buf });

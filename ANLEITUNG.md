@@ -303,12 +303,18 @@ Unter **Mehr → Dokumente** scannst du Quittungen, Garantiescheine, Policen usw
 5. **Run** klicken. Unten erscheint «Success. No rows returned».
 6. Kontrolle: links **Storage** → dort gibt es jetzt **dokumente**.
 
+**Ab Version 0.22.0 zusätzlich: private Dokumente (einmalig)**
+1. Wie oben im **SQL Editor**, aber mit der Datei **supabase/update-0.22.sql** → **Run** → «Success».
+2. Zuerst muss update-0.21.sql gelaufen sein. Die Reihenfolge ist wichtig: erst 0.21, dann 0.22.
+
 **Scannen**
 1. **Mehr → Dokumente → Scannen.** Die Kamera geht auf. Blatt auf einen dunklen Untergrund legen (Tisch), von oben fotografieren.
 2. Die App zeigt das Foto mit vier Punkten an den Ecken des Blatts. Stimmen sie nicht, die Punkte mit dem Finger verschieben. **↻ Drehen** dreht das Bild.
 3. Filter wählen: **Farbe** (Standard, Stempel und Logos bleiben farbig), **Schwarz-weiss** (für reinen Text) oder **Original**.
 4. **Seite übernehmen.** Für mehrseitige Dokumente **Weitere Seite scannen**, sonst **Fertig**.
 5. Titel eingeben (z.B. «Waschmaschine»), Art wählen (Versicherung, Garantie, Quittung …), Datum und freiwillig **Garantie bis / Gültig bis** und eine Notiz → **Speichern**.
+6. **Für alle oder privat:** Standard ist für alle (offenes Schloss 🔓). Tippst du oben rechts auf das Schloss, wird es **privat 🔒**: nur du siehst es, auch in der Cloud geschützt.
+7. **Betrifft:** Bei «für alle» kannst du Personen antippen, z.B. Thadea bei ihrer Versicherungspolice. Bei privat gibt es diese Auswahl nicht.
 
 **PDF oder Foto, das schon auf dem Handy ist**
 - **PDF oder Foto wählen** → Datei aussuchen. Ein Foto geht durch den Scanner, ein PDF direkt zu den Angaben.
@@ -316,23 +322,25 @@ Unter **Mehr → Dokumente** scannst du Quittungen, Garantiescheine, Policen usw
 
 **Ansehen und weitergeben**
 - Antippen zeigt alle Seiten. **Teilen / öffnen mit …** schickt das PDF z.B. per WhatsApp oder Mail. **Herunterladen** legt es in den Download-Ordner.
-- Oben suchen oder nach Art filtern. Läuft eine Garantie in den nächsten 30 Tagen ab, steht oben ein Hinweis.
+- Oben suchen, nach Art filtern oder nach Person (z.B. alle Dokumente, die Thadea betreffen). Deine privaten Dokumente erscheinen unter deinem Namen.
+- Privat oder für alle später ändern: Dokument öffnen → **Angaben bearbeiten** → Schloss → **Speichern**. Läuft eine Garantie in den nächsten 30 Tagen ab, steht oben ein Hinweis.
 - Ohne Internet: Dokumente, die auf diesem Handy schon einmal offen waren, gehen trotzdem. Neue Scans werden hochgeladen, sobald wieder Internet da ist («wird hochgeladen …»).
 - **Löschen** löscht das Dokument für alle.
 
 **Zum Testen**
 1. Zuerst die Ablage in Supabase einrichten (oben).
-2. Pull Request mergen, 1–2 Minuten warten, App schliessen und neu öffnen (Version **0.21.0**, Mehr → unten).
+2. Pull Request mergen, 1–2 Minuten warten, App schliessen und neu öffnen (Version **0.22.0**, Mehr → unten).
 3. Eine Quittung scannen und speichern. In der Ansicht muss stehen «in der Cloud gespeichert ✓».
 4. Auf Thadeas Handy: Mehr → Dokumente → das Dokument öffnen.
-Steht «Die Dokumenten-Ablage ist in Supabase noch nicht eingerichtet», fehlt Schritt 1. Danach wird automatisch hochgeladen.
+5. Ein Dokument mit dem Schloss privat speichern: Thadea darf es nicht sehen.
+Steht «Die Dokumenten-Ablage ist in Supabase noch nicht eingerichtet», fehlt Schritt 1 (bzw. update-0.22.sql bei privaten Dokumenten). Danach wird automatisch hochgeladen.
 
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
 - **Kalender:** Die Termine bleiben bei Google. Der Zugangsschlüssel zu Google liegt geschützt in Supabase; die App selbst kann ihn nicht lesen. «Verbindung trennen» löscht ihn und meldet die App bei Google ab.
 - **Liebesgrüsse (ab 0.20.0):** liegen wie die anderen Daten in Supabase. Fotos werden vorher verkleinert (ca. 100–200 KB pro Foto).
-- **Dokumente (ab 0.21.0):** Die PDFs liegen in eurer Supabase-Ablage in Zürich, nur Konten eures Haushalts kommen daran. Zusätzlich bleibt eine Kopie auf dem Handy, das sie erfasst oder geöffnet hat. Gratis-Kontingent: 1 GB, ein gescanntes Blatt braucht etwa 100–300 KB (also mehrere tausend Seiten).
+- **Dokumente (ab 0.21.0):** Die PDFs liegen in eurer Supabase-Ablage in Zürich, nur Konten eures Haushalts kommen daran. Zusätzlich bleibt eine Kopie auf dem Handy, das sie erfasst oder geöffnet hat. Private Dokumente sieht nur, wer sie erfasst hat. Gratis-Kontingent: 1 GB, ein gescanntes Blatt braucht etwa 100–300 KB (also mehrere tausend Seiten).
 - ⚠️ Gelöschtes wird auch auf den anderen Handys gelöscht. Ein Export-Knopf als zusätzliche Sicherung kommt noch (Wunschliste).
 
 ## Wenn etwas nicht klappt
