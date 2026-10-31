@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 30.10.2026 · Version 0.22.0
+Stand: 31.10.2026 · Version 0.22.1
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -19,7 +19,7 @@ Stand: 30.10.2026 · Version 0.22.0
 - ⏳ **Dokumente scannen und speichern (v0.21.0)**: Mehr → Dokumente. Eigener Scanner (Blatt finden, Ecken verschieben, gerade ziehen, aufhellen, mehrere Seiten → PDF), PDF/Foto wählen, «Teilen» aus anderen Apps, Angaben (Art, Datum, Garantie/gültig bis, Notiz), Suche, Filter, Hinweis «läuft bald ab». Datei in Supabase Storage (E41). Tobias: **update-0.21.sql in Supabase ausführen**, Pull Request mergen, ausprobieren (ANLEITUNG Y).
 - ⏳ **Dokumente privat und «Betrifft» (v0.22.0)**: Schloss oben rechts im Formular (Standard offen = für alle), privat = nur ich, auch in der Ablage geschützt. Bei «für alle» Personen zuordnen (z.B. Versicherung Thadea) und in der Liste nach Person filtern (E42). Tobias: **update-0.22.sql in Supabase ausführen** (nach 0.21), mergen, ausprobieren (ANLEITUNG Y).
 - ⏳ **Neues Aussehen, Schritt 1 (v0.19.0)**: hell und farbig (Violett, Familienfarben), neue Schrift, Symbole statt Emojis in Menüleiste und «Mehr», Menüleiste selber einrichten (Mehr → Menüleiste anpassen), Hell/Dunkel wählbar (E38). Tobias: Pull Request mergen und ausprobieren (ANLEITUNG V). Kein Datenbank-Update nötig.
-- ⏳ **Liebesgruss (v0.20.0)**: Text/Foto an Thadea (oder umgekehrt) auf den Startbildschirm, Empfängerin reagiert mit ❤️ 😘 😂 👍, erst dann geht die App auf; Reaktion auf der Startseite des Absenders; Album «Unsere Grüsse» (max. 100, ältere ausgedünnt) (E39). Tobias: Pull Request mergen und mit Thadea ausprobieren (ANLEITUNG W). Kein Datenbank-Update nötig.
+- ⏳ **Liebesgruss (v0.20.0)**: Text/Foto an Thadea (oder umgekehrt) auf den Startbildschirm, Empfängerin reagiert mit ❤️ 😘 😂 👍, erst dann geht die App auf; Reaktion auf der Startseite des Absenders; Album «Unsere Grüsse» (max. 100, ältere ausgedünnt) (E39). Tobias: Pull Request mergen und mit Thadea ausprobieren (ANLEITUNG W). Kein Datenbank-Update nötig. v0.22.1: zwei Knöpfe «Foto machen» (Kamera direkt, Frontkamera) und «Bild wählen».
 - ⏳ **Neues App-Symbol (v0.20.2)**: nach Tobias' Skizze: grosses Herz, die Eltern umarmen die Kinder (ihre Arme bilden ein Herz). Violetter Hintergrund, Eltern mit Verlauf blau → rosa, Kinder orange → violett (E40). v0.20.3: Bilddateien mit Kennung im Namen, damit Android das neue Symbol eher übernimmt. Tobias: mergen, App neu installieren, falls das alte Symbol bleibt (ANLEITUNG X).
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
@@ -128,6 +128,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **31.10.2026**: Rückmeldung Tobias: beim Liebesgruss nur Bilder wählbar, keine Fotos direkt. v0.22.1: zweiter Knopf «Foto machen» (`capture="user"`), Test in `greetings.mjs` ergänzt.
 - **30.10.2026 (6)**: v0.21.0 gemergt. Wunsch Tobias: beim Erfassen privat (Schloss, Standard offen) oder für alle; bei «für alle» betroffene Personen wählen und danach filtern; privat ohne Personen. v0.22.0: `Doc.private`/`persons`, `changeVisibility` (neue ID + leerer Löschvermerk, Datei an neuen Ort), private Dateien unter `<hh>/privat/<uid>/`, `update-0.22.sql` (Funktion `dokument_erlaubt`, mit PostgreSQL geprüft), Test in `docs-cloud.mjs` erweitert.
 - **30.10.2026 (5)**: Tobias (Handy): Dokumente vorerst über die App mit Ablage in der App-Cloud statt NAS, mit Scanner. v0.21.0 gebaut: `src/scan.ts` (Blatt finden, entzerren, aufhellen, PDF schreiben/lesen), `src/components/Scanner.tsx`, `src/docs.ts` (Ablage, Hochladen später, Teilen-Ziel), `src/pages/DocsPage.tsx` neu, `supabase/update-0.21.sql` (Bucket + Regeln, mit PostgreSQL geprüft), Manifest `share_target`, Service Worker nimmt geteilte Dateien an. NAS-Test entfernt (`src/nas.ts`, `nas/`, Tests). Neue Tests `tests/docs-scan.mjs`, `tests/docs-cloud.mjs` (Nachbau Storage in `mock-supabase.mjs`).
 - **30.10.2026 (4)**: v0.20.2 gemergt, Symbol kam auf Tobias' Handy nicht an (Android übernimmt Symbol-Änderungen installierter Web-Apps nur langsam). v0.20.3: `make-icons.mjs` gibt den PNG-Dateien eine Kennung (Hash) im Namen und führt Manifest und index.html nach.

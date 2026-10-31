@@ -146,6 +146,7 @@ function SendSheet({ from, to, toName, onClose }: { from: string; to: string; to
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
 
   const pick = async (f: File | undefined) => {
     if (!f) return;
@@ -173,7 +174,8 @@ function SendSheet({ from, to, toName, onClose }: { from: string; to: string; to
           <span>Text</span>
           <textarea className="greet-input" rows={3} value={text} maxLength={500} placeholder="z.B. Schönen Tag dir!" onChange={(e) => setText(e.target.value)} />
         </label>
-        <input ref={fileRef} type="file" accept="image/*" hidden aria-label="Foto wählen" onChange={(e) => void pick(e.target.files?.[0])} />
+        <input ref={camRef} type="file" accept="image/*" capture="user" hidden aria-label="Foto aufnehmen" data-testid="greet-camera" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
+        <input ref={fileRef} type="file" accept="image/*" hidden aria-label="Foto wählen" data-testid="greet-gallery" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
         {photo ? (
           <div className="greet-preview">
             <img src={photo} alt="Vorschau" />
@@ -182,9 +184,14 @@ function SendSheet({ from, to, toName, onClose }: { from: string; to: string; to
             </button>
           </div>
         ) : (
-          <button className="btn btn-block" disabled={busy} onClick={() => fileRef.current?.click()}>
-            📷 Foto aufnehmen oder wählen
-          </button>
+          <div className="greet-photo-btns">
+            <button className="btn" disabled={busy} onClick={() => camRef.current?.click()}>
+              📷 Foto machen
+            </button>
+            <button className="btn" disabled={busy} onClick={() => fileRef.current?.click()}>
+              🖼️ Bild wählen
+            </button>
+          </div>
         )}
         {error && <p className="warn">{error}</p>}
         <div className="sheet-actions">
