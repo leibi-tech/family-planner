@@ -789,6 +789,7 @@ h1, h2, h3, .sheet h2 { font-family: var(--f-head); font-weight: 600; letter-spa
 .greet-input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font: inherit; color: inherit; resize: vertical; }
 .greet-preview { display: grid; gap: 6px; margin-bottom: 12px; }
 .greet-preview img { width: 100%; max-height: 40vh; object-fit: contain; border-radius: 12px; }
+.greet-photo-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .greet-album { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .greet-tile { width: 100%; aspect-ratio: 1; position: relative; overflow: hidden; padding: 0; border-radius: 14px; border: 1px solid var(--border); background: var(--tile-4); cursor: pointer; display: block; }
 .greet-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }

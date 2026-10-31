@@ -36,7 +36,8 @@ ok(await A.p.locator('button:has-text("Senden 💌")').isDisabled(), 'Senden ers
 await A.p.fill('.greet-input', 'Schönen Tag, Schatz!');
 // Testbild 1600x1200 (wird auf 1080 verkleinert)
 const png = await A.p.evaluate(async () => { const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const x = c.getContext('2d'); x.fillStyle = '#e33'; x.fillRect(0, 0, 1600, 1200); return c.toDataURL('image/png').split(',')[1]; });
-await A.p.setInputFiles('input[type=file]', { name: 'herz.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+ok(await A.p.locator('[data-testid=greet-camera]').getAttribute('capture') === 'user', 'Kamera-Knopf öffnet die Kamera');
+await A.p.setInputFiles('[data-testid=greet-gallery]', { name: 'herz.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
 await A.p.waitForSelector('.greet-preview img');
 await A.p.click('button:has-text("Senden 💌")');
 await A.p.waitForTimeout(500);
