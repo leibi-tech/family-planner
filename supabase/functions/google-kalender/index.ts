@@ -185,11 +185,22 @@ export interface CalEvent {
   location: string | null;
   description: string | null;
   link: string | null;
+  uid?: string | null; // gleiche Kennung in allen Kalendern (Einladungen)
+  invitedBy?: string | null; // Kopie einer Einladung: Adresse der Person, die eingeladen hat
+  guests?: Array<{ email: string; status: string }>; // eingeladene Personen
 }
+
+const low = (s: unknown) => String(s ?? '').trim().toLowerCase();
 
 export function simplifyEvent(e: any, calendarId: string): CalEvent | null {
   if (!e || e.status === 'cancelled' || !e.start) return null;
   const allDay = !!e.start.date;
+  const att: any[] = Array.isArray(e.attendees) ? e.attendees : [];
+  const org = low(e.organizer?.email);
+  const invitedBy = att.length && org && org !== low(calendarId) ? org : null;
+  const guests = att
+    .filter((a) => a?.email && !a.organizer && low(a.email) !== org)
+    .map((a) => ({ email: low(a.email), status: String(a.responseStatus ?? 'needsAction') }));
   return {
     id: e.id,
     calendarId,
@@ -201,6 +212,9 @@ export function simplifyEvent(e: any, calendarId: string): CalEvent | null {
     location: e.location ?? null,
     description: e.description ? String(e.description).slice(0, 2000) : null,
     link: e.htmlLink ?? null,
+    uid: e.iCalUID ?? null,
+    invitedBy,
+    guests,
   };
 }
 
@@ -215,7 +229,7 @@ async function listEvents(acc: Account, calId: string, from: string, to: string)
       timeMax: to,
       maxResults: '2500',
       timeZone: 'Europe/Zurich',
-      fields: 'nextPageToken,items(id,status,summary,start,end,location,description,recurringEventId,htmlLink)',
+      fields: 'nextPageToken,items(id,status,summary,start,end,location,description,recurringEventId,htmlLink,iCalUID,organizer(email),attendees(email,responseStatus,organizer))',
     });
     if (page) q.set('pageToken', page);
     const b = await gcal(acc, `/calendars/${encodeURIComponent(calId)}/events?${q}`);
@@ -490,6 +504,26 @@ export function googleTimes(e: EventInput) {
   };
 }
 
+// ---------- Einladungen (v0.23) ----------
+const isEmail = (s: unknown) => typeof s === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+/** Liste gültiger Adressen (klein geschrieben, ohne Doppelte). undefined = nicht mitgeschickt. */
+function emailList(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  return [...new Set(v.filter(isEmail).map(low))].slice(0, 20);
+}
+/** Neue Gästeliste: Familienmitglieder (known) nach Wunsch (invite) ein-/austragen,
+ *  andere Gäste (z.B. in Google selbst eingeladen) und die Antworten bleiben erhalten. */
+export function mergeAttendees(current: any[] | undefined, invite: string[], known: string[], calendarId: string): any[] {
+  const cur = Array.isArray(current) ? current : [];
+  const own = low(calendarId);
+  const want = invite.filter((x) => x !== own);
+  const keep = cur.filter((a) => a.organizer || low(a.email) === own || !known.includes(low(a.email)) || want.includes(low(a.email)));
+  for (const em of want) if (!keep.some((a) => low(a.email) === em)) keep.push({ email: em });
+  return keep;
+}
+const sameGuests = (a: any[] | undefined, b: any[]) =>
+  (a ?? []).map((x) => low(x.email)).sort().join(',') === b.map((x) => low(x.email)).sort().join(',');
+
 /** Eigener Zugang + Prüfung, dass der Kalender zu meiner Auswahl gehört und änderbar ist. */
 async function writableAccount(user: { id: string }, calendarId: string): Promise<Account> {
   const acc = await getAccount(user.id);
@@ -508,7 +542,10 @@ async function actCreate(user: { id: string }, body: any): Promise<Response> {
   const ev: any = { summary: e.title, location: e.location || undefined, description: e.description || undefined, ...googleTimes(e) };
   for (const k of ['start', 'end']) for (const f of ['date', 'dateTime', 'timeZone']) if (ev[k][f] === null) delete ev[k][f];
   if (e.repeat) ev.recurrence = [repeatToRule(e.repeat, e.allDay)];
-  const created = await gcal(acc, evPath(calId), { method: 'POST', body: ev });
+  const invite = (emailList(body?.invite) ?? []).filter((x) => x !== low(calId));
+  if (invite.length) ev.attendees = invite.map((email) => ({ email }));
+  // sendUpdates=all: Google verschickt die Einladung per E-Mail
+  const created = await gcal(acc, evPath(calId) + (invite.length ? '?sendUpdates=all' : ''), { method: 'POST', body: ev });
   return json({ ok: true, id: created.id });
 }
 
@@ -531,12 +568,22 @@ async function actUpdate(user: { id: string }, body: any): Promise<Response> {
   const seriesId = body?.recurringEventId ? String(body.recurringEventId) : null;
   const scope = body?.scope === 'all' && seriesId ? 'all' : 'one';
   const patch: any = { summary: e.title, location: e.location ?? '', description: e.description ?? '' };
+  const invite = emailList(body?.invite);
+  const known = emailList(body?.inviteKnown) ?? [];
+  /** Gäste nachführen; gibt die Zusatz-Adresse zurück (Google benachrichtigt die Gäste). */
+  const guests = (cur: any): string => {
+    if (invite === undefined) return (cur?.attendees ?? []).length ? '?sendUpdates=all' : '';
+    const next = mergeAttendees(cur?.attendees, invite, [...known, ...invite], calId);
+    if (!sameGuests(cur?.attendees, next)) patch.attendees = next;
+    return (cur?.attendees ?? []).length || next.length ? '?sendUpdates=all' : '';
+  };
 
   if (scope === 'one') {
     Object.assign(patch, googleTimes(e));
     if (!seriesId) patch.recurrence = e.repeat ? [repeatToRule(e.repeat, e.allDay)] : e.repeat === null ? [] : undefined;
     if (patch.recurrence === undefined) delete patch.recurrence;
-    await gcal(acc, evPath(calId, eventId), { method: 'PATCH', body: patch });
+    const q = invite === undefined ? '' : guests(await gcal(acc, evPath(calId, eventId)));
+    await gcal(acc, evPath(calId, eventId) + q, { method: 'PATCH', body: patch });
     return json({ ok: true });
   }
 
@@ -553,7 +600,8 @@ async function actUpdate(user: { id: string }, body: any): Promise<Response> {
     const keep = (master.recurrence ?? []).filter((x: string) => !x.startsWith('RRULE:'));
     patch.recurrence = e.repeat ? [...keep, repeatToRule(e.repeat, e.allDay)] : [];
   }
-  await gcal(acc, evPath(calId, seriesId!), { method: 'PATCH', body: patch });
+  const q = guests(master);
+  await gcal(acc, evPath(calId, seriesId!) + q, { method: 'PATCH', body: patch });
   return json({ ok: true });
 }
 
@@ -563,7 +611,8 @@ async function actDelete(user: { id: string }, body: any): Promise<Response> {
   const seriesId = body?.recurringEventId ? String(body.recurringEventId) : null;
   const id = body?.scope === 'all' && seriesId ? seriesId : String(body?.eventId ?? '');
   try {
-    await gcal(acc, evPath(calId, id), { method: 'DELETE' });
+    // Gäste bekommen eine Absage (ohne Gäste verschickt Google nichts)
+    await gcal(acc, evPath(calId, id) + '?sendUpdates=all', { method: 'DELETE' });
   } catch (err) {
     if (!(err instanceof HttpError && err.status === 404)) throw err; // schon weg = ok
   }

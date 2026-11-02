@@ -220,3 +220,11 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Umsetzung:** `private` und `persons` im Eintrag `docs`. Private Einträge gehen wie private Notizen/ToDos mit `owner_id` hoch (bestehende Regeln aus update-0.10). Die Datei liegt bei privat unter `<haushalt>/privat/<konto-id>/…`; `update-0.22.sql` ersetzt die Ablage-Regeln durch `dokument_erlaubt(name)`: Haushaltsmitglied **und** (kein Privatordner **oder** eigener Privatordner).
 - **Wechsel privat ↔ für alle:** neues Dokument mit neuer ID und neuem Ablageort, das alte bekommt einen leeren Löschvermerk (wie bei Notizen), damit bei den anderen nichts Privates liegen bleibt. Braucht die Datei: liegt sie nicht auf dem Handy, ist Internet nötig.
 - **Filter:** zweite Chip-Reihe mit Personen (nur solche mit Dokumenten). Private Dokumente zählen bei der Person, die sie erfasst hat.
+
+## E43 – Termine für andere mit automatischer Einladung (v0.23.0, 02.11.2026)
+- **Wunsch Tobias:** Termin für Thadea erfassen, der auch in ihrem Gmail-Kalender steht, ohne Kalender-Freigaben. In der App nicht doppelt.
+- **Entscheide Tobias (1b, 2a):** Die Einladung geht **automatisch**, sobald man im **eigenen** Kalender eine Person mit E-Mail-Adresse wählt (kein eigenes Häkchen). Ändern/Löschen nur, wer eingeladen hat; die Eingeladene kann zu-/absagen. Man kann sich selbst abwählen: Titel «(Thadea) Zahnarzt» (runde Klammern = Besitzer des Kalenders nicht betroffen), in der App nur Thadeas Farbe.
+- **Adresse:** neues Feld `email` bei der Person (Familie, wird mit den Personen abgeglichen, kein Datenbank-Update). Fehlt es, nimmt die App die Adresse des verbundenen Google-Kontos dieser Person.
+- **Google:** `attendees` mit `sendUpdates=all` (Google verschickt Einladung, Änderungen, Absage). Beim Ändern schickt die App die gewünschten (`invite`) und alle Familien-Adressen (`inviteKnown`); die Funktion trägt nur Familienmitglieder ein/aus, andere Gäste und Antworten bleiben. Im Familienkalender keine Einladungen.
+- **Nicht doppelt:** Die Funktion liefert pro Termin `uid` (iCalUID), `invitedBy` (Kopie einer Einladung) und `guests`. Die App zeigt pro `uid` + Beginn nur einen Termin, bevorzugt die Fassung der einladenden Person. Kopien einer Einladung sind in der App nicht änderbar.
+- Tobias muss die Funktion `google-kalender` in Supabase neu einspielen (ANLEITUNG Z).

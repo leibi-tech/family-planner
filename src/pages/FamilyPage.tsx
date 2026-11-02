@@ -136,6 +136,8 @@ function PersonSheet({
   onClose: () => void;
 }) {
   const [name, setName] = useState(person.name);
+  const [email, setEmail] = useState(person.email ?? '');
+  const emailOk = !email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const [factor, setFactor] = useState(clamp(person.factor / scale)); // aus eigener Sicht
   const [factorText, setFactorText] = useState(fmtFactor(clamp(person.factor / scale)));
   const step = (d: number) => {
@@ -149,13 +151,13 @@ function PersonSheet({
     if (Number.isFinite(n) && n > 0) setFactor(clamp(n));
   };
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const valid = name.trim().length > 0;
+  const valid = name.trim().length > 0 && emailOk;
 
   const save = async () => {
     if (!valid) return;
     // Der eigene Faktor bleibt unverändert (man selbst ist immer 1.0), nur der Name ändert sich.
     const f = isMe ? person.factor : Math.round(clamp(factor) * scale * 1000) / 1000;
-    await put<Person>('persons', { ...person, name: name.trim(), factor: f });
+    await put<Person>('persons', { ...person, name: name.trim(), factor: f, email: email.trim().toLowerCase() || null });
     onClose();
   };
 
@@ -182,6 +184,24 @@ function PersonSheet({
             autoFocus={isNew}
             enterKeyHint="done"
           />
+        </label>
+
+        <label className="field">
+          <span>Gmail-Adresse (optional)</span>
+          <input
+            type="email"
+            inputMode="email"
+            autoCapitalize="off"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="z.B. name@gmail.com"
+            enterKeyHint="done"
+          />
+          <small className="muted">
+            {emailOk
+              ? 'Für Kalender-Einladungen: Wählst du diese Person bei einem Termin in deinem Kalender, bekommt sie automatisch eine Einladung in ihren Google-Kalender.'
+              : 'Bitte eine gültige E-Mail-Adresse eingeben.'}
+          </small>
         </label>
 
         <div className="field">
