@@ -16,6 +16,7 @@ import {
   type Slot,
 } from '../model';
 import { MenuEditor, emptyMenu, familyFactorOf } from './MenusPage';
+import { getShopSettings } from '../shopping';
 
 type Sel = { dayKey: string; slotId: string } | null;
 
@@ -27,6 +28,7 @@ export function PlanPage() {
   const days = useRecords<PlanDay>('days');
   const menus = useRecords<Menu>('menus');
   const persons = useRecords<Person>('persons');
+  const shopRows = useRecords('shopping');
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
   const [sel, setSel] = useState<Sel>(null); // Mahlzeit bearbeiten
   const [picker, setPicker] = useState<Sel>(null); // Menü auswählen
@@ -37,8 +39,10 @@ export function PlanPage() {
   const dayMap = useMemo(() => new Map((days ?? []).map((d) => [d.id, d])), [days]);
   const menuMap = useMemo(() => new Map((menus ?? []).map((m) => [m.id, m])), [menus]);
 
-  if (!days || !menus || !persons) return <p className="muted center">Lade …</p>;
+  if (!days || !menus || !persons || !shopRows) return <p className="muted center">Lade …</p>;
 
+  // Neu eingeplante (auch kopierte) Gerichte kommen nur in die Einkaufsliste, wenn das gerade eingeschaltet ist
+  const shopNow = getShopSettings(shopRows).fromMenus;
   const sortedPersons = [...persons].sort((a, b) => a.sort - b.sort);
   const getDay = (key: string) => dayMap.get(key) ?? blankDay(key);
   const saveDay = (day: PlanDay) => put<PlanDay>('days', day);
@@ -77,14 +81,14 @@ export function PlanPage() {
       slots: src.slots.map((sl) => ({
         ...sl,
         id: newId(),
-        dishes: sl.dishes.map((d) => ({ ...d, id: newId() })),
+        dishes: sl.dishes.map((d) => ({ ...d, id: newId(), shop: shopNow })),
         absent: [...sl.absent],
       })),
     });
   };
 
   const addDish = (target: NonNullable<Sel>, menuId: string) =>
-    updateSlot(target.dayKey, target.slotId, (s) => ({ ...s, dishes: [...s.dishes, { id: newId(), menuId }] }));
+    updateSlot(target.dayKey, target.slotId, (s) => ({ ...s, dishes: [...s.dishes, { id: newId(), menuId, shop: shopNow }] }));
 
   return (
     <section>

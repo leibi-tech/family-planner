@@ -8,7 +8,7 @@ export type PinTab = (typeof PINNABLE)[number];
 
 /** Freie Plätze: zwei links von Start, einer rechts (dann Mehr). So bleibt Start in der Mitte. */
 export const NAV_SLOTS = 3;
-export const DEFAULT_NAV: PinTab[] = ['einkauf', 'todo', 'notizen'];
+export const DEFAULT_NAV: PinTab[] = ['einkauf', 'todo', 'kalender'];
 
 export type Theme = 'hell' | 'dunkel';
 

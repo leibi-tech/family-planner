@@ -228,3 +228,9 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Google:** `attendees` mit `sendUpdates=all` (Google verschickt Einladung, Änderungen, Absage). Beim Ändern schickt die App die gewünschten (`invite`) und alle Familien-Adressen (`inviteKnown`); die Funktion trägt nur Familienmitglieder ein/aus, andere Gäste und Antworten bleiben. Im Familienkalender keine Einladungen.
 - **Nicht doppelt:** Die Funktion liefert pro Termin `uid` (iCalUID), `invitedBy` (Kopie einer Einladung) und `guests`. Die App zeigt pro `uid` + Beginn nur einen Termin, bevorzugt die Fassung der einladenden Person. Kopien einer Einladung sind in der App nicht änderbar.
 - Tobias muss die Funktion `google-kalender` in Supabase neu einspielen (ANLEITUNG Z).
+
+## E44 – Einkaufsliste aus Menüs abschaltbar, neue Standard-Menüleiste (v0.24.0, 02.11.2026)
+- **Wunsch Tobias:** Das automatische Füllen der Einkaufsliste aus den Menüs im Wochenplan soll man ausschalten können, **Standard aus**. Beim Ausschalten bleibt, was schon in der Liste ist; beim Einschalten kommen nur Menüs dazu, die **danach** eingeplant werden.
+- **Umsetzung:** Jedes eingeplante Gericht merkt sich beim Einplanen (auch beim Kopieren von Tag/Woche), ob die Einstellung gerade an war (`shop`). Ältere Gerichte ohne Vermerk zählen weiter (sie wurden ja mit «an» geplant). Von Hand erfasste und wiederkehrende Artikel sind nicht betroffen.
+- **Gilt für die ganze Familie** (die Einkaufsliste ist gemeinsam), gespeichert als Eintrag im Einkaufs-Speicher und mit abgeglichen. Kein Datenbank-Update.
+- **Menüleiste:** Standard neu Einkauf, ToDo, Start, Kalender, Mehr (Notizen unter Mehr). Wer die Leiste schon selbst eingerichtet hat, behält seine Einstellung.

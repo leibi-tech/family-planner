@@ -364,6 +364,24 @@ Erfasst du einen Termin in **deinem** Kalender und wählst Thadea dazu, bekommt 
 3. Einen Test-Termin nur für Thadea erfassen (dich abwählen). Prüfen: Thadea bekommt ein Mail und sieht den Termin in ihrem Gmail-Kalender.
 4. Falls der Termin bei ihr nicht automatisch erscheint: In Google Kalender (Einstellungen → «Einladungen zu meinem Kalender hinzufügen») «Von allen» wählen.
 
+## AA) Einstellungen: Einkaufsliste aus Menüs, Menüleiste (ab Version 0.24.0)
+**Einkaufsliste aus Menüs**
+1. **Mehr** → unten bei **Einstellungen** → «Einkaufsliste aus Menüs».
+2. **Aus** (Standard): Menüs im Wochenplan kommen nicht mehr automatisch in die Einkaufsliste. Was schon drin ist, bleibt.
+3. **Ein**: Menüs, die du **ab jetzt** einplanst, kommen mit ihren Zutaten in die Einkaufsliste. Früher eingeplante nicht.
+- Die Einstellung gilt für die ganze Familie (auch für Thadea).
+- Von Hand erfasste und wiederkehrende Artikel funktionieren immer.
+
+**Menüleiste**
+- Neu ist der Standard: Einkauf, ToDo, Start (Mitte), Kalender, Mehr. Notizen findest du unter Mehr.
+- Wer die Leiste schon selbst eingerichtet hat, behält sie. Ändern: Mehr → Menüleiste anpassen.
+
+**Zum Testen**
+1. Pull Request mergen, 1–2 Minuten warten, App neu öffnen (Version **0.24.0**).
+2. Mehr → Einstellungen: «Einkaufsliste aus Menüs» steht auf **Aus**. Bisherige Artikel in der Einkaufsliste sind noch da.
+3. Im Wochenplan ein Menü einplanen → kommt **nicht** in die Einkaufsliste.
+4. Auf **Ein** stellen, noch ein Menü einplanen → dessen Zutaten erscheinen in der Einkaufsliste.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

@@ -13,7 +13,7 @@ window.__markDirty = async () => { const db = await window.__idb(); const names 
 
 
 
-const mk = async () => { const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' }); await ctx.addInitScript({ content: helpers }); const p = await ctx.newPage(); p.on('pageerror', (e) => errs.push(String(e))); await p.goto('http://localhost:8765/docs-test/'); await p.waitForSelector('.tabbar'); return { ctx, p }; };
+const mk = async () => { const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' }); await ctx.addInitScript(() => { if (!localStorage.getItem('fp-nav')) localStorage.setItem('fp-nav', '["einkauf","todo","notizen"]'); }); /* Notizen in der Leiste (Standard ist seit v0.24 Kalender) */ await ctx.addInitScript({ content: helpers }); const p = await ctx.newPage(); p.on('pageerror', (e) => errs.push(String(e))); await p.goto('http://localhost:8765/docs-test/'); await p.waitForSelector('.tabbar'); return { ctx, p }; };
 const ctl = (path, body) => fetch('http://localhost:8766/__control/' + path, { method: 'POST', body: JSON.stringify(body ?? {}) }).then((r) => r.json());
 await ctl('reset');
 

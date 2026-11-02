@@ -18,11 +18,10 @@ const overflow = () => p.evaluate(() => document.documentElement.scrollWidth > w
 // 1) Ohne Haushalt: Hinweis
 await p.goto(APP);
 await p.waitForSelector('.tabbar');
-await p.click('.tabbar >> text=Mehr');
-ok((await p.locator('text=Termine aus Google Kalender').count()) === 1, '«Kalender» unter «Mehr»');
-await p.click('text=Kalender');
+ok((await p.locator('.tabbar .tab', { hasText: 'Kalender' }).count()) === 1, '«Kalender» in der Menüleiste (Standard seit v0.24)');
+await p.click('.tabbar >> text=Kalender');
 ok((await p.locator('text=braucht darum «Gemeinsam nutzen»').count()) === 1, 'ohne Haushalt: Hinweis auf «Gemeinsam nutzen»');
-ok((await p.locator('.topbar-back').count()) === 1, 'Zurück-Pfeil oben links');
+ok((await p.locator('.topbar-back').count()) === 0, 'Angeheftet: kein Zurück-Pfeil');
 
 // 2) Mit Haushalt, noch nicht verbunden
 const persons = await p.evaluate(() => window.__persons());

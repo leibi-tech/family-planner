@@ -23,6 +23,7 @@ import {
   isDue,
   itemKey,
   norm,
+  getShopSettings,
   shopWeekId,
   type Extra,
   type ManualItem,
@@ -222,7 +223,9 @@ export function ShoppingPage() {
       {visible.length === 0 ? (
         <p className="hint center">
           {allVisible.length === 0
-            ? 'Für diese Woche ist die Liste leer. Sie füllt sich automatisch aus dem Wochenplan, oder du erfasst oben Artikel von Hand.'
+            ? getShopSettings(weeks).fromMenus
+              ? 'Für diese Woche ist die Liste leer. Sie füllt sich automatisch aus dem Wochenplan, oder du erfasst oben Artikel von Hand.'
+              : 'Für diese Woche ist die Liste leer. Erfasse oben Artikel von Hand. (Zutaten aus dem Wochenplan: einschalten unter Mehr → Einstellungen.)'
             : `Unter «${CATEGORIES.find((c) => c.id === cat)!.label}» ist diese Woche nichts zu kaufen.`}
         </p>
       ) : (

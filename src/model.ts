@@ -74,6 +74,8 @@ export type SlotKind = MealType | 'extra';
 export interface Dish {
   id: string;
   menuId: string;
+  /** Zutaten in die Einkaufsliste? Wird beim Einplanen nach der Einstellung gesetzt (fehlt = ja, ältere Einträge). */
+  shop?: boolean;
 }
 
 export interface Slot {
