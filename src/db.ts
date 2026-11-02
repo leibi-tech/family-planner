@@ -14,6 +14,7 @@ export interface Person extends BaseRecord {
   name: string;
   factor: number; // Portionenfaktor, Tobias = 1.0
   sort: number;
+  email?: string | null; // Gmail-Adresse für Termin-Einladungen (optional, v0.23)
 }
 
 const DB_NAME = 'family-planner';

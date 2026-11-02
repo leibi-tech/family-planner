@@ -44,7 +44,7 @@ await p.waitForSelector('.cal-ev:has-text("Yoga")');
 await p.click('.cal-add');
 await p.waitForSelector('.sheet h2:has-text("Neuer Termin")');
 await p.fill('.sheet input[placeholder="z.B. Zahnarzt"]', 'Zahnarzt');
-ok((await p.locator('.sheet .chip:has-text("Tobias")').isDisabled()) && (await p.locator('.sheet .chip.on:has-text("Tobias")').count()) === 1, 'eigener Kalender: ich bin fix dabei');
+ok((await p.locator('.sheet .chip.on:has-text("Tobias")').count()) === 1, 'eigener Kalender: ich bin vorgewählt');
 await p.click(`.sheet .chip:has-text("${kind1.name}")`);
 ok((await p.locator('text=In Google: «[Kind 1] Zahnarzt»').count()) === 1, 'Vorschau Titel «[Kind 1] Zahnarzt»');
 const times = p.locator('.sheet input[type=time]');

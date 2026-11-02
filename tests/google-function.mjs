@@ -123,7 +123,7 @@ globalThis.fetch = async (input, init = {}) => {
       const list = (google.events[cal] ??= []);
       const id = w[2] && decodeURIComponent(w[2]);
       const body = init.body ? JSON.parse(init.body) : null;
-      google.writes.push({ method, cal, id, body });
+      google.writes.push({ method, cal, id, body, q: url.search });
       if (method === 'POST') { const ne = { id: 'new' + google.writes.length, ...body }; list.push(ne); return R(ne); }
       const cur = list.find((e) => e.id === id) ?? google.masters[id];
       if (!cur) return R({}, 404);
@@ -260,6 +260,26 @@ ok(google.writes.at(-1).method === 'DELETE' && google.writes.at(-1).id === 'seri
 await post('tok-tobias', { action: 'delete', calendarId: 'familie@group', eventId: 'serie1_20261110T160000Z', recurringEventId: 'serie1', scope: 'all' });
 ok(google.writes.at(-1).id === 'serie1' && !google.masters.serie1, 'Löschen «alle» löscht die Serie');
 ok((await post('tok-tobias', { action: 'delete', calendarId: 'familie@group', eventId: 'gibtsnicht' })).status === 200, 'Löschen eines schon gelöschten Termins = ok');
+
+// Einladungen (v0.23)
+r = await post('tok-tobias', { action: 'create', calendarId: 'tobias@gmail.com', invite: ['Thadea@Gmail.com', 'kein-mail', 'tobias@gmail.com'], event: { title: '(Thadea) Zahnarzt', allDay: false, startDate: '2026-11-05', endDate: '2026-11-05', startTime: '10:00', endTime: '11:00' } });
+wr = google.writes.at(-1);
+ok(r.status === 200 && wr.q === '?sendUpdates=all' && JSON.stringify(wr.body.attendees) === '[{"email":"thadea@gmail.com"}]', 'Erstellen mit Einladung: nur gültige fremde Adresse, Google verschickt sie');
+const invId = r.body.id;
+google.events['tobias@gmail.com'].find((x) => x.id === invId).attendees = [{ email: 'thadea@gmail.com', responseStatus: 'accepted' }, { email: 'gotte@gmx.ch', responseStatus: 'needsAction' }];
+await post('tok-tobias', { action: 'update', calendarId: 'tobias@gmail.com', eventId: invId, scope: 'one', invite: ['thadea@gmail.com'], inviteKnown: ['thadea@gmail.com'], event: { title: '(Thadea) Zahnarzt', allDay: false, startDate: '2026-11-05', endDate: '2026-11-05', startTime: '10:30', endTime: '11:30' } });
+wr = google.writes.at(-1);
+ok(wr.method === 'PATCH' && !('attendees' in wr.body) && wr.q === '?sendUpdates=all', 'Ändern ohne neue Gäste: Gästeliste (und Zusage) unverändert, Gäste werden informiert');
+await post('tok-tobias', { action: 'update', calendarId: 'tobias@gmail.com', eventId: invId, scope: 'one', invite: [], inviteKnown: ['thadea@gmail.com'], event: { title: 'Zahnarzt', allDay: false, startDate: '2026-11-05', endDate: '2026-11-05', startTime: '10:30', endTime: '11:30' } });
+wr = google.writes.at(-1);
+ok(JSON.stringify(wr.body.attendees.map((a) => a.email)) === '["gotte@gmx.ch"]', 'Thadea abgewählt: Einladung entfernt, fremder Gast bleibt');
+await post('tok-tobias', { action: 'delete', calendarId: 'tobias@gmail.com', eventId: invId });
+ok(google.writes.at(-1).method === 'DELETE' && google.writes.at(-1).q === '?sendUpdates=all', 'Löschen: Gäste bekommen eine Absage');
+const { simplifyEvent, mergeAttendees } = await import(join(dir, 'f.mjs'));
+const copy = simplifyEvent({ id: 'x', iCalUID: 'u1@google.com', summary: 'Zahnarzt', start: { dateTime: '2026-11-05T10:00:00+01:00' }, end: { dateTime: '2026-11-05T11:00:00+01:00' }, organizer: { email: 'Tobias@gmail.com' }, attendees: [{ email: 'tobias@gmail.com', organizer: true, responseStatus: 'accepted' }, { email: 'thadea@gmail.com', responseStatus: 'tentative' }] }, 'thadea@gmail.com');
+const orig = simplifyEvent({ id: 'x', iCalUID: 'u1@google.com', summary: 'Zahnarzt', start: { dateTime: '2026-11-05T10:00:00+01:00' }, end: { dateTime: '2026-11-05T11:00:00+01:00' }, organizer: { email: 'tobias@gmail.com' }, attendees: [{ email: 'thadea@gmail.com' }] }, 'tobias@gmail.com');
+ok(copy.invitedBy === 'tobias@gmail.com' && copy.uid === 'u1@google.com' && JSON.stringify(copy.guests) === '[{"email":"thadea@gmail.com","status":"tentative"}]' && orig.invitedBy === null, 'Kopie einer Einladung erkannt (eingeladen von, Gäste ohne Organisator)');
+ok(mergeAttendees(undefined, ['a@x.ch'], ['a@x.ch'], 'me@x.ch').length === 1 && mergeAttendees([{ email: 'me@x.ch', organizer: true }], [], ['me@x.ch'], 'me@x.ch').length === 1, 'Gästeliste: Organisator bleibt immer');
 
 // Nur-Lesen-Kalender
 accounts.find((a) => a.user_id === 'u-tobias').calendars.push({ id: 'feiertage', name: 'Feiertage', kind: 'family', access: 'reader' });

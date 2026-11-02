@@ -16,8 +16,11 @@ import {
   isoWeek,
   parseEventTarget,
   eventToInput,
+  canEdit,
   isWritable,
   parseTitle,
+  personByEmail,
+  personEmail,
   REPEAT_LABELS,
   seriesRepeat,
   updateEvent,
@@ -557,9 +560,17 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
           cal={calById.get(detail.calendarId)}
           online={online}
           ownerName={(() => {
+            if (detail.invitedBy) {
+              const pid = personByEmail(detail.invitedBy, sortedPersons, cache?.calendars ?? []);
+              return sortedPersons.find((p) => p.id === pid)?.name ?? detail.invitedBy;
+            }
             const c = calById.get(detail.calendarId);
             return sortedPersons.find((p) => p.id === c?.personId)?.name ?? c?.email ?? 'die andere Person';
           })()}
+          guests={(detail.guests ?? []).map((g) => {
+            const pid = personByEmail(g.email, sortedPersons, cache?.calendars ?? []);
+            return { name: sortedPersons.find((p) => p.id === pid)?.name ?? g.email, status: g.status };
+          })}
           onClose={closeDetail}
           conflicts={conflictsOf(detail).map((c) => ({ c, state: stateOf(c), care: careById.get(c.key) }))}
           h={h}
@@ -568,18 +579,23 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
             setCareOpen({ conflict: c });
           }}
           ownerPersonId={(() => {
+            if (detail.invitedBy) {
+              const pid = personByEmail(detail.invitedBy, sortedPersons, cache?.calendars ?? []);
+              return pid && pid !== me ? pid : null;
+            }
             const c = calById.get(detail.calendarId);
             return c?.kind === 'own' && c.personId && c.personId !== me ? c.personId : null;
           })()}
           onAsk={async (text) => {
             const c = calById.get(detail.calendarId)!;
+            const askTo = detail.invitedBy ? personByEmail(detail.invitedBy, sortedPersons, cache?.calendars ?? []) : c.personId;
             const day = dateKey(eventDays(detail)[0]);
             await put<Todo>('todos', {
               id: newId(),
               title: `Rückfrage: ${titleOf(detail)} (${eventDays(detail)[0].toLocaleDateString('de-CH', { day: 'numeric', month: 'numeric' })})`,
               note: text,
               due: null,
-              assignees: [c.personId!],
+              assignees: [askTo!],
               private: false,
               createdBy: me,
               createdAt: Date.now(),
@@ -590,7 +606,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
               updatedAt: 0,
               deleted: false,
             });
-            setFlash(`Rückfrage als ToDo an ${h.nameOf(c.personId)} geschickt ✓`);
+            setFlash(`Rückfrage als ToDo an ${h.nameOf(askTo)} geschickt ✓`);
             closeDetail();
           }}
           onEdit={(scope) => {
@@ -621,6 +637,7 @@ export function CalendarPage({ goto }: { goto: (tab: string) => void }) {
           scope={editor.scope}
           day={editor.day}
           calendars={writableCals}
+          allCalendars={cache?.calendars ?? []}
           cal={editor.ev ? calById.get(editor.ev.calendarId) : undefined}
           persons={sortedPersons}
           myPersonId={sync.membership?.person_id ?? null}
@@ -797,7 +814,9 @@ function EventSheet({
   onCare,
   ownerPersonId,
   onAsk,
+  guests,
 }: {
+  guests: Array<{ name: string; status: string }>;
   conflicts: Array<{ c: Conflict; state: CareState; care?: CareInfo }>;
   h: CalHelpers;
   onCare: (c: Conflict) => void;
@@ -818,7 +837,7 @@ function EventSheet({
   const [question, setQuestion] = useState('Dein Termin geht bei mir nicht. Bitte besprechen.');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const writable = isWritable(cal);
+  const writable = canEdit(ev, cal);
   const series = !!ev.recurringEventId;
 
   const del = async (scope: 'one' | 'all') => {
@@ -846,6 +865,11 @@ function EventSheet({
           👤 {who}
           {cal ? <span className="muted"> · Kalender «{cal.name}»</span> : null}
         </p>
+        {guests.length > 0 && (
+          <p className="cal-detail-row cal-guests">
+            ✉️ Eingeladen: {guests.map((g) => `${g.name} (${GUEST_STATUS[g.status] ?? 'offen'})`).join(', ')}
+          </p>
+        )}
         {ev.location && <p className="cal-detail-row">📍 {ev.location}</p>}
         {ev.description && <p className="cal-detail-desc">{ev.description.replace(/<[^>]+>/g, ' ')}</p>}
 
@@ -880,7 +904,11 @@ function EventSheet({
           );
         })}
 
-        {!writable && <p className="muted small-note">Diesen Termin kann nur {ownerName} ändern.</p>}
+        {!writable && (
+          <p className="muted small-note">
+            {ev.invitedBy ? `Einladung von ${ownerName}. ` : ''}Diesen Termin kann nur {ownerName} ändern.
+          </p>
+        )}
         {!writable && ownerPersonId && ask === null && (
           <button className="btn btn-block" onClick={() => setAsk('question')}>
             💬 Rückfrage an {ownerName}
@@ -970,6 +998,8 @@ function EventSheet({
   );
 }
 
+const GUEST_STATUS: Record<string, string> = { accepted: 'zugesagt', declined: 'abgesagt', tentative: 'vielleicht', needsAction: 'offen' };
+
 type RepeatChoice = 'none' | Repeat['freq'] | 'keep';
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const addMinutes = (date: string, time: string, min: number): [string, string] => {
@@ -989,6 +1019,7 @@ function EventEditor({
   scope,
   day,
   calendars,
+  allCalendars,
   cal,
   persons,
   myPersonId,
@@ -999,6 +1030,7 @@ function EventEditor({
   scope: 'one' | 'all';
   day: Date;
   calendars: CalInfo[];
+  allCalendars: CalInfo[];
   cal?: CalInfo;
   persons: Person[];
   myPersonId: string | null;
@@ -1027,6 +1059,8 @@ function EventEditor({
 
   const [title, setTitle] = useState(init.title);
   const [who, setWho] = useState<string[]>(() => (ev ? parseTitle(ev.title, persons).personIds : []));
+  // Im eigenen Kalender: bin ich (Besitzer) selbst betroffen? Abwählen = «(Thadea) Zahnarzt»
+  const [ownerIn, setOwnerIn] = useState(() => !(ev && parseTitle(ev.title, persons).only));
   const [allDay, setAllDay] = useState(init.allDay);
   const [startDate, setStartDate] = useState(init.startDate);
   const [endDate, setEndDate] = useState(init.endDate);
@@ -1071,12 +1105,28 @@ function EventEditor({
     setStartTime(t);
   };
 
-  const toggleWho = (id: string) => setWho(who.includes(id) ? who.filter((x) => x !== id) : [...who, id]);
+  const toggleWho = (id: string) => {
+    if (id === owner) setOwnerIn(!ownerIn);
+    else setWho(who.includes(id) ? who.filter((x) => x !== id) : [...who, id]);
+  };
   const titleWho = who.filter((x) => x !== owner);
-  const fullTitle = buildTitle(title, titleWho.length === persons.length ? [] : titleWho, persons);
+  const only = !!owner && !ownerIn;
+  const fullTitle = buildTitle(title, !only && titleWho.length === persons.length ? [] : titleWho, persons, only);
+
+  // Einladungen (nur im eigenen Kalender): gewählte Personen mit E-Mail-Adresse
+  const ownEmail = curCal?.kind === 'own' ? (curCal.email ?? curCal.id).toLowerCase() : null;
+  const emailOf = (id: string) => personEmail(id, persons, allCalendars);
+  const invitees = owner ? titleWho.filter((id) => { const em = emailOf(id); return em && em !== ownEmail; }) : [];
+  const inviteInput = owner
+    ? {
+        invite: invitees.map((id) => emailOf(id)!),
+        inviteKnown: persons.map((p) => emailOf(p.id)).filter((x): x is string => !!x && x !== ownEmail),
+      }
+    : undefined;
 
   const endOk = allDay ? endDate >= startDate : `${endDate}T${endTime}` > `${startDate}T${startTime}`;
-  const valid = title.trim() && calId && endOk && !loadingRepeat;
+  const whoOk = !only || titleWho.length > 0;
+  const valid = title.trim() && calId && endOk && whoOk && !loadingRepeat;
   const showRepeat = !(series && scope === 'one');
 
   const save = async () => {
@@ -1094,8 +1144,8 @@ function EventEditor({
       repeat: !showRepeat || repeat === 'keep' ? undefined : repeat === 'none' ? null : { freq: repeat, until: until || null },
     };
     try {
-      if (isNew) await createEvent(calId, input);
-      else await updateEvent(ev!, scope, input);
+      if (isNew) await createEvent(calId, input, inviteInput);
+      else await updateEvent(ev!, scope, input, inviteInput);
       await onSaved(isNew ? 'Termin gespeichert ✓' : 'Termin geändert ✓');
     } catch (e: any) {
       setError(e?.message ?? String(e));
@@ -1135,11 +1185,11 @@ function EventEditor({
           <span>Wen betrifft es?</span>
           <div className="chips">
             {persons.map((p) => {
-              const fixed = p.id === owner;
-              const on = fixed || who.includes(p.id);
+              const on = p.id === owner ? ownerIn : who.includes(p.id);
               return (
-                <button key={p.id} className={'chip small' + (on ? ' on' : '')} disabled={fixed} onClick={() => toggleWho(p.id)}>
+                <button key={p.id} className={'chip small' + (on ? ' on' : '')} onClick={() => toggleWho(p.id)}>
                   {p.name}
+                  {invitees.includes(p.id) ? ' ✉️' : ''}
                 </button>
               );
             })}
@@ -1148,6 +1198,14 @@ function EventEditor({
             {curCal?.kind === 'family' && titleWho.length === 0 ? 'Niemand gewählt = ganze Familie. ' : ''}
             {fullTitle !== title.trim() && title.trim() ? `In Google: «${fullTitle}»` : ''}
           </span>
+          {invitees.length > 0 && (
+            <span className="small-hint cal-invite-hint">
+              ✉️ {invitees.map((id) => persons.find((p) => p.id === id)?.name).join(', ')}{' '}
+              {invitees.length > 1 ? 'bekommen' : 'bekommt'} eine Einladung in den eigenen Google-Kalender.
+            </span>
+          )}
+          {only && <span className="small-hint muted">Du bist selbst nicht dabei. Der Termin steht trotzdem in deinem Kalender, mit «( )» markiert.</span>}
+          {!whoOk && <span className="warn">Bitte mindestens eine Person wählen.</span>}
         </div>
 
         <div className="seg cal-seg">

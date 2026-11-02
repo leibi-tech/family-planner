@@ -88,7 +88,9 @@ http.createServer(async (req, res) => {
       const list = (gcal.events[body.calendarId] ??= []);
       const id = 'n' + (++gcal.seq);
       const base = toEv(body.event);
-      gcal.writes.push({ uid, op: 'create', cal: body.calendarId, event: body.event });
+      gcal.writes.push({ uid, op: 'create', cal: body.calendarId, event: body.event, invite: body.invite });
+      // Einladungen: Gäste merken (die Kopie in ihrem Kalender entsteht beim Abholen)
+      if (body.invite?.length) Object.assign(base, { uid: 'ical-' + id, guests: body.invite.map((email) => ({ email, status: 'needsAction' })), organizer: body.calendarId });
       if (body.event.repeat) {
         gcal.repeats[id] = body.event.repeat;
         for (let i = 0; i < 3; i++) list.push({ ...base, id: `${id}_${i}`, recurringEventId: id, start: shift(base.start, i * 7, base.allDay), end: shift(base.end, i * 7, base.allDay) });
@@ -98,7 +100,11 @@ http.createServer(async (req, res) => {
     if (body.action === 'master') return send(res, 200, { repeat: gcal.repeats[body.eventId] ?? null });
     if (body.action === 'update') {
       const list = gcal.events[body.calendarId] ?? [];
-      gcal.writes.push({ uid, op: 'update', scope: body.scope, id: body.eventId, event: body.event });
+      gcal.writes.push({ uid, op: 'update', scope: body.scope, id: body.eventId, event: body.event, invite: body.invite, inviteKnown: body.inviteKnown });
+      if (Array.isArray(body.invite)) {
+        const e0 = list.find((x) => x.id === body.eventId);
+        if (e0) Object.assign(e0, { uid: e0.uid ?? 'ical-' + e0.id, organizer: body.calendarId, guests: body.invite.map((email) => e0.guests?.find((g) => g.email === email) ?? { email, status: 'needsAction' }) });
+      }
       const ne = toEv(body.event);
       if (body.scope === 'all' && body.recurringEventId) {
         for (const e of list.filter((x) => x.recurringEventId === body.recurringEventId)) Object.assign(e, { title: ne.title, location: ne.location, description: ne.description });
@@ -123,6 +129,9 @@ http.createServer(async (req, res) => {
           if (calendars.some((x) => x.id === c.id)) continue;
           calendars.push({ id: c.id, name: c.name, kind: c.kind, personId: c.kind === 'own' ? gcal.personOf[u] ?? members[u]?.person_id ?? null : null, mine: u === uid, writable: u === uid, email: a.email });
           for (const e of gcal.events[c.id] ?? []) if (e.end > body.from && e.start < body.to || e.allDay) events.push({ calendarId: c.id, recurringEventId: null, location: null, description: null, link: 'https://calendar.google.com/x', ...e });
+          // Einladungen anderer Kalender, bei denen dieser Kalender Gast ist (wie bei Google: Kopie)
+          for (const [cal2, list2] of Object.entries(gcal.events))
+            for (const e of list2) if (cal2 !== c.id && (e.guests ?? []).some((g) => g.email === c.id)) events.push({ recurringEventId: null, location: null, description: null, link: 'https://calendar.google.com/x', ...e, id: e.id, calendarId: c.id, invitedBy: cal2 });
         }
       return send(res, 200, { calendars, events, errors: gcal.errors });
     }

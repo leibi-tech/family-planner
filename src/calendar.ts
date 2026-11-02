@@ -16,6 +16,9 @@ export interface CalEvent {
   location: string | null;
   description: string | null;
   link: string | null;
+  uid?: string | null; // gleiche Kennung in allen Kalendern (bei Einladungen)
+  invitedBy?: string | null; // Kopie einer Einladung: E-Mail der Person, die eingeladen hat
+  guests?: Array<{ email: string; status: string }>; // Eingeladene
 }
 
 export interface CalInfo {
@@ -57,6 +60,12 @@ export interface EventInput {
   location?: string;
   description?: string;
   repeat?: Repeat | null; // undefined = unverändert lassen
+}
+
+/** Einladungen: wer eingeladen werden soll und welche Adressen zur Familie gehören. */
+export interface InviteInput {
+  invite: string[];
+  inviteKnown: string[];
 }
 
 export interface GoogleCalendar {
@@ -174,6 +183,23 @@ export function eventsFromCache(cache: CalCache | undefined, keys: string[]): Ca
   return out;
 }
 
+/** Eine Einladung steht im Kalender der einladenden und der eingeladenen Person.
+ *  In der App nur einmal zeigen, bevorzugt die Fassung der einladenden Person. */
+export function dedupeInvites(events: CalEvent[]): CalEvent[] {
+  const key = (e: CalEvent) => (e.uid ? `${e.uid}|${e.start}` : null);
+  const best = new Map<string, CalEvent>();
+  for (const e of events) {
+    const k = key(e);
+    if (!k) continue;
+    const cur = best.get(k);
+    if (!cur || (cur.invitedBy && !e.invitedBy)) best.set(k, e);
+  }
+  return events.filter((e) => {
+    const k = key(e);
+    return !k || best.get(k) === e;
+  });
+}
+
 /** Holt die Monate ab (y, m) für «count» Monate bei Google und legt sie in der Kopie ab. */
 export async function fetchMonths(household: string, y: number, m: number, count: number): Promise<CalCache> {
   const from = new Date(y, m, 1);
@@ -188,7 +214,7 @@ export async function fetchMonths(household: string, y: number, m: number, count
   const now = Date.now();
   const fresh: Record<string, CalEvent[]> = {};
   for (let i = 0; i < count; i++) fresh[monthKey(y, m + i)] = [];
-  for (const e of r.events) {
+  for (const e of dedupeInvites(r.events)) {
     const [s, en] = eventDays(e);
     for (let i = 0; i < count; i++) {
       const ms = new Date(y, m + i, 1);
@@ -213,13 +239,18 @@ export async function fetchStatus(): Promise<CalStatus> {
 
 export const isWritable = (c: CalInfo | undefined) => !!c && (c.writable ?? c.mine);
 
-export const createEvent = (calendarId: string, event: EventInput) => calendarCall('create', { calendarId, event });
+/** Darf ich diesen Termin ändern? Einladungen nur die Person, die eingeladen hat. */
+export const canEdit = (e: CalEvent, c: CalInfo | undefined) => isWritable(c) && !e.invitedBy;
+
+export const createEvent = (calendarId: string, event: EventInput, inv?: InviteInput) => calendarCall('create', { calendarId, event, ...inv });
 export const updateEvent = (
   e: CalEvent,
   scope: 'one' | 'all',
   event: EventInput,
+  inv?: InviteInput,
 ) =>
   calendarCall('update', {
+    ...inv,
     calendarId: e.calendarId,
     eventId: e.id,
     recurringEventId: e.recurringEventId,
@@ -233,33 +264,64 @@ export const seriesRepeat = (e: CalEvent) =>
   calendarCall<{ repeat: Repeat | 'other' | null }>('master', { calendarId: e.calendarId, eventId: e.recurringEventId });
 
 // ---------- Personen im Titel: «[Kind 1, Kind 2] Turnen» ----------
+// Im eigenen Kalender gehört die Besitzerin immer dazu. «(Thadea) Zahnarzt» = nur Thadea,
+// die Besitzerin des Kalenders ist nicht betroffen (z.B. Termin für jemand anderen erfasst).
 interface Named {
   id: string;
   name: string;
 }
-/** Zerlegt «[A, B] Titel» in Personen (nur bekannte Namen) und Titel. */
-export function parseTitle(title: string, persons: Named[]): { title: string; personIds: string[] } {
-  const m = title.match(/^\s*\[([^\]]+)\]\s*(.*)$/);
-  if (!m) return { title, personIds: [] };
+/** Zerlegt «[A, B] Titel» bzw. «(A, B) Titel» in Personen (nur bekannte Namen) und Titel. */
+export function parseTitle(title: string, persons: Named[]): { title: string; personIds: string[]; only: boolean } {
+  const m = title.match(/^\s*(?:\[([^\]]+)\]|\(([^)]+)\))\s*(.*)$/);
+  if (!m) return { title, personIds: [], only: false };
   const ids: string[] = [];
-  for (const raw of m[1].split(/[,;+&]/)) {
+  for (const raw of (m[1] ?? m[2]).split(/[,;+&]/)) {
     const n = raw.trim().toLowerCase();
     const p = persons.find((x) => x.name.trim().toLowerCase() === n);
-    if (!p) return { title, personIds: [] }; // unbekannter Name → Titel so lassen
+    if (!p) return { title, personIds: [], only: false }; // unbekannter Name → Titel so lassen
     if (!ids.includes(p.id)) ids.push(p.id);
   }
-  return { title: m[2] || title, personIds: ids };
+  return { title: m[3] || title, personIds: ids, only: m[2] !== undefined };
 }
-export function buildTitle(title: string, personIds: string[], persons: Named[]): string {
+export function buildTitle(title: string, personIds: string[], persons: Named[], only = false): string {
   const names = persons.filter((p) => personIds.includes(p.id)).map((p) => p.name);
   const clean = title.trim();
-  return names.length ? `[${names.join(', ')}] ${clean}` : clean;
+  if (!names.length) return clean;
+  return only ? `(${names.join(', ')}) ${clean}` : `[${names.join(', ')}] ${clean}`;
 }
-/** Wen betrifft ein Termin? Leere Liste = ganze Familie. */
-export function eventPersons(e: CalEvent, cal: CalInfo | undefined, persons: Named[]): string[] {
-  const { personIds } = parseTitle(e.title, persons);
-  if (cal?.kind === 'own' && cal.personId) return [cal.personId, ...personIds.filter((x) => x !== cal.personId)];
+/** Wen betrifft ein Termin? Leere Liste = ganze Familie.
+ *  organizer = Person, die eingeladen hat (bei der Kopie einer Einladung). */
+export function eventPersons(e: CalEvent, cal: CalInfo | undefined, persons: Named[], organizer?: string | null): string[] {
+  const { personIds, only } = parseTitle(e.title, persons);
+  const owner = e.invitedBy ? organizer ?? null : cal?.kind === 'own' ? cal.personId : null;
+  if (owner && !only) return [owner, ...personIds.filter((x) => x !== owner)];
+  if (e.invitedBy && cal?.kind === 'own' && cal.personId && !personIds.length) return [cal.personId];
   return personIds;
+}
+
+/** E-Mail-Adresse einer Person für Einladungen: selbst eingetragen oder die ihres Google-Kontos. */
+export function personEmail(
+  personId: string,
+  persons: Array<Named & { email?: string | null }>,
+  calendars: CalInfo[],
+): string | null {
+  const own = persons.find((p) => p.id === personId)?.email?.trim();
+  if (own) return own.toLowerCase();
+  const c = calendars.find((x) => x.kind === 'own' && x.personId === personId && x.email);
+  return c?.email ? c.email.toLowerCase() : null;
+}
+/** Person zu einer E-Mail-Adresse (Gegenstück zu personEmail). */
+export function personByEmail(
+  email: string | null | undefined,
+  persons: Array<Named & { email?: string | null }>,
+  calendars: CalInfo[],
+): string | null {
+  if (!email) return null;
+  const em = email.toLowerCase();
+  const p = persons.find((x) => x.email?.trim().toLowerCase() === em);
+  if (p) return p.id;
+  const c = calendars.find((x) => x.kind === 'own' && x.personId && (x.email?.toLowerCase() === em || x.id.toLowerCase() === em));
+  return c?.personId ?? null;
 }
 
 /** Lokales Datum/Zeit eines Termins für das Formular. */
@@ -349,10 +411,11 @@ export function isoWeek(d: Date): number {
 }
 
 /** Hilfsfunktionen rund um Personen eines Termins (Kalender, Startseite, Betreuung). */
-export function calHelpers(calendars: CalInfo[], persons: Named[]) {
+export function calHelpers(calendars: CalInfo[], persons: Array<Named & { email?: string | null }>) {
   const calById = new Map(calendars.map((c) => [c.id, c]));
   const personIds = persons.map((p) => p.id);
-  const personsOf = (e: CalEvent) => eventPersons(e, calById.get(e.calendarId), persons);
+  const personsOf = (e: CalEvent) =>
+    eventPersons(e, calById.get(e.calendarId), persons, e.invitedBy ? personByEmail(e.invitedBy, persons, calendars) : null);
   const keysOf = (e: CalEvent) => {
     const ps = personsOf(e);
     return ps.length ? ps : ['family'];

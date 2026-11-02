@@ -335,6 +335,35 @@ Unter **Mehr → Dokumente** scannst du Quittungen, Garantiescheine, Policen usw
 5. Ein Dokument mit dem Schloss privat speichern: Thadea darf es nicht sehen.
 Steht «Die Dokumenten-Ablage ist in Supabase noch nicht eingerichtet», fehlt Schritt 1 (bzw. update-0.22.sql bei privaten Dokumenten). Danach wird automatisch hochgeladen.
 
+## Z) Termine für andere: automatische Einladung (ab Version 0.23.0)
+Erfasst du einen Termin in **deinem** Kalender und wählst Thadea dazu, bekommt sie automatisch eine Google-Einladung. Der Termin steht dann auch in ihrem Gmail-Kalender. In der App erscheint er trotzdem nur einmal.
+
+**Einmalig: Google-Funktion in Supabase erneuern (ca. 3 Minuten, am PC einfacher)**
+1. supabase.com → euer Projekt → links **Edge Functions** → **google-kalender** → oben **Code**.
+2. Links `index.ts` anklicken, rechts alles markieren (Ctrl+A) und mit dem Inhalt von `supabase/functions/google-kalender/index-zum-kopieren.txt` ersetzen (auf GitHub: Datei öffnen → «Raw» bzw. Kopieren-Knopf).
+3. **Deploy** klicken. Kein Datenbank-Update nötig. «Verify JWT» bleibt aus.
+
+**Einmalig: Thadeas Gmail-Adresse eintragen**
+1. **Mehr → Familie** → Thadea antippen.
+2. Bei **Gmail-Adresse** ihre Adresse eintragen → **Speichern**.
+3. Ist Thadea später selbst mit Google verbunden, nimmt die App automatisch diese Adresse.
+
+**So geht's**
+1. Kalender → **+** → Titel eingeben, bei «Kalender» deinen eigenen wählen.
+2. Bei «Wen betrifft es?» **Thadea** antippen. Darunter steht «Thadea bekommt eine Einladung», am Knopf ein ✉️.
+3. **Nur für Thadea?** Tippe auch auf deinen eigenen Namen, dann bist du abgewählt. In Google heisst der Termin dann «(Thadea) Zahnarzt» (runde Klammern = du bist nicht dabei). In der App ist er nur in Thadeas Farbe.
+4. **Speichern.** Google schickt Thadea die Einladung per Mail, der Termin erscheint in ihrem Kalender.
+5. In der Termin-Ansicht steht «Eingeladen: Thadea (offen / zugesagt / abgesagt)».
+- Ändern oder löschen kannst nur du (wer eingeladen hat). Thadea kann zu- oder absagen. Bei Änderungen und beim Löschen bekommt sie von Google eine Mitteilung.
+- Wählst du Thadea später wieder ab, wird die Einladung zurückgezogen.
+- Im Familienkalender gibt es keine Einladungen (den sieht Thadea ja schon).
+
+**Zum Testen**
+1. Google-Funktion erneuern (oben), dann Pull Request mergen, 1–2 Minuten warten, App neu öffnen (Version **0.23.0**).
+2. Thadeas Gmail-Adresse bei Familie eintragen.
+3. Einen Test-Termin nur für Thadea erfassen (dich abwählen). Prüfen: Thadea bekommt ein Mail und sieht den Termin in ihrem Gmail-Kalender.
+4. Falls der Termin bei ihr nicht automatisch erscheint: In Google Kalender (Einstellungen → «Einladungen zu meinem Kalender hinzufügen») «Von allen» wählen.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
