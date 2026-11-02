@@ -14,6 +14,7 @@ export const CATEGORIES = [
   { id: 'gesundheit', label: 'Gesundheit' },
   { id: 'steuern', label: 'Steuern' },
   { id: 'schule', label: 'Schule / Kinder' },
+  { id: 'geraete', label: 'Fahrzeuge / Maschinen / Geräte' },
   { id: 'anderes', label: 'Anderes' },
 ] as const;
 export type Category = (typeof CATEGORIES)[number]['id'];

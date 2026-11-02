@@ -312,7 +312,7 @@ Unter **Mehr → Dokumente** scannst du Quittungen, Garantiescheine, Policen usw
 2. Die App zeigt das Foto mit vier Punkten an den Ecken des Blatts. Stimmen sie nicht, die Punkte mit dem Finger verschieben. **↻ Drehen** dreht das Bild.
 3. Filter wählen: **Farbe** (Standard, Stempel und Logos bleiben farbig), **Schwarz-weiss** (für reinen Text) oder **Original**.
 4. **Seite übernehmen.** Für mehrseitige Dokumente **Weitere Seite scannen**, sonst **Fertig**.
-5. Titel eingeben (z.B. «Waschmaschine»), Art wählen (Versicherung, Garantie, Quittung …), Datum und freiwillig **Garantie bis / Gültig bis** und eine Notiz → **Speichern**.
+5. Titel eingeben (z.B. «Waschmaschine»), Art wählen (Versicherung, Garantie, Quittung, Fahrzeuge / Maschinen / Geräte …), Datum und freiwillig **Garantie bis / Gültig bis** und eine Notiz → **Speichern**.
 6. **Für alle oder privat:** Standard ist für alle (offenes Schloss 🔓). Tippst du oben rechts auf das Schloss, wird es **privat 🔒**: nur du siehst es, auch in der Cloud geschützt.
 7. **Betrifft:** Bei «für alle» kannst du Personen antippen, z.B. Thadea bei ihrer Versicherungspolice. Bei privat gibt es diese Auswahl nicht.
 
