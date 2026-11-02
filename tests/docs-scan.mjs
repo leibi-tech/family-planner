@@ -92,6 +92,7 @@ ok((await p.locator('.docs-form-file').innerText()).includes('2 Seiten'), 'Formu
 ok(await p.locator('button:has-text("Speichern")').isDisabled(), 'Speichern erst mit Titel');
 await p.fill('.docs-form input[maxlength="120"]', 'Waschmaschine');
 await p.click('.docs-form .chip:has-text("Garantie")');
+ok(await p.locator('.docs-form .chip:has-text("Fahrzeuge / Maschinen / Geräte")').count() === 1, 'Art «Fahrzeuge / Maschinen / Geräte» wählbar');
 ok((await p.locator('.docs-form').innerText()).includes('Garantie bis'), 'Art Garantie: Feld heisst «Garantie bis»');
 const soon = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
 await p.fill('.docs-form input[type=date] >> nth=1', soon);
