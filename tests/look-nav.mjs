@@ -9,21 +9,21 @@ await p.goto('http://localhost:8765/docs-test/'); await p.waitForSelector('.tabb
 const tabs = () => p.locator('.tabbar .tab').allTextContents();
 const theme = () => p.evaluate(() => document.documentElement.dataset.theme);
 
-ok(JSON.stringify(await tabs()) === JSON.stringify(['Einkauf', 'ToDo', 'Start', 'Notizen', 'Mehr']), 'Standard-Leiste: Einkauf, ToDo, Start, Notizen, Mehr');
+ok(JSON.stringify(await tabs()) === JSON.stringify(['Einkauf', 'ToDo', 'Start', 'Kalender', 'Mehr']), 'Standard-Leiste: Einkauf, ToDo, Start, Kalender, Mehr');
 ok(await theme() === 'light', 'Standard: hell');
 ok(await p.locator('.tabbar svg.ico').count() === 5, 'Symbole statt Emojis in der Leiste');
 
 // Mehr: Kacheln + Einstellungen
 await p.click('.tabbar >> text=Mehr');
 ok(await p.locator('.more-grid .row').count() === 6, '«Mehr» zeigt die 6 nicht angehefteten Seiten');
-ok(await p.locator('.more-grid .row', { hasText: 'Notizen' }).count() === 0, 'Angeheftete Seite nicht unter «Mehr»');
+ok(await p.locator('.more-grid .row', { hasText: 'Kalender' }).count() === 0, 'Angeheftete Seite nicht unter «Mehr»');
 
 // Leiste anpassen
 await p.click('text=Menüleiste anpassen');
 ok(await p.locator('.topbar h1', { hasText: 'Menüleiste' }).count() === 1 && await p.locator('.topbar-back').count() === 1, 'Seite «Menüleiste» mit Zurück-Pfeil');
 ok(await p.locator('.nav-pin:disabled').count() === 6, 'Alle 3 Plätze belegt: Anheften gesperrt');
-await p.click('[aria-label="Notizen lösen"]');
-ok(JSON.stringify(await tabs()) === JSON.stringify(['Einkauf', 'ToDo', 'Start', 'frei', 'Mehr']), 'Notizen gelöst: Platz rechts frei, Start bleibt Mitte');
+await p.click('[aria-label="Kalender lösen"]');
+ok(JSON.stringify(await tabs()) === JSON.stringify(['Einkauf', 'ToDo', 'Start', 'frei', 'Mehr']), 'Kalender gelöst: Platz rechts frei, Start bleibt Mitte');
 await p.locator('.nav-list li', { hasText: 'Kalender' }).locator('.nav-pin').click();
 await p.click('[aria-label="Kalender nach links"]');
 await p.click('[aria-label="Kalender nach links"]');

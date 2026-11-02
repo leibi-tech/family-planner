@@ -15,9 +15,10 @@ import { readReturnFromGoogle } from './calendar';
 import { readShareStart } from './docs';
 import { onNavBack, onOpenRequest, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
-import { onChange, type Person } from './db';
+import { onChange, put, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 import { Icon } from './icons';
+import { SHOP_SETTINGS_ID, getShopSettings } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
 type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse';
@@ -248,6 +249,7 @@ function MorePage({ goto, pinned }: { goto: (t: Tab) => void; pinned: PinTab[] }
           ›
         </span>
       </button>
+      <ShopSetting />
       <div className="set-box">
         <div className="set-box-h">
           <Icon name="aussehen" />
@@ -263,6 +265,33 @@ function MorePage({ goto, pinned }: { goto: (t: Tab) => void; pinned: PinTab[] }
         </div>
       </div>
     </>
+  );
+}
+
+/** Einkaufsliste aus den Menüs: gilt für die ganze Familie. Bereits Eingeplantes bleibt, wie es ist. */
+function ShopSetting() {
+  const rows = useRecords('shopping');
+  if (!rows) return null;
+  const s = getShopSettings(rows);
+  const set = (on: boolean) => on !== s.fromMenus && put('shopping', { ...s, id: SHOP_SETTINGS_ID, fromMenus: on });
+  return (
+    <div className="set-box">
+      <div className="set-box-h">
+        <Icon name="einkauf" />
+        Einkaufsliste aus Menüs
+      </div>
+      <p className="hint small-hint">
+        Zutaten von Menüs, die im Wochenplan eingeplant werden, automatisch in die Einkaufsliste. Ausschalten: was schon drin ist, bleibt. Einschalten: nur neu eingeplante Menüs kommen dazu. Gilt für die ganze Familie.
+      </p>
+      <div className="seg" role="group" aria-label="Einkaufsliste aus Menüs">
+        <button className={!s.fromMenus ? 'on' : ''} onClick={() => set(false)}>
+          Aus
+        </button>
+        <button className={s.fromMenus ? 'on' : ''} onClick={() => set(true)}>
+          Ein
+        </button>
+      </div>
+    </div>
   );
 }
 

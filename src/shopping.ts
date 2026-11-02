@@ -56,6 +56,16 @@ export interface Suggestion extends BaseRecord {
   uses: number;
 }
 
+/** Einstellung für den ganzen Haushalt, gespeichert als Eintrag in «shopping» (wird mit abgeglichen). */
+export const SHOP_SETTINGS_ID = 'einstellungen';
+export interface ShopSettings extends BaseRecord {
+  fromMenus: boolean; // Zutaten neu eingeplanter Menüs automatisch in die Einkaufsliste (Standard: aus)
+}
+export function getShopSettings(rows: BaseRecord[] | undefined): ShopSettings {
+  const s = rows?.find((r) => r.id === SHOP_SETTINGS_ID) as ShopSettings | undefined;
+  return s ?? { id: SHOP_SETTINGS_ID, fromMenus: false, updatedAt: 0, deleted: false };
+}
+
 export const intervalLabel = (n: number) => (n === 1 ? 'jede Woche' : `alle ${n} Wochen`);
 
 /** Ist ein wiederkehrender Artikel in dieser Woche fällig? */
@@ -131,6 +141,7 @@ export function buildShoppingList(
       const factor = eaters.reduce((s, p) => s + p.factor, 0);
       if (factor <= 0) continue;
       for (const dish of slot.dishes) {
+        if (dish.shop === false) continue; // eingeplant, als «aus Menüs» ausgeschaltet war
         const menu = menuMap.get(dish.menuId);
         if (!menu) continue;
         const source: Source = { day: WEEKDAYS[i].slice(0, 2), slot: slot.label, menu: menu.name, kind: 'plan' };

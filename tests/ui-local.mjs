@@ -1,6 +1,6 @@
 import { chromium } from './pw.mjs';
 const b = await chromium.launch();
-const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' });
+const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' }); await ctx.addInitScript(() => { if (!localStorage.getItem('fp-nav')) localStorage.setItem('fp-nav', '["einkauf","todo","notizen"]'); }); /* Notizen in der Leiste (Standard ist seit v0.24 Kalender) */
 const page = await ctx.newPage();
 const errs = []; page.on('pageerror', (e) => errs.push(String(e))); page.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
 const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };

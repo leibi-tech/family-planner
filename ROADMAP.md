@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 02.11.2026 · Version 0.23.0
+Stand: 02.11.2026 · Version 0.24.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -22,6 +22,7 @@ Stand: 02.11.2026 · Version 0.23.0
 - ⏳ **Liebesgruss (v0.20.0)**: Text/Foto an Thadea (oder umgekehrt) auf den Startbildschirm, Empfängerin reagiert mit ❤️ 😘 😂 👍, erst dann geht die App auf; Reaktion auf der Startseite des Absenders; Album «Unsere Grüsse» (max. 100, ältere ausgedünnt) (E39). Tobias: Pull Request mergen und mit Thadea ausprobieren (ANLEITUNG W). Kein Datenbank-Update nötig. v0.22.1: zwei Knöpfe «Foto machen» (Kamera direkt, Frontkamera) und «Bild wählen».
 - ⏳ **Neues App-Symbol (v0.20.2)**: nach Tobias' Skizze: grosses Herz, die Eltern umarmen die Kinder (ihre Arme bilden ein Herz). Violetter Hintergrund, Eltern mit Verlauf blau → rosa, Kinder orange → violett (E40). v0.20.3: Bilddateien mit Kennung im Namen, damit Android das neue Symbol eher übernimmt. Tobias: mergen, App neu installieren, falls das alte Symbol bleibt (ANLEITUNG X).
 - ⏳ **Kalender: Termine für andere mit Einladung (v0.23.0)**: Person mit Gmail-Adresse im eigenen Kalender wählen → automatische Google-Einladung, Termin auch in ihrem Gmail-Kalender, in der App nur einmal. Sich selbst abwählen → «(Thadea) …». Ändern nur, wer eingeladen hat (E43). Tobias: **Funktion google-kalender in Supabase neu einspielen**, Thadeas Adresse bei Familie eintragen, mergen, ausprobieren (ANLEITUNG Z).
+- ⏳ **Einstellungen (v0.24.0)**: Mehr → Einstellungen → «Einkaufsliste aus Menüs» Ein/Aus (Standard aus, gilt für die ganze Familie). Ausschalten: was schon in der Liste ist, bleibt. Einschalten: nur danach eingeplante Menüs kommen dazu (E44). Standard-Menüleiste neu: Einkauf, ToDo, Start, Kalender, Mehr (Notizen unter Mehr). Tobias: mergen, ausprobieren (ANLEITUNG AA). Kein Datenbank-Update nötig.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -129,6 +130,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **02.11.2026 (2)**: Wunsch Tobias: Einkaufsliste aus Menüs abschaltbar (Standard aus, Bestehendes bleibt, nur danach Eingeplantes kommt dazu) und Standard-Menüleiste wie auf seinem Bild (Einkauf, ToDo, Start, Kalender, Mehr). v0.24.0: `Dish.shop` wird beim Einplanen/Kopieren nach der Einstellung gesetzt, Einstellung als Eintrag `einstellungen` im Speicher `shopping` (wird abgeglichen). Neuer Test `tests/shop-setting.mjs`, ältere Tests heften Notizen selbst an.
 - **02.11.2026**: Idee Tobias: Termin für andere, der auch in ihrem Gmail-Kalender steht. Antworten 1b (Einladung automatisch beim Wählen der Person), 2a (nur wer einlädt, darf ändern), sich selbst abwählen mit «( )». v0.23.0 gebaut: Einladungen in der Funktion `google-kalender`, Feld Gmail-Adresse bei Familie, keine Doppelten. Neuer Test `tests/calendar-invite.mjs`, Funktionstests ergänzt.
 - **31.10.2026**: Rückmeldung Tobias: beim Liebesgruss nur Bilder wählbar, keine Fotos direkt. v0.22.1: zweiter Knopf «Foto machen» (`capture="user"`), Test in `greetings.mjs` ergänzt.
 - **30.10.2026 (6)**: v0.21.0 gemergt. Wunsch Tobias: beim Erfassen privat (Schloss, Standard offen) oder für alle; bei «für alle» betroffene Personen wählen und danach filtern; privat ohne Personen. v0.22.0: `Doc.private`/`persons`, `changeVisibility` (neue ID + leerer Löschvermerk, Datei an neuen Ort), private Dateien unter `<hh>/privat/<uid>/`, `update-0.22.sql` (Funktion `dokument_erlaubt`, mit PostgreSQL geprüft), Test in `docs-cloud.mjs` erweitert.
