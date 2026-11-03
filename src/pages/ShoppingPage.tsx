@@ -64,7 +64,7 @@ export function ShoppingPage() {
   const items = useMemo(() => {
     if (!days || !menus || !persons || !recurring) return [];
     const extras: Extra[] = [
-      ...weekManual.map((m) => ({ ...m, source: { day: '', slot: '', menu: 'von Hand', kind: 'manual' as const } })),
+      ...weekManual.map((m) => ({ ...m, source: { day: '', slot: '', menu: m.from || 'von Hand', kind: 'manual' as const } })),
       ...recurring
         .filter((r) => isDue(r, monday))
         .map((r) => ({ ...r, source: { day: '', slot: '', menu: intervalLabel(r.intervalWeeks), kind: 'recurring' as const } })),

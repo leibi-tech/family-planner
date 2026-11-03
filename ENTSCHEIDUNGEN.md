@@ -234,3 +234,9 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Umsetzung:** Jedes eingeplante Gericht merkt sich beim Einplanen (auch beim Kopieren von Tag/Woche), ob die Einstellung gerade an war (`shop`). Ältere Gerichte ohne Vermerk zählen weiter (sie wurden ja mit «an» geplant). Von Hand erfasste und wiederkehrende Artikel sind nicht betroffen.
 - **Gilt für die ganze Familie** (die Einkaufsliste ist gemeinsam), gespeichert als Eintrag im Einkaufs-Speicher und mit abgeglichen. Kein Datenbank-Update.
 - **Menüleiste:** Standard neu Einkauf, ToDo, Start, Kalender, Mehr (Notizen unter Mehr). Wer die Leiste schon selbst eingerichtet hat, behält seine Einstellung.
+
+## E45 – Einkaufsliste: «Fragen» beim Einplanen (v0.25.0, 03.11.2026)
+- **Wunsch Tobias:** Neben Aus/Ein eine Wahl «jedes Mal fragen». Beim Einfügen eines Menüs fragt die App, ob die Einkaufsliste ergänzt wird, und man kann die Artikel vorher bearbeiten.
+- **Umsetzung:** Fenster «Einkaufsliste ergänzen?» mit den Zutaten (Menge nach den Personen, die mitessen). Abwählen, Name/Menge/Einheit ändern, Artikel dazufügen. Übernommen wird als Artikel der Woche mit Herkunft («Pizza (Do Mittagessen)»), löschbar mit ✕ wie Artikel von Hand.
+- **Folge:** Diese Artikel sind fest. Wird das Menü später aus dem Plan genommen oder ändern die Personen, die mitessen, bleibt die Liste unverändert (anders als bei «Ein»).
+- Beim Kopieren von Tag/Woche wird nicht gefragt (bei «Fragen» kommt dann nichts in die Liste).

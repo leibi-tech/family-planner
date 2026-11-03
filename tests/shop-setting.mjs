@@ -1,5 +1,5 @@
 // v0.24 Einstellung «Einkaufsliste aus Menüs»: Standard aus. Ausschalten lässt Bestehendes stehen,
-// Einschalten bringt nur danach eingeplante Menüs in die Einkaufsliste.
+// Einschalten bringt nur danach eingeplante Menüs in die Einkaufsliste. v0.25: «Fragen».
 import { chromium } from './pw.mjs';
 const b = await chromium.launch();
 const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
@@ -15,7 +15,7 @@ const p = await ctx.newPage(); p.on('pageerror', (e) => errs.push(String(e))); p
 await p.goto('http://localhost:8765/docs-test/'); await p.waitForSelector('.tabbar');
 const now = Date.now();
 const menu = (id, name, product) => ({ id, name, mealTypes: ['mittag', 'abend'], basis: { kind: 'family', baseFactor: 2.6 }, ingredients: [{ id: 'i' + id, product, amount: 1, unit: 'Stk.', category: 'lebensmittel' }], note: '', updatedAt: now, deleted: false });
-await p.evaluate(async (ms) => window.__put('menus', ms), [menu('m1', 'Milchreis', 'Milch'), menu('m2', 'Brotzeit', 'Brot'), menu('m3', 'Fondue', 'Käse')]);
+await p.evaluate(async (ms) => window.__put('menus', ms), [menu('m1', 'Milchreis', 'Milch'), menu('m2', 'Brotzeit', 'Brot'), menu('m3', 'Fondue', 'Käse'), { ...menu('m4', 'Pizza', 'Mehl'), ingredients: [{ id: 'a', product: 'Mehl', amount: 500, unit: 'g', category: 'lebensmittel' }, { id: 'b', product: 'Tomaten', amount: 2, unit: 'Dose', category: 'lebensmittel' }, { id: 'c', product: 'Salz', amount: null, unit: '', category: 'lebensmittel' }] }, menu('m5', 'Suppe', 'Lauch')]);
 await p.reload(); await p.waitForSelector('.tabbar');
 
 const more = async () => { await p.click('.tabbar >> text=Mehr'); await p.waitForSelector('.more-grid'); };
@@ -53,6 +53,31 @@ ok(rec && rec.fromMenus === false && rec.dirty === true, 'Einstellung als gemein
 await p.reload(); await p.waitForSelector('.tabbar');
 list = await shopItems();
 ok(list.includes('Brot') && !list.includes('Käse') && !list.includes('Milch'), 'Nach Neuladen unverändert');
+
+// Fragen: nach dem Einplanen erscheint die Frage, Artikel lassen sich anpassen
+await setShop('Fragen');
+await plan(2, 'Mittagessen', 'Pizza');
+const dlg = p.locator('[aria-label="Einkaufsliste ergänzen"]');
+ok(await dlg.count() === 1, 'Fragen: «Einkaufsliste ergänzen?» erscheint nach dem Einplanen');
+ok(await dlg.locator('.ask-name').count() === 3 && (await dlg.locator('[aria-label="Menge Mehl"]').inputValue()) !== '', 'Zutaten mit berechneter Menge vorgeschlagen');
+await dlg.locator('[aria-label="Menge Mehl"]').fill('1');
+await dlg.locator('[aria-label="Einheit Mehl"]').selectOption('kg');
+await dlg.locator('[aria-label="Nicht kaufen: Salz"]').click();
+await dlg.locator('button', { hasText: '+ Artikel' }).click();
+await dlg.locator('.ask-name').nth(3).fill('Mozzarella');
+await dlg.locator('button', { hasText: 'in die Einkaufsliste' }).click(); await p.waitForTimeout(300);
+ok(await dlg.count() === 0, 'Fenster schliesst nach dem Übernehmen');
+list = await shopItems();
+ok(list.includes('Mehl') && list.includes('Tomaten') && list.includes('Mozzarella') && !list.includes('Salz'), 'Angepasste Artikel in der Liste, abgewählter nicht (' + list.join(', ') + ')');
+const mehl = p.locator('.shop-item', { hasText: 'Mehl' });
+ok((await mehl.locator('.shop-qty').textContent()).trim() === '1 kg', 'Geänderte Menge übernommen');
+ok((await mehl.locator('.shop-src').textContent()).includes('Pizza'), 'Herkunft zeigt das Menü');
+await plan(2, 'Abendessen', 'Suppe');
+await p.locator('[aria-label="Einkaufsliste ergänzen"] button', { hasText: 'Nein, danke' }).click();
+list = await shopItems();
+ok(!list.includes('Lauch'), '«Nein, danke»: nichts übernommen');
+await more();
+ok(await p.locator('[aria-label="Einkaufsliste aus Menüs"] button.on').textContent() === 'Fragen', 'Einstellung «Fragen» gespeichert');
 
 ok(errs.length === 0, 'Keine Fehler ' + errs.join(' | '));
 await b.close();

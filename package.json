@@ -1,7 +1,7 @@
 {
   "name": "family-planner",
   "private": true,
-  "version": "0.24.1",
+  "version": "0.25.0",
   "description": "Familien-Organisation: Familie, Menüs, Wochenplan, Einkaufsliste (PWA)",
   "type": "module",
   "scripts": {
