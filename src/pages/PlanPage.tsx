@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
-import { newId, put, type Person } from '../db';
+import { getAll, newId, put, type Person } from '../db';
 import { useRecords } from '../hooks';
 import {
+  CATEGORIES,
+  UNITS,
+  parseAmount,
+  type Category,
   MEAL_TYPES,
   WEEKDAYS,
   addDays,
@@ -16,7 +20,7 @@ import {
   type Slot,
 } from '../model';
 import { MenuEditor, emptyMenu, familyFactorOf } from './MenusPage';
-import { getShopSettings } from '../shopping';
+import { dishItems, getShopSettings, shopMode, shopWeekId, itemKey, type ManualItem, type ShopWeek } from '../shopping';
 
 type Sel = { dayKey: string; slotId: string } | null;
 
@@ -35,6 +39,7 @@ export function PlanPage() {
   const [addSlotFor, setAddSlotFor] = useState<string | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const [copyDay, setCopyDay] = useState<string | null>(null);
+  const [ask, setAsk] = useState<{ dayKey: string; slotId: string; menuId: string } | null>(null); // Einkaufsliste ergänzen?
 
   const dayMap = useMemo(() => new Map((days ?? []).map((d) => [d.id, d])), [days]);
   const menuMap = useMemo(() => new Map((menus ?? []).map((m) => [m.id, m])), [menus]);
@@ -43,6 +48,7 @@ export function PlanPage() {
 
   // Neu eingeplante (auch kopierte) Gerichte kommen nur in die Einkaufsliste, wenn das gerade eingeschaltet ist
   const shopNow = getShopSettings(shopRows).fromMenus;
+  const askShop = shopMode(shopRows) === 'fragen';
   const sortedPersons = [...persons].sort((a, b) => a.sort - b.sort);
   const getDay = (key: string) => dayMap.get(key) ?? blankDay(key);
   const saveDay = (day: PlanDay) => put<PlanDay>('days', day);
@@ -191,10 +197,38 @@ export function PlanPage() {
           onPick={async (menuId) => {
             await addDish(picker, menuId);
             setPicker(null);
+            const m = menuMap.get(menuId) ?? (await getAll<Menu>('menus')).find((x) => x.id === menuId);
+            if (askShop && m && m.ingredients.some((i) => i.product.trim())) setAsk({ ...picker, menuId });
           }}
           onClose={() => setPicker(null)}
         />
       )}
+
+      {ask && (() => {
+        const day = getDay(ask.dayKey);
+        const slot = day.slots.find((s) => s.id === ask.slotId);
+        const menu = menuMap.get(ask.menuId);
+        if (!slot || !menu) return null;
+        const d = new Date(ask.dayKey + 'T12:00');
+        return (
+          <ShopAskSheet
+            title={`${menu.name} (${WEEKDAYS[(d.getDay() + 6) % 7].slice(0, 2)} ${slot.label})`}
+            items={dishItems(menu, slot, persons)}
+            onAdd={async (rows) => {
+              const wid = shopWeekId(mondayOf(d));
+              const from = `${menu.name} (${WEEKDAYS[(d.getDay() + 6) % 7].slice(0, 2)} ${slot.label})`;
+              for (const r of rows)
+                await put<ManualItem>('manual', { id: newId(), week: wid, ...r, from, updatedAt: 0, deleted: false });
+              // War ein Artikel als «zu Hause» markiert: wieder auf die Liste
+              const w = (shopRows as ShopWeek[]).find((x) => x.id === wid);
+              const keys = rows.map((r) => itemKey(r.product, r.unit));
+              if (w && w.removed.some((k) => keys.includes(k))) await put<ShopWeek>('shopping', { ...w, removed: w.removed.filter((k) => !keys.includes(k)) });
+              setAsk(null);
+            }}
+            onClose={() => setAsk(null)}
+          />
+        );
+      })()}
 
       {addSlotFor && (
         <AddSlotSheet
@@ -664,6 +698,71 @@ function WeekCopySheet({
           </button>
           <button className="btn btn-block" onClick={onClose}>
             Abbrechen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type AskRow = { on: boolean; product: string; qtyText: string; unit: string; category: Category };
+
+/** «In die Einkaufsliste?» nach dem Einplanen eines Menüs (Einstellung «Fragen»). Artikel vorher anpassen. */
+function ShopAskSheet({
+  title,
+  items,
+  onAdd,
+  onClose,
+}: {
+  title: string;
+  items: Array<{ product: string; qty: number | null; unit: string; category: Category }>;
+  onAdd: (rows: Array<{ product: string; qty: number | null; unit: string; category: Category }>) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [rows, setRows] = useState<AskRow[]>(() =>
+    items.map((i) => ({ on: true, product: i.product, qtyText: i.qty != null ? String(i.qty) : '', unit: i.unit, category: i.category })),
+  );
+  const upd = (i: number, patch: Partial<AskRow>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const chosen = rows.filter((r) => r.on && r.product.trim());
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet sheet-tall" role="dialog" aria-modal="true" aria-label="Einkaufsliste ergänzen" onClick={(e) => e.stopPropagation()}>
+        <h2>Einkaufsliste ergänzen?</h2>
+        <p className="muted">{title}</p>
+        <p className="hint small-hint">Häkchen weg = nicht kaufen. Name, Menge und Einheit kannst du anpassen.</p>
+        <ul className="ask-list">
+          {rows.map((r, i) => (
+            <li key={i} className={r.on ? '' : 'off'}>
+              <button className="ask-box" aria-label={(r.on ? 'Nicht kaufen: ' : 'Doch kaufen: ') + r.product} onClick={() => upd(i, { on: !r.on })}>
+                {r.on ? '✓' : ''}
+              </button>
+              <input className="ask-name" value={r.product} onChange={(e) => upd(i, { product: e.target.value })} aria-label="Artikel" disabled={!r.on} />
+              <input className="ask-qty" inputMode="decimal" value={r.qtyText} placeholder="–" onChange={(e) => upd(i, { qtyText: e.target.value })} aria-label={'Menge ' + r.product} disabled={!r.on} />
+              <select className="select ask-unit" value={r.unit} onChange={(e) => upd(i, { unit: e.target.value })} aria-label={'Einheit ' + r.product} disabled={!r.on}>
+                <option value="">–</option>
+                {[...new Set([...UNITS, r.unit].filter(Boolean))].map((u) => (
+                  <option key={u}>{u}</option>
+                ))}
+              </select>
+            </li>
+          ))}
+        </ul>
+        <button
+          className="btn btn-block"
+          onClick={() => setRows([...rows, { on: true, product: '', qtyText: '', unit: '', category: CATEGORIES[0].id }])}
+        >
+          + Artikel
+        </button>
+        <div className="sheet-actions">
+          <button
+            className="btn btn-primary btn-block"
+            disabled={!chosen.length}
+            onClick={() => onAdd(chosen.map((r) => ({ product: r.product.trim(), qty: parseAmount(r.qtyText), unit: r.unit, category: r.category })))}
+          >
+            {chosen.length} Artikel in die Einkaufsliste
+          </button>
+          <button className="btn btn-block" onClick={onClose}>
+            Nein, danke
           </button>
         </div>
       </div>

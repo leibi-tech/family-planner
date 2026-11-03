@@ -797,3 +797,12 @@ h1, h2, h3, .sheet h2 { font-family: var(--f-head); font-weight: 600; letter-spa
 .greet-tile-meta { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 4px; padding: 6px 8px; font-size: 12.5px; background: rgba(0, 0, 0, 0.5); color: #fff; }
 .greet-tile-meta > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .greet-tile-r { font-size: 18px; flex: none; }
+
+/* v0.25 «Einkaufsliste ergänzen?» nach dem Einplanen */
+.ask-list { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 8px; }
+.ask-list li { display: grid; grid-template-columns: 34px 1fr 56px 84px; gap: 6px; align-items: center; }
+.ask-list li.off input, .ask-list li.off select { opacity: 0.45; text-decoration: line-through; }
+.ask-box { width: 32px; height: 32px; border-radius: 9px; border: 2px solid var(--primary); background: transparent; color: var(--primary); font-weight: 800; font-size: 16px; }
+.ask-list li.off .ask-box { border-color: var(--muted); }
+.ask-name, .ask-qty { min-width: 0; width: 100%; padding: 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; }
+.ask-unit { min-width: 0; width: 100%; }

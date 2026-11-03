@@ -18,7 +18,7 @@ import { useRecords } from './hooks';
 import { onChange, put, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 import { Icon } from './icons';
-import { SHOP_SETTINGS_ID, getShopSettings } from './shopping';
+import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
 type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse';
@@ -273,7 +273,8 @@ function ShopSetting() {
   const rows = useRecords('shopping');
   if (!rows) return null;
   const s = getShopSettings(rows);
-  const set = (on: boolean) => on !== s.fromMenus && put('shopping', { ...s, id: SHOP_SETTINGS_ID, fromMenus: on });
+  const mode = shopMode(rows);
+  const set = (m: ShopMode) => m !== mode && put('shopping', { ...s, id: SHOP_SETTINGS_ID, fromMenus: m === 'ein', ask: m === 'fragen' });
   return (
     <div className="set-box">
       <div className="set-box-h">
@@ -281,13 +282,16 @@ function ShopSetting() {
         Einkaufsliste aus Menüs
       </div>
       <p className="hint small-hint">
-        Zutaten von Menüs, die im Wochenplan eingeplant werden, automatisch in die Einkaufsliste. Ausschalten: was schon drin ist, bleibt. Einschalten: nur neu eingeplante Menüs kommen dazu. Gilt für die ganze Familie.
+        Kommen die Zutaten von Menüs, die im Wochenplan eingeplant werden, in die Einkaufsliste? <b>Ein</b> = automatisch. <b>Fragen</b> = jedes Mal fragen, Artikel vorher anpassen. Umstellen ändert nichts an dem, was schon in der Liste ist. Gilt für die ganze Familie.
       </p>
       <div className="seg" role="group" aria-label="Einkaufsliste aus Menüs">
-        <button className={!s.fromMenus ? 'on' : ''} onClick={() => set(false)}>
+        <button className={mode === 'aus' ? 'on' : ''} onClick={() => set('aus')}>
           Aus
         </button>
-        <button className={s.fromMenus ? 'on' : ''} onClick={() => set(true)}>
+        <button className={mode === 'fragen' ? 'on' : ''} onClick={() => set('fragen')}>
+          Fragen
+        </button>
+        <button className={mode === 'ein' ? 'on' : ''} onClick={() => set('ein')}>
           Ein
         </button>
       </div>

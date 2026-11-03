@@ -2,7 +2,7 @@
 // Die Liste selbst wird nicht gespeichert, sondern jedes Mal frisch aus dem Plan berechnet.
 // Gespeichert werden nur deine Entscheide (zu Hause vorhanden, abgehakt) – pro Woche und pro Artikel.
 import type { BaseRecord, Person } from './db';
-import { WEEKDAYS, addDays, dateKey, defaultSlots, type Category, type Menu, type PlanDay } from './model';
+import { WEEKDAYS, addDays, dateKey, defaultSlots, type Category, type Menu, type PlanDay, type Slot } from './model';
 
 export interface Source {
   day: string; // «Mo» (leer bei manuellen/wiederkehrenden Artikeln)
@@ -35,6 +35,7 @@ export interface ManualItem extends BaseRecord {
   qty: number | null;
   unit: string; // '' = ohne Einheit
   category: Category;
+  from?: string; // Herkunft, wenn aus einem Menü übernommen, z.B. «Spaghetti (Mo Mittagessen)»
 }
 
 /** Wiederkehrender Artikel, z.B. jede Woche 12 Joghurts. */
@@ -60,10 +61,29 @@ export interface Suggestion extends BaseRecord {
 export const SHOP_SETTINGS_ID = 'einstellungen';
 export interface ShopSettings extends BaseRecord {
   fromMenus: boolean; // Zutaten neu eingeplanter Menüs automatisch in die Einkaufsliste (Standard: aus)
+  ask?: boolean; // v0.25: bei jedem eingeplanten Menü fragen (fromMenus ist dann false)
 }
+export type ShopMode = 'aus' | 'fragen' | 'ein';
 export function getShopSettings(rows: BaseRecord[] | undefined): ShopSettings {
   const s = rows?.find((r) => r.id === SHOP_SETTINGS_ID) as ShopSettings | undefined;
   return s ?? { id: SHOP_SETTINGS_ID, fromMenus: false, updatedAt: 0, deleted: false };
+}
+export function shopMode(rows: BaseRecord[] | undefined): ShopMode {
+  const s = getShopSettings(rows);
+  return s.fromMenus ? 'ein' : s.ask ? 'fragen' : 'aus';
+}
+
+/** Zutaten eines Gerichts für eine Mahlzeit (Mengen nach den Personen, die mitessen). */
+export function dishItems(menu: Menu, slot: Slot, persons: Person[]): Array<{ product: string; qty: number | null; unit: string; category: Category }> {
+  const factor = persons.filter((p) => !slot.absent.includes(p.id)).reduce((s, p) => s + p.factor, 0);
+  return menu.ingredients
+    .filter((ing) => ing.product.trim())
+    .map((ing) => ({
+      product: ing.product.trim(),
+      unit: ing.unit,
+      category: ing.category,
+      qty: ing.amount != null && menu.basis.baseFactor > 0 && factor > 0 ? roundQty((ing.amount / menu.basis.baseFactor) * factor, ing.unit) : null,
+    }));
 }
 
 export const intervalLabel = (n: number) => (n === 1 ? 'jede Woche' : `alle ${n} Wochen`);

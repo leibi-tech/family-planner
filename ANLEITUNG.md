@@ -369,12 +369,19 @@ Erfasst du einen Termin in **deinem** Kalender und wählst Thadea dazu, bekommt 
 1. **Mehr** → unten bei **Einstellungen** → «Einkaufsliste aus Menüs».
 2. **Aus** (Standard): Menüs im Wochenplan kommen nicht mehr automatisch in die Einkaufsliste. Was schon drin ist, bleibt.
 3. **Ein**: Menüs, die du **ab jetzt** einplanst, kommen mit ihren Zutaten in die Einkaufsliste. Früher eingeplante nicht.
+4. **Fragen** (ab 0.25.0): Nach jedem eingeplanten Menü fragt die App «Einkaufsliste ergänzen?». Häkchen weg = nicht kaufen, Name/Menge/Einheit änderbar, «+ Artikel» für Zusätzliches. Dann «… Artikel in die Einkaufsliste» oder «Nein, danke». Diese Artikel bleiben in der Liste, auch wenn du das Menü später wieder aus dem Plan nimmst (dann mit ✕ löschen).
 - Die Einstellung gilt für die ganze Familie (auch für Thadea).
 - Von Hand erfasste und wiederkehrende Artikel funktionieren immer.
 
 **Menüleiste**
 - Neu ist der Standard: Einkauf, ToDo, Start (Mitte), Kalender, Mehr. Notizen findest du unter Mehr.
 - Wer die Leiste schon selbst eingerichtet hat, behält sie. Ändern: Mehr → Menüleiste anpassen.
+
+**Zum Testen «Fragen» (0.25.0)**
+1. Pull Request mergen, 1–2 Minuten warten, App neu öffnen (Version **0.25.0**).
+2. Mehr → Einstellungen → «Einkaufsliste aus Menüs» → **Fragen**.
+3. Im Wochenplan ein Menü einplanen → Fenster «Einkaufsliste ergänzen?» erscheint. Eine Menge ändern, einen Artikel abwählen, übernehmen.
+4. Einkaufsliste prüfen: geänderte Menge, abgewählter Artikel fehlt, darunter steht das Menü als Herkunft.
 
 **Zum Testen**
 1. Pull Request mergen, 1–2 Minuten warten, App neu öffnen (Version **0.24.0**).
