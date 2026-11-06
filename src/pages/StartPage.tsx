@@ -1,3 +1,4 @@
+import { ApkUpdateCard } from '../components/ApkUpdate';
 import { useEffect, useMemo, useState } from 'react';
 import { useSync } from '../components/CloudCard';
 import { CareSheet, conflictWhen } from '../components/CareSheet';
@@ -150,6 +151,8 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
       </header>
 
       <GreetingCard onAlbum={() => goto('gruesse')} />
+
+      <ApkUpdateCard />
 
       {/* Wer schaut auf die Kinder? */}
       {(openConflicts.length > 0 || orphans.length > 0) && (

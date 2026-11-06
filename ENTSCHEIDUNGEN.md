@@ -254,3 +254,8 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Zurück-Taste:** Die App hat keine Browser-Verlaufsschritte, darum fragt die Hülle die App (`window.fpBack()`). Reihenfolge: offenes Fenster (zuerst ein Knopf mit `data-back`, sonst wie neben das Fenster tippen) → Zurück-Knopf der Seite (`data-back`) → Startseite. Auf der Startseite: App in den Hintergrund. Gruss-Sperre und «Wer bist du?» lassen sich so nicht wegdrücken.
 - **Speichern/Teilen:** Eigene kleine Verbindung `window.FPAndroid` (JavascriptInterface) statt Capacitor-Plugins, weil diese offline (Seite aus dem Service Worker) nicht verfügbar wären. Herunterladen → Ordner «Download» (MediaStore) und gleich öffnen. Teilen → Android-Teilen-Fenster. Nur erlaubt, wenn die eigene App-Adresse angezeigt wird.
 
+## E48 – Hinweis «Neue Android-App bereit» (v0.27.0, APK 1.2, 06.11.2026)
+- **Frage Tobias:** Muss jedes Update neu installiert werden? Antwort: nein, nur Änderungen am Android-Teil. Wunsch: Die App meldet eine neue APK selbst.
+- **Umsetzung:** Die App fragt (nur in der APK, höchstens alle 3 Stunden) die GitHub-Seite «Android-App» (Release `android`) ab und liest «Version 1.2 (Build 7)» aus dem Text. Ist die Build-Nummer höher als die installierte (`FPAndroid.versionCode()`, APK 1.1 ohne diese Funktion = Build 5), erscheint auf der Startseite ein Hinweis mit Download-Knopf. Installieren muss man immer selbst bestätigen (Android).
+- Der Release-Text wird vom Workflow geschrieben; das Muster «Version … (Build N)» darf sich nicht ändern.
+

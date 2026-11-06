@@ -428,6 +428,11 @@ Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel u
 2. Link von Punkt 7 öffnen, herunterladen, **über die alte drüber installieren** (Aktualisieren).
 3. App öffnen, unten bei Mehr: Version **0.26.0**. Zurück-Taste und bei einem Dokument «Herunterladen» und «Teilen» ausprobieren.
 
+**Ab APK 1.2: Hinweis bei neuer Version**
+- Gibt es eine neue Android-App, steht auf der **Startseite** «📲 Neue Android-App bereit». **Herunterladen** antippen → Chrome lädt sie → **Öffnen** → **Aktualisieren**. «Später» blendet den Hinweis bis zum nächsten Öffnen der App aus.
+- Unten auf jeder Seite steht neben der Version auch die Android-App-Version.
+- Normale Updates der App kommen weiterhin von selbst (App schliessen und neu öffnen), dafür gibt es keinen Hinweis.
+
 **Neue APK-Version (nur wenn Claude es sagt)**
 - Gleicher Link wie oben (Punkt 7), herunterladen und **über die alte drüber installieren**. Daten und Anmeldung bleiben.
 
