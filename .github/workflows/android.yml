@@ -1,0 +1,100 @@
+# Baut die Android-App (APK) und stellt sie unter «Releases» zum Herunterladen bereit.
+# Läuft, wenn sich am Android-Teil etwas ändert, oder von Hand (Actions → Android-App bauen → Run workflow).
+# Die eigentliche App kommt weiterhin von GitHub Pages; für normale Updates braucht es keine neue APK.
+name: Android-App bauen
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'android/**'
+      - 'android-start/**'
+      - 'capacitor.config.json'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
+      FP_KEY_PASSWORD: ${{ secrets.ANDROID_PASSWORT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Abhängigkeiten
+        run: npm install --no-audit --no-fund
+
+      - name: Version
+        run: |
+          echo "FP_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "FP_VERSION_NAME=$(node -p "require('./package.json').apkVersion") (Build ${{ github.run_number }})" >> "$GITHUB_ENV"
+
+      # Auf main wird immer mit dem eigenen Schlüssel unterschrieben (sonst gehen Updates nicht).
+      # Gibt es die Schlüsseldatei noch nicht, wird sie einmalig mit dem Passwort erzeugt und gespeichert.
+      - name: Schlüssel
+        if: env.IS_MAIN == 'true'
+        run: |
+          if [ -z "$FP_KEY_PASSWORD" ]; then
+            echo "::error::Das Geheimnis ANDROID_PASSWORT fehlt (Settings → Secrets and variables → Actions). Siehe ANLEITUNG.md, Abschnitt AB."
+            exit 1
+          fi
+          if [ ! -f android/familyplanner.p12 ]; then
+            keytool -genkeypair -noprompt -storetype PKCS12 -keystore android/familyplanner.p12 \
+              -alias familyplanner -keyalg RSA -keysize 4096 -validity 36500 \
+              -storepass "$FP_KEY_PASSWORD" -keypass "$FP_KEY_PASSWORD" -dname "CN=Family-Planner, C=CH"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add android/familyplanner.p12
+            git commit -m "Android: Schlüssel für die Unterschrift erzeugt (mit Passwort geschützt)"
+            git push
+          fi
+          echo "FP_KEYSTORE=$PWD/android/familyplanner.p12" >> "$GITHUB_ENV"
+
+      - name: Android-Projekt vorbereiten
+        run: npx cap sync android
+
+      - name: APK bauen
+        working-directory: android
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: APK umbenennen
+        run: cp android/app/build/outputs/apk/release/app-release.apk family-planner.apk
+
+      # Auf Test-Branches: nur zum Prüfen (Actions → Lauf → Artifacts)
+      - name: Test-APK ablegen
+        if: env.IS_MAIN != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: family-planner-test-apk
+          path: family-planner.apk
+          retention-days: 7
+
+      # Auf main: unter Releases → «Android-App» ersetzen
+      - name: Zum Herunterladen bereitstellen
+        if: env.IS_MAIN == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view android >/dev/null 2>&1; then
+            gh release create android --target "$GITHUB_SHA" --title "Android-App" \
+              --notes "Neueste Android-App (APK) für den Family-Planner. Auf dem Handy herunterladen und installieren. Anleitung: ANLEITUNG.md, Abschnitt AB."
+          fi
+          gh release upload android family-planner.apk --clobber
+          gh release edit android --notes "Neueste Android-App: Version ${FP_VERSION_NAME}. Auf dem Handy herunterladen und installieren (über die alte drüber). Anleitung: ANLEITUNG.md, Abschnitt AB."
