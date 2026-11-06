@@ -1,0 +1,13 @@
+{
+  "appId": "ch.leibitech.familyplanner",
+  "appName": "Family-Planner",
+  "webDir": "android-start",
+  "server": {
+    "url": "https://leibi-tech.github.io/family-planner/",
+    "errorPath": "fehler.html"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f7f5fc"
+  }
+}

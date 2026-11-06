@@ -2,16 +2,20 @@
   "name": "family-planner",
   "private": true,
   "version": "0.25.0",
+  "apkVersion": "1.0",
   "description": "Familien-Organisation: Familie, Menüs, Wochenplan, Einkaufsliste (PWA)",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.0",
     "esbuild": "0.28.2",
     "typescript": "6.0.3"
   }

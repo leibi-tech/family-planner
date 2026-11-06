@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 03.11.2026 · Version 0.25.0
+Stand: 06.11.2026 · Version 0.25.0 · APK 1.0
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -25,6 +25,7 @@ Stand: 03.11.2026 · Version 0.25.0
 - ⏳ **Einstellungen (v0.24.0)**: Mehr → Einstellungen → «Einkaufsliste aus Menüs» Ein/Aus (Standard aus, gilt für die ganze Familie). Ausschalten: was schon in der Liste ist, bleibt. Einschalten: nur danach eingeplante Menüs kommen dazu (E44). Standard-Menüleiste neu: Einkauf, ToDo, Start, Kalender, Mehr (Notizen unter Mehr). Tobias: mergen, ausprobieren (ANLEITUNG AA). Kein Datenbank-Update nötig.
 - ⏳ **Dokumente: neue Art «Fahrzeuge / Maschinen / Geräte» (v0.24.1)**: z.B. KM-Stand, Service, Bedienungsanleitung, Fahrzeugausweis. Tobias: mergen, ausprobieren. Kein Datenbank-Update nötig.
 - ⏳ **Einkaufsliste: «Fragen» (v0.25.0)**: dritte Wahl bei Mehr → Einstellungen → «Einkaufsliste aus Menüs»: Aus / Fragen / Ein. Bei «Fragen» erscheint nach dem Einplanen eines Menüs «Einkaufsliste ergänzen?» mit den Zutaten (Menge nach den Personen, die mitessen): abwählen, Name/Menge/Einheit ändern, Artikel dazufügen, dann übernehmen oder «Nein, danke» (E45). Tobias: mergen, ausprobieren (ANLEITUNG AA). Kein Datenbank-Update.
+- ⏳ **Android-App (APK 1.0)**: Hülle mit Capacitor, lädt die App weiter von GitHub Pages (Updates automatisch), eigenes Symbol, wird auf GitHub gebaut und unter Releases bereitgestellt (E46). Tobias: Geheimnis `ANDROID_PASSWORT` anlegen, mergen, APK auf beiden Handys installieren, ausprobieren (ANLEITUNG AB). Danach: Lücken schliessen (Dokument teilen/herunterladen, Teilen an die App), dann erstes Widget.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -44,6 +45,7 @@ Synchronisation über Supabase. Läuft: Konto, Haushalt mit Code, Rollen, automa
 
 ## Phase 3 – Eigene Android-App (APK), kein Play Store
 **Entscheid Tobias (26.10.2026):** Die App kommt **nie** in den Play Store (zu aufwendig, keine fremden Nutzer betreuen). Falls nötig eine APK (Capacitor) für die Familie und evtl. Kollegen, direkt installiert. Bis dahin bleibt die installierte Web-App die Hauptform.
+**Gestartet 06.11.2026 (Wunsch Tobias, für Widgets):** Schritt A1 APK ohne Widget (APK 1.0, E46). Nächste Schritte: A2 Lücken der APK schliessen (Dokumente teilen/herunterladen, Teilen an die App, evtl. Google-Scanner), A3 erstes Widget (welches, entscheidet Tobias nach dem Test).
 
 ## Nächste Schritte (Stand 26.10.2026, mit Tobias abgesprochen)
 Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseite zeigt auf einen Blick, was für die Familie heute wichtig ist.
@@ -132,6 +134,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **06.11.2026**: Frage Tobias: APK für Widgets, Kosten, Updates. Antworten: Thadea hat Android, zuerst nur APK ohne Widget. APK 1.0: Capacitor 8 mit `server.url` auf GitHub Pages, Ordner `android/` und `android-start/`, `capacitor.config.json`, Bau in GitHub Actions (`android.yml`, Release-Tag `android`), Unterschrift mit Geheimnis `ANDROID_PASSWORT` (E46). Web-App unverändert (kein neuer Build von `docs/`). Kein automatischer Test für die APK (Android-Werkzeuge in der Cloud gesperrt), Test-Bau auf GitHub geprüft.
 - **03.11.2026**: v0.24.0 gemergt. Wunsch Tobias: zusätzlich «jedes Mal fragen», Artikel vorher bearbeiten. v0.25.0: Einstellung `ask`, Fenster `ShopAskSheet` im Wochenplan, übernommene Artikel als `ManualItem` mit `from` (Herkunft). Test `tests/shop-setting.mjs` erweitert.
 - **02.11.2026 (3)**: Frage Tobias: KM-Stand vom Auto passt in keine Dokument-Art. Entscheid Tobias: eine gemeinsame Art «Fahrzeuge / Maschinen / Geräte» (id `geraete`). v0.24.1, Test in `docs-scan.mjs` ergänzt. Arten bleiben fest im Code (kein eigenes Anlegen).
 - **02.11.2026 (2)**: Wunsch Tobias: Einkaufsliste aus Menüs abschaltbar (Standard aus, Bestehendes bleibt, nur danach Eingeplantes kommt dazu) und Standard-Menüleiste wie auf seinem Bild (Einkauf, ToDo, Start, Kalender, Mehr). v0.24.0: `Dish.shop` wird beim Einplanen/Kopieren nach der Einstellung gesetzt, Einstellung als Eintrag `einstellungen` im Speicher `shopping` (wird abgeglichen). Neuer Test `tests/shop-setting.mjs`, ältere Tests heften Notizen selbst an.

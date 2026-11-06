@@ -389,6 +389,42 @@ Erfasst du einen Termin in **deinem** Kalender und wählst Thadea dazu, bekommt 
 3. Im Wochenplan ein Menü einplanen → kommt **nicht** in die Einkaufsliste.
 4. Auf **Ein** stellen, noch ein Menü einplanen → dessen Zutaten erscheinen in der Einkaufsliste.
 
+## AB) Android-App (APK) installieren (ab APK 1.0)
+Die APK ist eine «Hülle» um die bekannte App. Sie lädt die App weiterhin von GitHub, darum kommen normale Updates **automatisch** (wie bisher: mergen, App neu öffnen). Eine neue APK braucht es nur, wenn sich am Android-Teil etwas ändert (z.B. Widgets). Kostet nichts.
+
+**Einmalig: Passwort für die Unterschrift festlegen (am besten am PC, geht auch im Handy-Browser)**
+Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel unterschrieben ist. Der Schlüssel wird mit deinem Passwort geschützt.
+1. Im Browser github.com öffnen → Repository **family-planner** → **Settings** (Zahnrad oben; im Handy-Browser evtl. «Desktop-Version» einschalten).
+2. Links **Secrets and variables** → **Actions** → grüner Knopf **New repository secret**.
+3. Name: `ANDROID_PASSWORT` (genau so). Secret: ein Passwort, das du dir ausdenkst, **mindestens 12 Zeichen**. Aufschreiben (z.B. im Passwort-Manager), Claude braucht es nicht.
+4. **Add secret**.
+
+**Pull Request mergen**
+5. Pull Request öffnen → **Merge pull request** → **Confirm merge**.
+6. GitHub baut jetzt die APK (ca. 5 Minuten). Fortschritt: Repository → **Actions** → «Android-App bauen». Grüner Haken = fertig. Roter Kreis = Claude Bescheid geben.
+   - Hattest du das Passwort noch nicht eingetragen: nachholen, dann Actions → «Android-App bauen» → **Run workflow** → **Run workflow**.
+
+**APK auf dem Handy installieren (Tobias und Thadea)**
+7. Auf dem Handy diesen Link öffnen: https://github.com/leibi-tech/family-planner/releases/download/android/family-planner.apk
+8. Herunterladen bestätigen. Fertig geladen → **Öffnen**.
+9. Android fragt, ob Chrome Apps installieren darf → **Einstellungen** → **Aus dieser Quelle zulassen** einschalten → zurück → **Installieren**.
+10. Warnt Google Play Protect («unbekannte App»): **Weitere Details** → **Trotzdem installieren**. (Normal bei Apps, die nicht aus dem Play Store kommen.)
+11. Die App «Family-Planner» öffnen. Beim ersten Start braucht sie Internet. **Neu anmelden** (gleiche E-Mail und gleiches Passwort wie bisher). Deine Daten kommen aus der Cloud.
+12. Mehr → Menüleiste und Hell/Dunkel prüfen, falls du sie angepasst hattest: diese Einstellungen gelten pro App und müssen evtl. neu gemacht werden.
+13. Läuft alles: die alte Web-App (gleiches Symbol) kannst du vom Startbildschirm entfernen (lange drücken → Deinstallieren bzw. Entfernen). Vorher prüfen, dass alles da ist.
+
+**Bitte ausprobieren und Claude melden**
+- Startet die App? Steht oben nichts unter der Uhr/Statusleiste, unten nichts unter der Navigationsleiste?
+- Offline: Flugmodus ein, App schliessen und neu öffnen → läuft sie?
+- Zurück-Taste von Android: geht sie einen Schritt zurück?
+- Foto für Liebesgruss, Dokument scannen (Kamera), Datei wählen.
+- Kalender: lädt er die Termine? (Neu mit Google verbinden öffnet Chrome; danach zurück in die App wechseln.)
+- Dokument öffnen und **Herunterladen / Teilen**: klappt das? (Kann in der APK noch fehlen, wird im nächsten Schritt gelöst.)
+- «Teilen» aus einer anderen App an den Family-Planner geht in der APK noch nicht (kommt später).
+
+**Neue APK-Version (nur wenn Claude es sagt)**
+- Gleicher Link wie oben (Punkt 7), herunterladen und **über die alte drüber installieren**. Daten und Anmeldung bleiben.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

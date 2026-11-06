@@ -53,3 +53,10 @@ Diese Datei ist für Claude: So wird in einer neuen Sitzung weitergearbeitet. To
 - In Bash `pkill -f`/`pgrep -f` nicht mit einem Muster verwenden, das im eigenen Befehl vorkommt, das beendet die eigene Shell (Exit 144). Für Hintergrundprozesse stattdessen eine PID-Datei verwenden.
 - Playwright-Selektoren `:has-text("Kopieren")` treffen auch Knöpfe wie «Kopieren nach …». Lieber eindeutige Selektoren verwenden.
 - Den Inhalt aus der Supabase-Dokumentation nicht ungeprüft übernehmen: Ohne eigenes SMTP lassen sich die E-Mail-Vorlagen nicht ändern. Deshalb ist «Confirm email» aus, Anmeldung mit Passwort.
+
+## Android-App (APK, ab 06.11.2026, E46)
+- Capacitor 8: `capacitor.config.json` (appId `ch.leibitech.familyplanner`, `server.url` = GitHub Pages), `android-start/` (nur Start- und Fehlerseite), `android/` (Projekt, eingecheckt).
+- Bauen nur auf GitHub: `.github/workflows/android.yml` (Java 21, `npx cap sync android`, `./gradlew assembleRelease`). Startet bei Änderungen an `android/**`, `android-start/**`, `capacitor.config.json` oder dem Workflow, sonst von Hand. In der Claude-Cloud fehlen Android-SDK und Zugang zu dl.google.com.
+- Ergebnis prüfen: GitHub-MCP `actions_list` (list_workflow_runs, `android.yml`), bei Fehler `get_job_logs`.
+- Symbole: aus `public/icon-…-maskable-512.png` erzeugt (adaptive icon: Bild als Hintergrund-Ebene, leere Vordergrund-Ebene).
+- Normale Web-Updates brauchen keine neue APK. Für Änderungen am Android-Teil `apkVersion` in `package.json` erhöhen.
