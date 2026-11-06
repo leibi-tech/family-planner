@@ -1,8 +1,8 @@
 {
   "name": "family-planner",
   "private": true,
-  "version": "0.25.0",
-  "apkVersion": "1.0",
+  "version": "0.26.0",
+  "apkVersion": "1.1",
   "description": "Familien-Organisation: Familie, Menüs, Wochenplan, Einkaufsliste (PWA)",
   "type": "module",
   "scripts": {

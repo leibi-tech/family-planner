@@ -60,3 +60,4 @@ Diese Datei ist für Claude: So wird in einer neuen Sitzung weitergearbeitet. To
 - Ergebnis prüfen: GitHub-MCP `actions_list` (list_workflow_runs, `android.yml`), bei Fehler `get_job_logs`.
 - Symbole: aus `public/icon-…-maskable-512.png` erzeugt (adaptive icon: Bild als Hintergrund-Ebene, leere Vordergrund-Ebene).
 - Normale Web-Updates brauchen keine neue APK. Für Änderungen am Android-Teil `apkVersion` in `package.json` erhöhen.
+- Verbindung App ↔ Hülle (E47): `src/android.ts`. Die Hülle (`MainActivity.java`) ruft bei der Zurück-Taste `window.fpBack()` auf und stellt `window.FPAndroid.saveFile/shareFile(name, mime, base64)` bereit. Neue Fenster/Ansichten mit eigenem Zurück- oder Abbrechen-Knopf: `data-back` setzen. Test: `tests/apk.mjs`.

@@ -287,7 +287,7 @@ function NoteEditor({
   return (
     <section className="note-editor">
       <div className="note-head">
-        <button className="btn" onClick={onClose}>
+        <button className="btn" data-back onClick={onClose}>
           ‹ Zurück
         </button>
         <div className="note-head-actions">
