@@ -233,7 +233,7 @@ export function fmtSize(b: number): string {
   return Math.max(1, Math.round(b / 1024)) + ' KB';
 }
 
-// ---------- Teilen aus anderen Apps (Android «Teilen» → Family-Planner) ----------
+// ---------- Teilen aus anderen Apps (Android «Teilen» → myFam.) ----------
 // Der Service Worker legt die geteilten Dateien in den Zwischenspeicher «fp-teilen».
 export const SHARE_CACHE = 'fp-teilen';
 

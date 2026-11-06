@@ -94,7 +94,7 @@ jobs:
         run: |
           if ! gh release view android >/dev/null 2>&1; then
             gh release create android --target "$GITHUB_SHA" --title "Android-App" \
-              --notes "Neueste Android-App (APK) für den Family-Planner. Auf dem Handy herunterladen und installieren. Anleitung: ANLEITUNG.md, Abschnitt AB."
+              --notes "Neueste Android-App (APK) für myFam. (Family-Planner). Auf dem Handy herunterladen und installieren. Anleitung: ANLEITUNG.md, Abschnitt AB."
           fi
           gh release upload android family-planner.apk --clobber
           gh release edit android --notes "Neueste Android-App: Version ${FP_VERSION_NAME}. Auf dem Handy herunterladen und installieren (über die alte drüber). Anleitung: ANLEITUNG.md, Abschnitt AB."

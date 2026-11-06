@@ -390,6 +390,7 @@ Erfasst du einen Termin in **deinem** Kalender und wählst Thadea dazu, bekommt 
 4. Auf **Ein** stellen, noch ein Menü einplanen → dessen Zutaten erscheinen in der Einkaufsliste.
 
 ## AB) Android-App (APK) installieren (ab APK 1.0)
+> Ab APK 1.3 heisst die App **myFam.** (unter dem Symbol). Der Download-Link und alles andere bleiben gleich.
 Die APK ist eine «Hülle» um die bekannte App. Sie lädt die App weiterhin von GitHub, darum kommen normale Updates **automatisch** (wie bisher: mergen, App neu öffnen). Eine neue APK braucht es nur, wenn sich am Android-Teil etwas ändert (z.B. Widgets). Kostet nichts.
 
 **Einmalig: Passwort für die Unterschrift festlegen (am besten am PC, geht auch im Handy-Browser)**

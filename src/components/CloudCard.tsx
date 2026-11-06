@@ -415,7 +415,7 @@ function InviteBox({ householdId }: { householdId: string }) {
   }, [householdId]);
 
   const share = async () => {
-    const text = `Komm in unseren Family-Planner! App: https://leibi-tech.github.io/family-planner/ – Einladungscode: ${code} (zusammen mit deinem Vornamen eingeben)`;
+    const text = `Komm zu uns in die App myFam.! App: https://leibi-tech.github.io/family-planner/ – Einladungscode: ${code} (zusammen mit deinem Vornamen eingeben)`;
     try {
       if (navigator.share) await navigator.share({ text });
       else {

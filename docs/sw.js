@@ -1,7 +1,7 @@
 // Service Worker: macht die App offline nutzbar.
 // Version und Dateiliste werden beim Bauen automatisch eingesetzt.
-const CACHE = 'family-planner-26c72381f9';
-const ASSETS = ["./","./index.html","./app.js?v=de438b7e","./app.css?v=2a527125","./apple-touch-icon-0462c5a9.png","./datenschutz.html","./font-fredoka-600.woff2","./font-nunito-sans-400.woff2","./font-nunito-sans-600.woff2","./font-nunito-sans-700.woff2","./font-nunito-sans-800.woff2","./icon-0462c5a9-192.png","./icon-0462c5a9-512.png","./icon-0462c5a9-maskable-512.png","./icon.svg","./manifest.webmanifest"];
+const CACHE = 'family-planner-7ca9e71607';
+const ASSETS = ["./","./index.html","./app.js?v=e546b0f7","./app.css?v=2a527125","./apple-touch-icon-0462c5a9.png","./datenschutz.html","./font-fredoka-600.woff2","./font-nunito-sans-400.woff2","./font-nunito-sans-600.woff2","./font-nunito-sans-700.woff2","./font-nunito-sans-800.woff2","./icon-0462c5a9-192.png","./icon-0462c5a9-512.png","./icon-0462c5a9-maskable-512.png","./icon.svg","./manifest.webmanifest"];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

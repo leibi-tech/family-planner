@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 06.11.2026 · Version 0.27.0 · APK 1.2
+Stand: 06.11.2026 · Version 0.28.0 · APK 1.3 · Name «myFam.»
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
@@ -27,7 +27,8 @@ Stand: 06.11.2026 · Version 0.27.0 · APK 1.2
 - ⏳ **Einkaufsliste: «Fragen» (v0.25.0)**: dritte Wahl bei Mehr → Einstellungen → «Einkaufsliste aus Menüs»: Aus / Fragen / Ein. Bei «Fragen» erscheint nach dem Einplanen eines Menüs «Einkaufsliste ergänzen?» mit den Zutaten (Menge nach den Personen, die mitessen): abwählen, Name/Menge/Einheit ändern, Artikel dazufügen, dann übernehmen oder «Nein, danke» (E45). Tobias: mergen, ausprobieren (ANLEITUNG AA). Kein Datenbank-Update.
 - ⏳ **Android-App (APK 1.0)**: Hülle mit Capacitor, lädt die App weiter von GitHub Pages (Updates automatisch), eigenes Symbol, wird auf GitHub gebaut und unter Releases bereitgestellt (E46). Läuft auf Tobias' Handy (06.11.2026), Kalender und Scannen gehen.
 - ⏳ **APK 1.1 / v0.26.0: Zurück-Taste, Herunterladen und Teilen in der APK** (E47). Tobias: mergen, neue APK drüber installieren, ausprobieren (ANLEITUNG AB). Gemergt.
-- ⏳ **APK 1.2 / v0.27.0: Hinweis «Neue Android-App bereit»** auf der Startseite mit Download-Knopf (E48). Tobias: mergen, Hinweis erscheint in der App (APK 1.1) → so installieren. Danach offen: Teilen an die App, dann erstes Widget.
+- ⏳ **APK 1.3 / v0.28.0: neuer Name «myFam.»** (E49). Tobias: mergen, Hinweis auf der Startseite → neue APK installieren. Die Web-App im Browser zeigt den neuen Namen erst nach neuem Hinzufügen zum Startbildschirm.
+- ✅ **APK 1.2 / v0.27.0: Hinweis «Neue Android-App bereit»** (gemergt) auf der Startseite mit Download-Knopf (E48). Tobias: mergen, Hinweis erscheint in der App (APK 1.1) → so installieren. Danach offen: Teilen an die App, dann erstes Widget.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
 
@@ -136,6 +137,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **06.11.2026 (4)**: Wunsch Tobias: App heisst «myFam.». v0.28.0 / APK 1.3: Name in `strings.xml`, `capacitor.config.json`, Manifest, Titel, Einladungstext. Repository, Adresse, Android-Kennung und Datenschutzseite bleiben (E49).
 - **06.11.2026 (3)**: Frage Tobias, ob jedes Update neu installiert werden muss (nein, nur Android-Teil). Wunsch: Hinweis bei neuer APK. v0.27.0 / APK 1.2: `ApkUpdateCard` (Startseite), `latestApk()` liest den Release-Text, `FPAndroid.versionCode()/versionName()`. Test `tests/apk.mjs` erweitert. Alle Tests ok.
 - **06.11.2026 (2)**: APK 1.0 läuft bei Tobias (Kalender, Scannen ok). Zurück-Taste und Herunterladen gingen nicht. v0.26.0 / APK 1.1: `src/android.ts` (`fpBack`, `data-back` an Zurück-/Abbrechen-Knöpfen, `apkSave`/`apkShare`), `MainActivity.java` (Zurück-Taste, `FPAndroid` mit MediaStore-Download und Teilen). Neuer Test `tests/apk.mjs` (Hülle nachgespielt). Alle Tests ok.
 - **06.11.2026**: Frage Tobias: APK für Widgets, Kosten, Updates. Antworten: Thadea hat Android, zuerst nur APK ohne Widget. APK 1.0: Capacitor 8 mit `server.url` auf GitHub Pages, Ordner `android/` und `android-start/`, `capacitor.config.json`, Bau in GitHub Actions (`android.yml`, Release-Tag `android`), Unterschrift mit Geheimnis `ANDROID_PASSWORT` (E46). Web-App unverändert (kein neuer Build von `docs/`). Kein automatischer Test für die APK (Android-Werkzeuge in der Cloud gesperrt), Test-Bau auf GitHub geprüft.
