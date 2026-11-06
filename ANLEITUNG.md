@@ -366,7 +366,7 @@ Erfasst du einen Termin in **deinem** Kalender und wählst Thadea dazu, bekommt 
 
 ## AA) Einstellungen: Einkaufsliste aus Menüs, Menüleiste (ab Version 0.24.0)
 **Einkaufsliste aus Menüs**
-1. **Mehr** → unten bei **Einstellungen** → «Einkaufsliste aus Menüs».
+1. **Mehr** → **Einstellungen** (ab 0.28.0 eine eigene Seite) → «Einkaufsliste aus Menüs».
 2. **Aus** (Standard): Menüs im Wochenplan kommen nicht mehr automatisch in die Einkaufsliste. Was schon drin ist, bleibt.
 3. **Ein**: Menüs, die du **ab jetzt** einplanst, kommen mit ihren Zutaten in die Einkaufsliste. Früher eingeplante nicht.
 4. **Fragen** (ab 0.25.0): Nach jedem eingeplanten Menü fragt die App «Einkaufsliste ergänzen?». Häkchen weg = nicht kaufen, Name/Menge/Einheit änderbar, «+ Artikel» für Zusätzliches. Dann «… Artikel in die Einkaufsliste» oder «Nein, danke». Diese Artikel bleiben in der Liste, auch wenn du das Menü später wieder aus dem Plan nimmst (dann mit ✕ löschen).
@@ -436,6 +436,15 @@ Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel u
 
 **Neue APK-Version (nur wenn Claude es sagt)**
 - Gleicher Link wie oben (Punkt 7), herunterladen und **über die alte drüber installieren**. Daten und Anmeldung bleiben.
+
+## AC) Einstellungen, Datenschutz, Copyright (ab Version 0.28.0)
+- **Mehr → Einstellungen** ist jetzt eine eigene Seite: Menüleiste anpassen, Einkaufsliste aus Menüs, Hell/Dunkel, **Datenschutzerklärung**, Version und Copyright.
+- Wie ToDo oder Kalender kannst du «Einstellungen» in der Menüleiste anheften (Einstellungen → Menüleiste anpassen).
+- Die Datenschutzerklärung ist nachgeführt (Dokumente, Grüsse, Einladungen, Android-App, neuer Name) und auch offline lesbar. Dieselbe Seite gibt es für Google unter https://leibi-tech.github.io/family-planner/datenschutz.html
+
+**Zum Testen**
+1. Mehr → Einstellungen → alles da? Unten «© 2026 Tobias Leibacher».
+2. Datenschutzerklärung antippen → Text erscheint. Zurück-Pfeil oben links → wieder Einstellungen.
 
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.

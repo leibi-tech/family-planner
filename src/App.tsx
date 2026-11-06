@@ -22,7 +22,7 @@ import { apkVersion, installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
-type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse' | 'einstellungen' | 'datenschutz';
 
 const TITLES: Record<Tab, string> = {
   start: 'Start',
@@ -37,6 +37,8 @@ const TITLES: Record<Tab, string> = {
   dokumente: 'Dokumente',
   leiste: 'Menüleiste',
   gruesse: 'Unsere Grüsse',
+  einstellungen: 'Einstellungen',
+  datenschutz: 'Datenschutz',
 };
 
 /** Name in der Menüleiste und auf «Mehr», mit Beschreibung und Kachelfarbe. */
@@ -50,8 +52,12 @@ const PAGE_INFO: Record<PinTab, { label: string; sub: string; color: number }> =
   gruesse: { label: 'Unsere Grüsse', sub: 'Album mit Liebesgrüssen', color: 4 },
   dokumente: { label: 'Dokumente', sub: 'Scannen: Versicherungen, Garantien, Quittungen', color: 4 },
   familie: { label: 'Familie', sub: 'Personen, Portionen, gemeinsam nutzen', color: 5 },
+  einstellungen: { label: 'Einstellungen', sub: 'Aussehen, Menüleiste, Datenschutz', color: 1 },
 };
-const shortLabel = (id: PinTab) => (id === 'dokumente' ? 'Dokumente' : id === 'gruesse' ? 'Grüsse' : PAGE_INFO[id].label);
+const shortLabel = (id: PinTab) => (id === 'gruesse' ? 'Grüsse' : PAGE_INFO[id].label);
+
+/** Unterseiten: «Zurück» führt zu den Einstellungen statt zu «Mehr». */
+const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz: 'einstellungen' };
 
 declare const __APP_VERSION__: string;
 
@@ -135,7 +141,7 @@ export function App() {
       <header className="topbar">
         <div className="topbar-left">
           {inMore && (
-            <button className="topbar-back" data-back aria-label="Zurück zu Mehr" onClick={() => setTab('mehr')}>
+            <button className="topbar-back" data-back aria-label={'Zurück zu ' + TITLES[PARENT[tab] ?? 'mehr']} onClick={() => setTab(PARENT[tab] ?? 'mehr')}>
               ‹
             </button>
           )}
@@ -173,6 +179,10 @@ export function App() {
           <CalendarPage goto={(t) => setTab(t as Tab)} />
         ) : tab === 'leiste' ? (
           <NavSettingsPage />
+        ) : tab === 'einstellungen' ? (
+          <SettingsPage goto={setTab} apk={apk} />
+        ) : tab === 'datenschutz' ? (
+          <PrivacyPage />
         ) : (
           <MorePage goto={setTab} pinned={pinned} />
         )}
@@ -236,7 +246,6 @@ function TabBar({ pinned, tab, inMore, myOpen, onTab }: { pinned: PinTab[]; tab:
 
 /** «Mehr»: alle Seiten, die nicht in der Menüleiste angeheftet sind, und die Einstellungen. */
 function MorePage({ goto, pinned }: { goto: (t: Tab) => void; pinned: PinTab[] }) {
-  const theme = useTheme();
   const rest = PINNABLE.filter((id) => !pinned.includes(id));
   return (
     <>
@@ -255,7 +264,15 @@ function MorePage({ goto, pinned }: { goto: (t: Tab) => void; pinned: PinTab[] }
           </li>
         ))}
       </ul>
-      <h2 className="more-h">Einstellungen</h2>
+    </>
+  );
+}
+
+/** Einstellungen: eigene Seite (anheftbar wie ToDo), mit Datenschutz und Copyright. */
+function SettingsPage({ goto, apk }: { goto: (t: Tab) => void; apk: ReturnType<typeof apkVersion> }) {
+  const theme = useTheme();
+  return (
+    <>
       <button className="set-row" onClick={() => goto('leiste')}>
         <Icon name="leiste" />
         <span className="grow">Menüleiste anpassen</span>
@@ -278,8 +295,49 @@ function MorePage({ goto, pinned }: { goto: (t: Tab) => void; pinned: PinTab[] }
           </button>
         </div>
       </div>
+      <button className="set-row" onClick={() => goto('datenschutz')}>
+        <Icon name="schloss" />
+        <span className="grow">Datenschutzerklärung</span>
+        <span className="chev" aria-hidden>
+          ›
+        </span>
+      </button>
+      <div className="set-box about" data-testid="about">
+        <div className="set-box-h">myFam.</div>
+        <p className="hint small-hint">
+          Version {__APP_VERSION__}
+          {apk && (
+            <>
+              <br />
+              Android-App {apk.name || apk.code}
+            </>
+          )}
+        </p>
+        <p className="copy">© {new Date().getFullYear() > 2026 ? '2026–' + new Date().getFullYear() : '2026'} Tobias Leibacher. Alle Rechte vorbehalten.</p>
+      </div>
     </>
   );
+}
+
+/** Datenschutzerklärung in der App (gleicher Text wie datenschutz.html, auch offline). */
+function PrivacyPage() {
+  const [html, setHtml] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    fetch('./datenschutz.html')
+      .then((r) => (r.ok ? r.text() : Promise.reject()))
+      .then((t) => {
+        const main = new DOMParser().parseFromString(t, 'text/html').querySelector('main');
+        if (!main) throw new Error();
+        main.querySelectorAll('[data-web-only]').forEach((e) => e.remove());
+        main.querySelectorAll('a[href^="http"]').forEach((a) => a.setAttribute('target', '_blank'));
+        setHtml(main.innerHTML);
+      })
+      .catch(() => setFailed(true));
+  }, []);
+  if (failed) return <p className="warn">Die Datenschutzerklärung lässt sich gerade nicht laden. Bitte mit Internet nochmals öffnen.</p>;
+  if (html === null) return <p className="muted center">Lade …</p>;
+  return <article className="privacy" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 /** Einkaufsliste aus den Menüs: gilt für die ganze Familie. Bereits Eingeplantes bleibt, wie es ist. */

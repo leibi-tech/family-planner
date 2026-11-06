@@ -264,3 +264,8 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Geändert: Name unter dem Symbol (APK und Web-App), Fenstertitel, Einladungstext.
 - **Bleibt:** Repository und Adresse `leibi-tech.github.io/family-planner` (sonst zeigt die APK ins Leere), Android-Kennung `ch.leibitech.familyplanner` (sonst gehen Updates nicht), Datenschutzseite «Family-Planner» (passt zum Namen bei der Google-Anmeldung; erst ändern, wenn auch der Name in der Google Cloud Console geändert wird).
 
+## E50 – Einstellungen als eigene Seite, Datenschutz und Copyright (v0.28.0, 06.11.2026)
+- **Wunsch Tobias:** Einstellungen als eigenes Menü wie ToDo, dort Datenschutzerklärung und Copyright. Datenschutzerklärung ergänzen.
+- **Umsetzung:** Seite `einstellungen` (anheftbar, unter Mehr als Kachel) mit Menüleiste, Einkaufsliste aus Menüs, Aussehen, Datenschutzerklärung, Version und «© 2026 Tobias Leibacher. Alle Rechte vorbehalten.». Unterseiten «Menüleiste» und «Datenschutz» führen mit Zurück zu den Einstellungen.
+- **Datenschutz:** eine Quelle, `public/datenschutz.html` (für Google und Web). Die App lädt dieselbe Datei und zeigt den Inhalt an (offline über den Service Worker). Ergänzt: Grundsätze, Familie/Gmail-Adresse, Dokumente, Grüsse, Betreuung, Termine bearbeiten und Einladungen, Dienste (Supabase, GitHub Pages, Google, Rezept-Import), Android-App, Rechte nach Schweizer DSG. Name «myFam. (früher Family-Planner)», damit es zur Google-Anmeldung passt.
+

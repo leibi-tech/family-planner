@@ -745,6 +745,15 @@ h1, h2, h3, .sheet h2 { font-family: var(--f-head); font-weight: 600; letter-spa
 .set-box { background: var(--surface); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; display: grid; gap: 10px; }
 .set-box-h { display: flex; align-items: center; gap: 12px; font-weight: 700; }
 .set-box-h .ico { color: var(--primary); }
+.about .hint { margin: 0; }
+.about .copy { margin: 0; font-size: 14px; color: var(--muted); }
+.privacy { background: var(--surface); border-radius: 16px; padding: 4px 16px 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.privacy h1 { font-size: 22px; margin: 14px 0 2px; }
+.privacy h2 { font-size: 17px; margin: 20px 0 6px; }
+.privacy p, .privacy li { margin: 0 0 8px; }
+.privacy ul { padding-left: 20px; margin: 0 0 8px; }
+.privacy .muted { color: var(--muted); }
+.privacy a { color: var(--primary); }
 
 /* Menüleiste anpassen */
 .nav-preview { position: relative; background: var(--bg); border-radius: 20px; padding: 30px 0 0; margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }

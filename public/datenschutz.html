@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Family-Planner – Datenschutz</title>
+<title>myFam. – Datenschutz</title>
 <style>
   :root { color-scheme: light dark; --bg: #f6f5f2; --text: #1d1d1b; --muted: #6b6a66; --primary: #2f7d5b; }
   @media (prefers-color-scheme: dark) { :root { --bg: #161716; --text: #ecebe8; --muted: #a3a29d; --primary: #4fb487; } }
@@ -18,37 +18,62 @@
 </head>
 <body>
 <main>
-  <h1>Datenschutz – Family-Planner</h1>
-  <p class="muted">Stand: 26. Oktober 2026</p>
+  <h1>Datenschutz – myFam.</h1>
+  <p class="muted">Stand: 6. November 2026 · myFam. hiess bis November 2026 «Family-Planner».</p>
 
   <h2>Worum es geht</h2>
-  <p>Family-Planner ist eine private App einer Familie (Menüplan, Einkaufsliste, ToDos, Notizen, Kalender). Sie wird nicht verkauft, enthält keine Werbung und ist nur für die Familie und eingeladene Personen gedacht.</p>
+  <p>myFam. (früher «Family-Planner») ist eine private App einer Familie: Menüplan, Einkaufsliste, ToDos, Notizen, Kalender, Dokumente und Grüsse. Sie wird nicht verkauft, enthält keine Werbung und ist nur für die Familie und eingeladene Personen gedacht.</p>
   <p>Verantwortlich: Tobias Leibacher, Schweiz · E-Mail: <a href="mailto:leibachertobias@gmail.com">leibachertobias@gmail.com</a></p>
+
+  <h2>Grundsätze</h2>
+  <ul>
+    <li>Keine Werbung, keine Tracker, keine Statistik- oder Analyse-Dienste.</li>
+    <li>Daten werden nicht verkauft und nicht an Dritte weitergegeben, ausser an die unten genannten Dienste, die für den Betrieb nötig sind.</li>
+    <li>Daten werden nicht zum Trainieren von KI-Modellen verwendet.</li>
+  </ul>
 
   <h2>Welche Daten gespeichert werden</h2>
   <ul>
-    <li><b>Auf dem Gerät:</b> Alle Einträge der App (Personen, Menüs, Wochenplan, Einkaufsliste, ToDos, Notizen) und eine Kopie der Kalendertermine, damit die App auch ohne Internet funktioniert.</li>
+    <li><b>Auf dem Gerät:</b> Alle Einträge der App (Personen, Menüs, Wochenplan, Einkaufsliste, ToDos, Ämtli, Notizen und Listen, Grüsse, Dokumente) und eine Kopie der Kalendertermine, damit die App auch ohne Internet funktioniert. Persönliche Einstellungen (Menüleiste, Hell/Dunkel) bleiben nur auf dem Gerät.</li>
     <li><b>Beim gemeinsamen Nutzen:</b> E-Mail-Adresse und Passwort (verschlüsselt) für die Anmeldung sowie die Einträge des Haushalts. Sie liegen bei Supabase auf Servern in der Schweiz (Zürich). Nur Konten desselben Haushalts sehen diese Daten; private Einträge nur die Person, die sie erfasst hat.</li>
+    <li><b>Familie:</b> Vorname, Portionenfaktor und, falls eingetragen, die Gmail-Adresse einer Person (für Kalender-Einladungen).</li>
+    <li><b>Dokumente:</b> Gescannte oder gewählte Dateien (z.B. Versicherungen, Garantien, Quittungen) mit Titel, Art, Datum und Notiz. Die Dateien liegen in der Supabase-Ablage in Zürich und als Kopie auf den Geräten, die sie geöffnet haben. Private Dokumente sind auch in der Ablage nur für die Person zugänglich, die sie erfasst hat.</li>
+    <li><b>Grüsse:</b> Text und Foto (vorher verkleinert) sowie die Reaktion darauf.</li>
+    <li><b>Betreuung:</b> Notizen dazu, wer bei einem Termin auf die Kinder schaut, verknüpft mit dem Termin.</li>
   </ul>
 
   <h2>Google Kalender</h2>
   <p>Wer seinen Google Kalender verbindet, erlaubt der App:</p>
   <ul>
     <li>die Liste der eigenen Kalender zu lesen, damit man auswählen kann, welche angezeigt werden;</li>
-    <li>Termine der ausgewählten Kalender anzuzeigen und (in einer späteren Version) zu erstellen, zu ändern und zu löschen.</li>
+    <li>Termine der ausgewählten Kalender anzuzeigen, zu erstellen, zu ändern und zu löschen;</li>
+    <li>beim Erfassen eines Termins Familienmitglieder mit ihrer Gmail-Adresse einzuladen. Google schickt ihnen dann eine Einladung.</li>
   </ul>
   <p>Die Termine der ausgewählten Kalender werden den anderen Mitgliedern des eigenen Haushalts in der App angezeigt. Sie werden nicht in der Datenbank gespeichert, sondern jeweils direkt bei Google abgerufen; nur eine Kopie bleibt auf den Geräten des Haushalts.</p>
-  <p>Gespeichert wird der Zugangsschlüssel zu Google und die E-Mail-Adresse des Google-Kontos, geschützt in der Datenbank (Supabase, Zürich). Die App selbst kann den Schlüssel nicht lesen; nur die Server-Funktion verwendet ihn, um Termine abzurufen.</p>
+  <p>Gespeichert wird der Zugangsschlüssel zu Google und die E-Mail-Adresse des Google-Kontos, geschützt in der Datenbank (Supabase, Zürich). Die App selbst kann den Schlüssel nicht lesen; nur die Server-Funktion verwendet ihn, um Termine abzurufen und zu bearbeiten.</p>
   <p>Die Daten aus Google werden ausschliesslich für die Kalenderfunktion dieser App verwendet, nicht an Dritte weitergegeben, nicht für Werbung genutzt und nicht zum Trainieren von KI-Modellen verwendet. Die Nutzung der von Google erhaltenen Daten hält sich an die <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, einschliesslich der Anforderungen zur eingeschränkten Nutzung («Limited Use»).</p>
 
-  <h2>Verbindung trennen und Daten löschen</h2>
+  <h2>Dienste, die die App verwendet</h2>
   <ul>
-    <li>In der App unter «Mehr → Kalender → ⚙︎ Kalender → Verbindung trennen»: Der Zugangsschlüssel wird gelöscht und bei Google widerrufen.</li>
+    <li><b>Supabase</b> (Server in Zürich): Anmeldung, Datenbank, Dokumenten-Ablage und Server-Funktionen.</li>
+    <li><b>GitHub Pages</b> (GitHub, USA): liefert die App aus. Beim Laden erhält GitHub technisch nötige Angaben wie die IP-Adresse des Geräts. Die Android-App fragt bei GitHub ausserdem nach, ob es eine neue Version gibt.</li>
+    <li><b>Google</b>: nur für den Kalender (siehe oben) und nur, wenn man ihn verbindet.</li>
+    <li><b>Rezept-Import:</b> Fügt man den Link zu einem Rezept ein, holt eine Server-Funktion die Webseite ab. Dabei wird nur der Link übermittelt, keine persönlichen Daten.</li>
+  </ul>
+  <p>Schriften und Symbole sind in der App enthalten; es werden keine Inhalte von weiteren Dritten nachgeladen.</p>
+
+  <h2>Android-App</h2>
+  <p>Die Android-App zeigt dieselbe App an und braucht nur Internet. Kamera und Dateien werden nur verwendet, wenn man selbst ein Foto macht oder eine Datei wählt. Beim «Herunterladen» eines Dokuments wird es im Ordner «Download» des Handys gespeichert.</p>
+
+  <h2>Ihre Rechte, Verbindung trennen und Daten löschen</h2>
+  <ul>
+    <li>Nach dem Schweizer Datenschutzgesetz können Sie jederzeit Auskunft über Ihre Daten verlangen und sie berichtigen oder löschen lassen. Eine E-Mail an die oben genannte Adresse genügt, auch für das Löschen eines Kontos und aller Daten.</li>
+    <li>Google Kalender in der App trennen: «Kalender → ⚙︎ Kalender → Verbindung trennen». Der Zugangsschlüssel wird gelöscht und bei Google widerrufen.</li>
     <li>Jederzeit auch direkt bei Google unter <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</li>
-    <li>Für das Löschen eines Kontos und aller Daten genügt eine E-Mail an die oben genannte Adresse.</li>
+    <li>Daten auf dem Gerät: Die App deinstallieren bzw. die Website-Daten im Browser löschen.</li>
   </ul>
 
-  <p class="muted" style="margin-top:32px"><a href="./">Zurück zur App</a></p>
+  <p class="muted" style="margin-top:32px" data-web-only><a href="./">Zurück zur App</a></p>
 </main>
 </body>
 </html>
