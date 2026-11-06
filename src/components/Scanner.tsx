@@ -122,7 +122,7 @@ export function Scanner({ first, onDone, onCancel }: { first: File; onDone: (r: 
       <input ref={camRef} type="file" accept="image/*" capture="environment" hidden data-testid="scan-camera" onChange={(e) => { void open(e.target.files?.[0]); e.target.value = ''; }} />
       <input ref={galRef} type="file" accept="image/*" hidden data-testid="scan-gallery" onChange={(e) => { void open(e.target.files?.[0]); e.target.value = ''; }} />
       <div className="scan-head">
-        <button className="btn btn-ghost" onClick={cancel}>
+        <button className="btn btn-ghost" data-back onClick={cancel}>
           Abbrechen
         </button>
         <span className="scan-title">{edit ? `Seite ${pages.length + 1}: Ecken prüfen` : `${pages.length} ${pages.length === 1 ? 'Seite' : 'Seiten'}`}</span>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { requestPersistentStorage } from './db';
 import { FamilyPage } from './pages/FamilyPage';
 import { MenusPage } from './pages/MenusPage';
@@ -18,6 +18,7 @@ import { useRecords } from './hooks';
 import { onChange, put, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 import { Icon } from './icons';
+import { installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
@@ -95,6 +96,17 @@ export function App() {
     };
   }, []);
 
+  // Zurück-Taste der Android-App: Fenster schliessen, Seite zurück, zur Startseite
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  useEffect(() => {
+    installBack(() => {
+      if (tabRef.current === 'start') return false;
+      setTab('start');
+      return true;
+    });
+  }, []);
+
   // Zähler in der Menüleiste: meine offenen ToDos
   const todos = useRecords<Todo>('todos');
   const persons = useRecords<Person>('persons');
@@ -122,7 +134,7 @@ export function App() {
       <header className="topbar">
         <div className="topbar-left">
           {inMore && (
-            <button className="topbar-back" aria-label="Zurück zu Mehr" onClick={() => setTab('mehr')}>
+            <button className="topbar-back" data-back aria-label="Zurück zu Mehr" onClick={() => setTab('mehr')}>
               ‹
             </button>
           )}

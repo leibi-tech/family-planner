@@ -1,3 +1,4 @@
+import { apkSave, apkShare, inApk } from '../android';
 import { useEffect, useRef, useState } from 'react';
 import { useRecords } from '../hooks';
 import type { Person } from '../db';
@@ -400,8 +401,11 @@ function DocView({ doc, persons, pending, cloud, onClose, onEdit, onDelete }: { 
   }, [doc.id, doc.file.path, retry]);
 
   const file = () => new File([blob!], doc.file.name, { type: doc.file.type });
-  const canShare = !!blob && typeof navigator.share === 'function' && (navigator.canShare?.({ files: [file()] }) ?? false);
+  const apk = inApk();
+  const canShare = !!blob && (apk || (typeof navigator.share === 'function' && (navigator.canShare?.({ files: [file()] }) ?? false)));
+  const share = () => (apk ? void apkShare(blob!, doc.file.name) : void navigator.share({ files: [file()], title: doc.title }).catch(() => {}));
   const download = () => {
+    if (apk) return void apkSave(blob!, doc.file.name);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob!);
     a.download = doc.file.name;
@@ -417,7 +421,7 @@ function DocView({ doc, persons, pending, cloud, onClose, onEdit, onDelete }: { 
 
   return (
     <section className="docs-view">
-      <button className="btn btn-ghost docs-back" onClick={onClose}>
+      <button className="btn btn-ghost docs-back" data-back onClick={onClose}>
         ‹ Alle Dokumente
       </button>
       <h2>{doc.title}</h2>
@@ -444,7 +448,7 @@ function DocView({ doc, persons, pending, cloud, onClose, onEdit, onDelete }: { 
 
       <div className="docs-actions">
         {canShare && (
-          <button className="btn btn-primary" onClick={() => void navigator.share({ files: [file()], title: doc.title }).catch(() => {})}>
+          <button className="btn btn-primary" onClick={share}>
             Teilen / öffnen mit …
           </button>
         )}

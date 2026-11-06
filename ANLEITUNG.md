@@ -419,8 +419,14 @@ Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel u
 - Zurück-Taste von Android: geht sie einen Schritt zurück?
 - Foto für Liebesgruss, Dokument scannen (Kamera), Datei wählen.
 - Kalender: lädt er die Termine? (Neu mit Google verbinden öffnet Chrome; danach zurück in die App wechseln.)
-- Dokument öffnen und **Herunterladen / Teilen**: klappt das? (Kann in der APK noch fehlen, wird im nächsten Schritt gelöst.)
+- Dokument öffnen und **Herunterladen / Teilen**: ab APK 1.1 (App 0.26.0). «Herunterladen» speichert im Ordner **Download** und öffnet die Datei gleich. «Teilen / öffnen mit …» öffnet das Android-Teilen-Fenster (WhatsApp, Mail, Drive …).
+- **Zurück-Taste** (ab APK 1.1): schliesst zuerst ein offenes Fenster, dann eine Seite zurück, dann zur Startseite. Auf der Startseite geht die App in den Hintergrund.
 - «Teilen» aus einer anderen App an den Family-Planner geht in der APK noch nicht (kommt später).
+
+**Update auf APK 1.1 (Zurück-Taste, Herunterladen, Teilen)**
+1. Pull Request mergen, ca. 5 Minuten warten (Actions → «Android-App bauen» → grüner Haken).
+2. Link von Punkt 7 öffnen, herunterladen, **über die alte drüber installieren** (Aktualisieren).
+3. App öffnen, unten bei Mehr: Version **0.26.0**. Zurück-Taste und bei einem Dokument «Herunterladen» und «Teilen» ausprobieren.
 
 **Neue APK-Version (nur wenn Claude es sagt)**
 - Gleicher Link wie oben (Punkt 7), herunterladen und **über die alte drüber installieren**. Daten und Anmeldung bleiben.

@@ -249,3 +249,8 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Version:** `apkVersion` in `package.json` + Build-Nummer von GitHub (versionCode).
 - **Bekannte Lücken (nächster Schritt):** Teilen an die App (Web Share Target) gibt es in der APK nicht; Herunterladen/Teilen von Dokumenten (blob-Download, `navigator.share`) geht in der Android-WebView nicht. Google verbinden öffnet Chrome (Google erlaubt keine Anmeldung in eingebetteten Ansichten); der Schlüssel landet trotzdem in Supabase. Lösung später mit Capacitor-Plugins (die Bridge wird auch in die entfernte Seite eingespielt).
 
+## E47 – Zurück-Taste und Speichern/Teilen in der APK (v0.26.0, APK 1.1, 06.11.2026)
+- **Rückmeldung Tobias:** APK läuft, Kalender und Scannen gehen; Zurück-Taste und Herunterladen nicht.
+- **Zurück-Taste:** Die App hat keine Browser-Verlaufsschritte, darum fragt die Hülle die App (`window.fpBack()`). Reihenfolge: offenes Fenster (zuerst ein Knopf mit `data-back`, sonst wie neben das Fenster tippen) → Zurück-Knopf der Seite (`data-back`) → Startseite. Auf der Startseite: App in den Hintergrund. Gruss-Sperre und «Wer bist du?» lassen sich so nicht wegdrücken.
+- **Speichern/Teilen:** Eigene kleine Verbindung `window.FPAndroid` (JavascriptInterface) statt Capacitor-Plugins, weil diese offline (Seite aus dem Service Worker) nicht verfügbar wären. Herunterladen → Ordner «Download» (MediaStore) und gleich öffnen. Teilen → Android-Teilen-Fenster. Nur erlaubt, wenn die eigene App-Adresse angezeigt wird.
+

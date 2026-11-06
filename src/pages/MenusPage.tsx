@@ -462,7 +462,7 @@ export function MenuEditor({
           <button className="btn btn-primary btn-block" onClick={save} disabled={!valid}>
             Speichern
           </button>
-          <button className="btn btn-block" onClick={onClose}>
+          <button className="btn btn-block" data-back onClick={onClose}>
             Abbrechen
           </button>
           {!isNew && (
