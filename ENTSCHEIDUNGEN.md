@@ -240,3 +240,12 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Umsetzung:** Fenster «Einkaufsliste ergänzen?» mit den Zutaten (Menge nach den Personen, die mitessen). Abwählen, Name/Menge/Einheit ändern, Artikel dazufügen. Übernommen wird als Artikel der Woche mit Herkunft («Pizza (Do Mittagessen)»), löschbar mit ✕ wie Artikel von Hand.
 - **Folge:** Diese Artikel sind fest. Wird das Menü später aus dem Plan genommen oder ändern die Personen, die mitessen, bleibt die Liste unverändert (anders als bei «Ein»).
 - Beim Kopieren von Tag/Woche wird nicht gefragt (bei «Fragen» kommt dann nichts in die Liste).
+
+## E46 – Android-App (APK) als Hülle, App kommt weiter von GitHub Pages (APK 1.0, 06.11.2026)
+- **Wunsch Tobias:** APK, damit später Widgets möglich sind. Thadea hat auch Android. Zuerst nur die APK ohne Widget.
+- **Umsetzung:** Capacitor 8 (E18). Die APK lädt die App von `https://leibi-tech.github.io/family-planner/` (`server.url`). Vorteil: normale Updates kommen automatisch, ohne neue APK. Offline: Capacitor holt die Seite selbst; ohne Netz übernimmt der Service Worker die gespeicherte Kopie. Nur beim allerersten Start ohne Netz erscheint «Keine Verbindung» (`android-start/fehler.html`).
+- **Bauen:** GitHub Actions (`.github/workflows/android.yml`), weil die Android-Werkzeuge in der Claude-Cloud gesperrt sind. Läuft nur bei Änderungen am Android-Teil oder von Hand. Auf `main` landet die APK unter Releases → Tag `android` (fester Download-Link). Auf `claude/…`-Branches nur Test-APK (Artifact, Test-Schlüssel).
+- **Unterschrift:** Schlüssel `android/familyplanner.p12`, beim ersten Lauf auf `main` erzeugt und eingecheckt, geschützt mit dem Passwort im GitHub-Geheimnis `ANDROID_PASSWORT` (nur Tobias kennt es). Ohne gleichen Schlüssel kein Update. Geht das Geheimnis verloren: neuer Schlüssel, App einmal deinstallieren und neu installieren (Daten kommen aus der Cloud).
+- **Version:** `apkVersion` in `package.json` + Build-Nummer von GitHub (versionCode).
+- **Bekannte Lücken (nächster Schritt):** Teilen an die App (Web Share Target) gibt es in der APK nicht; Herunterladen/Teilen von Dokumenten (blob-Download, `navigator.share`) geht in der Android-WebView nicht. Google verbinden öffnet Chrome (Google erlaubt keine Anmeldung in eingebetteten Ansichten); der Schlüssel landet trotzdem in Supabase. Lösung später mit Capacitor-Plugins (die Bridge wird auch in die entfernte Seite eingespielt).
+
