@@ -18,10 +18,10 @@ const menu = (id, name, product) => ({ id, name, mealTypes: ['mittag', 'abend'],
 await p.evaluate(async (ms) => window.__put('menus', ms), [menu('m1', 'Milchreis', 'Milch'), menu('m2', 'Brotzeit', 'Brot'), menu('m3', 'Fondue', 'Käse'), { ...menu('m4', 'Pizza', 'Mehl'), ingredients: [{ id: 'a', product: 'Mehl', amount: 500, unit: 'g', category: 'lebensmittel' }, { id: 'b', product: 'Tomaten', amount: 2, unit: 'Dose', category: 'lebensmittel' }, { id: 'c', product: 'Salz', amount: null, unit: '', category: 'lebensmittel' }] }, menu('m5', 'Suppe', 'Lauch')]);
 await p.reload(); await p.waitForSelector('.tabbar');
 
-const more = async () => { await p.click('.tabbar >> text=Mehr'); await p.waitForSelector('.more-grid'); };
+const more = async () => { await p.click('.tabbar >> text=Mehr'); await p.click('.more-grid >> text=Einstellungen'); await p.waitForSelector('[aria-label="Einkaufsliste aus Menüs"]'); };
 const setShop = async (label) => { await more(); await p.locator('[aria-label="Einkaufsliste aus Menüs"] button', { hasText: label }).click(); await p.waitForTimeout(200); };
 const plan = async (dayIdx, slot, name) => {
-  await more(); await p.click('.more-grid .row >> text=Wochenplan'); await p.waitForSelector('.day');
+  await p.click('.tabbar >> text=Mehr'); await p.click('.more-grid .row >> text=Wochenplan'); await p.waitForSelector('.day');
   await p.locator('.day').nth(dayIdx).locator('.slot', { hasText: slot }).click();
   await p.locator('.sheet .row', { hasText: name }).click(); await p.waitForTimeout(300);
 };

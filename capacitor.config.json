@@ -1,6 +1,6 @@
 {
   "appId": "ch.leibitech.familyplanner",
-  "appName": "Family-Planner",
+  "appName": "myFam.",
   "webDir": "android-start",
   "server": {
     "url": "https://leibi-tech.github.io/family-planner/",

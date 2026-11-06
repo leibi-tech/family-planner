@@ -1,6 +1,6 @@
 {
-  "name": "Family-Planner",
-  "short_name": "Family",
+  "name": "myFam.",
+  "short_name": "myFam.",
   "description": "Familie organisieren: Wochenmenü, Einkauf, ToDos, Kalender, Dokumente",
   "lang": "de-CH",
   "start_url": "./",

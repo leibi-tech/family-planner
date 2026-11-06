@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Family-Planner</string>
-    <string name="title_activity_main">Family-Planner</string>
+    <string name="app_name">myFam.</string>
+    <string name="title_activity_main">myFam.</string>
     <string name="package_name">ch.leibitech.familyplanner</string>
     <string name="custom_url_scheme">ch.leibitech.familyplanner</string>
 </resources>

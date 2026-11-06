@@ -15,13 +15,23 @@ ok(await p.locator('.tabbar svg.ico').count() === 5, 'Symbole statt Emojis in de
 
 // Mehr: Kacheln + Einstellungen
 await p.click('.tabbar >> text=Mehr');
-ok(await p.locator('.more-grid .row').count() === 6, '«Mehr» zeigt die 6 nicht angehefteten Seiten');
+ok(await p.locator('.more-grid .row').count() === 7, '«Mehr» zeigt die 7 nicht angehefteten Seiten (mit Einstellungen)');
 ok(await p.locator('.more-grid .row', { hasText: 'Kalender' }).count() === 0, 'Angeheftete Seite nicht unter «Mehr»');
 
 // Leiste anpassen
+await p.click('.more-grid >> text=Einstellungen');
+ok(await p.locator('.topbar h1', { hasText: 'Einstellungen' }).count() === 1, 'Einstellungen: eigene Seite');
+ok((await p.locator('[data-testid=about]').innerText()).includes('© 2026 Tobias Leibacher'), 'Einstellungen: Copyright');
+ok((await p.locator('[data-testid=about]').innerText()).includes('Version 0.'), 'Einstellungen: Version');
+await p.click('text=Datenschutzerklärung');
+await p.waitForSelector('.privacy h1');
+const priv = await p.locator('.privacy').innerText();
+ok(priv.includes('Datenschutz – myFam.') && priv.includes('Supabase') && priv.includes('Limited Use') && !priv.includes('Zurück zur App'), 'Datenschutzerklärung in der App (ohne «Zurück zur App»)');
+await p.click('.topbar-back');
+ok(await p.locator('.topbar h1', { hasText: 'Einstellungen' }).count() === 1, 'Datenschutz → Zurück → Einstellungen');
 await p.click('text=Menüleiste anpassen');
 ok(await p.locator('.topbar h1', { hasText: 'Menüleiste' }).count() === 1 && await p.locator('.topbar-back').count() === 1, 'Seite «Menüleiste» mit Zurück-Pfeil');
-ok(await p.locator('.nav-pin:disabled').count() === 6, 'Alle 3 Plätze belegt: Anheften gesperrt');
+ok(await p.locator('.nav-pin:disabled').count() === 7, 'Alle 3 Plätze belegt: Anheften gesperrt');
 await p.click('[aria-label="Kalender lösen"]');
 ok(JSON.stringify(await tabs()) === JSON.stringify(['Einkauf', 'ToDo', 'Start', 'frei', 'Mehr']), 'Kalender gelöst: Platz rechts frei, Start bleibt Mitte');
 await p.locator('.nav-list li', { hasText: 'Kalender' }).locator('.nav-pin').click();
@@ -38,13 +48,23 @@ await p.click('.tabbar >> text=Mehr'); await p.click('.more-grid .row >> text=No
 ok(await p.locator('.tabbar .tab.active', { hasText: 'Mehr' }).count() === 1 && await p.locator('.topbar-back').count() === 1, 'Notizen jetzt unter «Mehr» (Mehr aktiv, Zurück-Pfeil)');
 
 // Dunkel
-await p.click('.tabbar >> text=Mehr'); await p.click('.seg button >> text=Dunkel');
+await p.click('.tabbar >> text=Mehr'); await p.click('.more-grid >> text=Einstellungen'); await p.click('.seg button >> text=Dunkel');
 ok(await theme() === 'dark', 'Dunkel eingeschaltet');
 await p.reload(); await p.waitForSelector('.tabbar');
 ok(await theme() === 'dark', 'Dunkel bleibt nach Neuladen');
 const bg = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
 ok(bg === 'rgb(30, 27, 46)', 'Dunkel ist violett-blau, nicht schwarz (' + bg + ')');
-await p.click('.tabbar >> text=Mehr'); await p.click('.seg button >> text=Hell');
+await p.click('.tabbar >> text=Mehr'); await p.click('.more-grid >> text=Einstellungen'); await p.click('.seg button >> text=Hell');
+
+// Einstellungen anheften wie ToDo
+await p.click('text=Menüleiste anpassen');
+ok(await p.locator('.topbar-back[aria-label="Zurück zu Einstellungen"]').count() === 1, 'Menüleiste: Zurück führt zu den Einstellungen');
+await p.click('[aria-label="Kalender lösen"]');
+await p.locator('.nav-list li', { hasText: 'Einstellungen' }).locator('.nav-pin').click();
+ok((await tabs()).includes('Einstellungen'), 'Einstellungen in der Menüleiste angeheftet');
+await p.click('.tabbar >> text=Einstellungen');
+ok(await p.locator('.tabbar .tab.active', { hasText: 'Einstellungen' }).count() === 1 && await p.locator('.topbar-back').count() === 0, 'Angeheftete Einstellungen: Knopf aktiv, kein Zurück-Pfeil');
+ok(await p.evaluate(() => [...document.querySelectorAll('.tabbar .tab')].every((t) => t.scrollWidth <= t.clientWidth + 1)), 'Name «Einstellungen» passt in die Leiste');
 ok(await theme() === 'light', 'Zurück auf hell');
 
 // nichts ragt über den Bildschirm hinaus
