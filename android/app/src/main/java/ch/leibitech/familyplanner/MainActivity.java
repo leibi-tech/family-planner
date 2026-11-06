@@ -14,6 +14,7 @@ import android.webkit.WebView;
 import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.content.FileProvider;
+import androidx.core.content.pm.PackageInfoCompat;
 import com.getcapacitor.BridgeActivity;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -101,6 +102,25 @@ public class MainActivity extends BridgeActivity {
     }
 
     class FpAndroid {
+
+        /** Installierte Version (für den Hinweis «Neue Android-App bereit»). */
+        @JavascriptInterface
+        public int versionCode() {
+            try {
+                return (int) PackageInfoCompat.getLongVersionCode(getPackageManager().getPackageInfo(getPackageName(), 0));
+            } catch (Exception e) {
+                return 0;
+            }
+        }
+
+        @JavascriptInterface
+        public String versionName() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (Exception e) {
+                return "";
+            }
+        }
 
         /** Datei im Ordner «Download» speichern und gleich öffnen. */
         @JavascriptInterface

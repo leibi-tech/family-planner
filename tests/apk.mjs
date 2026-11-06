@@ -50,5 +50,40 @@ ok(calls[0]?.[0] === 'save' && /Quittung Velo\.pdf$/.test(calls[0][1]) && calls[
 ok(calls[1]?.[0] === 'share' && calls[1][1] === calls[0][1], 'Teilen → Hülle teilt dieselbe Datei');
 ok(await back() === true && await p.locator('.docs-view').count() === 0 && await p.locator('.docs-add').count() === 1, 'Dokument-Ansicht → Zurück → Liste');
 
+// v0.27 Hinweis «Neue Android-App bereit»: installiert Build 5, auf GitHub Build 7
+const mk = async (installed) => {
+  const c = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' });
+  let asked = 0;
+  await c.route('https://api.github.com/**', (r) => { asked++; r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ body: 'Neueste Android-App: Version 1.2 (Build 7). Auf dem Handy …' }) }); });
+  await c.addInitScript({ content: `window.FPAndroid = { saveFile() {}, shareFile() {}${installed ? `, versionCode: () => ${installed}, versionName: () => '1.x (Build ${installed})'` : ''} };` });
+  const q = await c.newPage(); q.on('pageerror', (e) => errs.push(String(e)));
+  await q.goto('http://localhost:8765/docs-test/'); await q.waitForSelector('.tabbar'); await q.waitForTimeout(500);
+  return { c, q, asked: () => asked };
+};
+{
+  const { c, q, asked } = await mk(0); // APK 1.1: kennt ihre Nummer nicht → Build 5
+  const card = q.locator('[data-testid=apk-update]');
+  ok(await card.count() === 1 && (await card.innerText()).includes('1.2 (Build 7)') && (await card.innerText()).includes('1.1 (Build 5)'), 'APK 1.1 installiert, 1.2 auf GitHub: Hinweis auf der Startseite');
+  ok(await card.locator('a').getAttribute('href') === 'https://github.com/leibi-tech/family-planner/releases/download/android/family-planner.apk', 'Knopf «Herunterladen» führt zur APK');
+  ok((await q.locator('.foot').innerText()).includes('Android-App 1.1 (Build 5)'), 'Unten: installierte Android-App-Version');
+  await card.locator('text=Später').click();
+  ok(await card.count() === 0, '«Später» blendet den Hinweis aus');
+  await q.reload(); await q.waitForSelector('.tabbar'); await q.waitForTimeout(300);
+  ok(await card.count() === 0 && asked() === 1, 'Nach Neuladen: bleibt ausgeblendet, GitHub nur einmal gefragt');
+  await c.close();
+}
+{
+  const { c, q } = await mk(7);
+  ok(await q.locator('[data-testid=apk-update]').count() === 0, 'Neueste APK installiert: kein Hinweis');
+  await c.close();
+}
+{
+  const c = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' });
+  let asked = 0; await c.route('https://api.github.com/**', (r) => { asked++; r.abort(); });
+  const q = await c.newPage(); await q.goto('http://localhost:8765/docs-test/'); await q.waitForSelector('.tabbar'); await q.waitForTimeout(300);
+  ok(asked === 0 && await q.locator('[data-testid=apk-update]').count() === 0 && !(await q.locator('.foot').innerText()).includes('Android'), 'Im Browser: kein Hinweis, GitHub wird nicht gefragt');
+  await c.close();
+}
+
 ok(errs.length === 0, 'Keine Fehler ' + errs.join(' | '));
 await b.close();

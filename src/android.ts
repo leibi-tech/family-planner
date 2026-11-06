@@ -3,6 +3,8 @@
 interface FPAndroidApi {
   saveFile(name: string, mime: string, base64: string): void;
   shareFile(name: string, mime: string, base64: string): void;
+  versionCode?(): number; // ab APK 1.2
+  versionName?(): string;
 }
 const api = (): FPAndroidApi | undefined => (window as unknown as { FPAndroid?: FPAndroidApi }).FPAndroid;
 
@@ -53,4 +55,35 @@ export function installBack(fallback: () => boolean) {
     }
     return fallback();
   };
+}
+
+// ---- Neue APK-Version melden (E48) ----
+export const APK_URL = 'https://github.com/leibi-tech/family-planner/releases/download/android/family-planner.apk';
+const RELEASE_API = 'https://api.github.com/repos/leibi-tech/family-planner/releases/tags/android';
+const APK_11_BUILD = 5; // APK 1.1 kennt ihre Nummer noch nicht selbst
+
+export interface ApkVersion {
+  code: number;
+  name: string;
+}
+
+/** Installierte APK-Version (null im Browser). */
+export function apkVersion(): ApkVersion | null {
+  const a = api();
+  if (!a) return null;
+  if (typeof a.versionCode === 'function') return { code: Number(a.versionCode()), name: String(a.versionName?.() ?? '') };
+  return { code: APK_11_BUILD, name: '1.1 (Build 5)' };
+}
+
+/** Neueste APK auf GitHub (aus dem Text der Seite «Android-App»: «Version 1.2 (Build 7)»). */
+export async function latestApk(): Promise<ApkVersion | null> {
+  try {
+    const r = await fetch(RELEASE_API, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { body?: string };
+    const m = /Version (.+?\(Build (\d+)\))/.exec(j.body ?? '');
+    return m ? { code: Number(m[2]), name: m[1] } : null;
+  } catch {
+    return null;
+  }
 }

@@ -421,6 +421,9 @@ button, input { font: inherit; color: inherit; }
 .dash-hello p { margin: 2px 0 0; font-size: 15.5px; }
 .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; min-width: 0; }
 .dash-card h3 { margin: 0; font-size: 17px; }
+.apk-card p { margin: 8px 0 12px; line-height: 1.45; }
+.apk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.apk-actions a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .dash-link { flex: none; min-height: 44px; padding: 0 4px 0 12px; border: 0; background: none; color: var(--primary); font: inherit; font-weight: 700; cursor: pointer; }
 .dash-empty { margin: 4px 0 2px; font-size: 15px; }

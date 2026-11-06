@@ -18,7 +18,7 @@ import { useRecords } from './hooks';
 import { onChange, put, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
 import { Icon } from './icons';
-import { installBack } from './android';
+import { apkVersion, installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
@@ -65,6 +65,7 @@ export function App() {
     window.scrollTo(0, 0);
   };
   const [persistent, setPersistent] = useState<boolean | null>(null);
+  const [apk] = useState(apkVersion);
   const sync = useSync();
   useThinAlbum();
   const [online, setOnline] = useState(navigator.onLine);
@@ -178,6 +179,7 @@ export function App() {
 
         <footer className="foot muted">
           Version {__APP_VERSION__}
+          {apk && <> · Android-App {apk.name || apk.code}</>}
           <br />
           {persistent === true && 'Daten dauerhaft auf diesem Gerät gespeichert ✓'}
           {persistent === false && 'Daten auf diesem Gerät gespeichert'}
