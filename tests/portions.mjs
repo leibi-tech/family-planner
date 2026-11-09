@@ -1,0 +1,25 @@
+// v0.30: Familie zeigt nur Namen, Portionenfaktoren unter Einstellungen → Portionen.
+import { chromium } from './pw.mjs';
+const b = await chromium.launch();
+const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
+const errs = [];
+const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' });
+const p = await ctx.newPage(); p.on('pageerror', (e) => errs.push(String(e)));
+await p.goto('http://localhost:8765/docs-test/'); await p.waitForSelector('.tabbar');
+await p.click('.tabbar >> text=Mehr'); await p.click('text=Familie'); await p.waitForSelector('text=Kind 1');
+ok(await p.locator('.badge').count() === 0, 'Familie: keine Faktoren');
+ok(await p.locator('text=Portionenfaktor').count() === 0 && await p.locator('text=Ganze Familie').count() === 0, 'Familie: kein Hinweis, keine Summe');
+await p.locator('.row', { hasText: 'Kind 1' }).click();
+ok(await p.locator('[aria-label="Portionenfaktor"]').count() === 0 && await p.locator('text=Löschen').count() === 1, 'Person bearbeiten: Name, ohne Faktor');
+await p.click('text=Abbrechen');
+await p.click('[data-back]'); await p.click('text=Einstellungen'); await p.click('text=Portionen pro Person');
+ok((await p.locator('.topbar h1').innerText()) === 'Portionen', 'Einstellungen → Portionen'); await p.waitForSelector('.badge');
+ok(await p.locator('.badge').count() === 4 && await p.locator('text=Ganze Familie').count() === 1, 'Portionen: Faktoren und Summe');
+ok(await p.locator('text=Person hinzufügen').count() === 0, 'Portionen: kein «Person hinzufügen»');
+await p.locator('.row', { hasText: 'Kind 1' }).click();
+await p.click('[aria-label="mehr"]'); await p.click('text=Speichern'); await p.waitForTimeout(300);
+ok((await p.locator('.row', { hasText: 'Kind 1' }).locator('.badge').innerText()).includes('0.45'), 'Faktor ändern: 0.4 → 0.45');
+await p.click('[data-back]');
+ok((await p.locator('.topbar h1').innerText()) === 'Einstellungen', 'Zurück → Einstellungen');
+ok(errs.length === 0, 'keine Fehler ' + errs.join(' | '));
+await b.close();

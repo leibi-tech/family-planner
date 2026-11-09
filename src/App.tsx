@@ -23,7 +23,7 @@ import { apkVersion, installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
-type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse' | 'einstellungen' | 'datenschutz';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse' | 'einstellungen' | 'datenschutz' | 'portionen';
 
 const TITLES: Record<Tab, string> = {
   start: 'Start',
@@ -40,6 +40,7 @@ const TITLES: Record<Tab, string> = {
   gruesse: 'Unsere Grüsse',
   einstellungen: 'Einstellungen',
   datenschutz: 'Datenschutz',
+  portionen: 'Portionen',
 };
 
 /** Name in der Menüleiste und auf «Mehr», mit Beschreibung und Kachelfarbe. */
@@ -52,13 +53,13 @@ const PAGE_INFO: Record<PinTab, { label: string; sub: string; color: number }> =
   menues: { label: 'Menüs', sub: 'Gerichte erfassen und importieren', color: 2 },
   gruesse: { label: 'Unsere Grüsse', sub: 'Album mit Liebesgrüssen', color: 4 },
   dokumente: { label: 'Dokumente', sub: 'Scannen: Versicherungen, Garantien, Quittungen', color: 4 },
-  familie: { label: 'Familie', sub: 'Personen, Portionen, gemeinsam nutzen', color: 5 },
-  einstellungen: { label: 'Einstellungen', sub: 'Aussehen, Menüleiste, Datenschutz', color: 1 },
+  familie: { label: 'Familie', sub: 'Personen, gemeinsam nutzen', color: 5 },
+  einstellungen: { label: 'Einstellungen', sub: 'Portionen, Aussehen, Menüleiste, Datenschutz', color: 1 },
 };
 const shortLabel = (id: PinTab) => (id === 'gruesse' ? 'Grüsse' : PAGE_INFO[id].label);
 
 /** Unterseiten: «Zurück» führt zu den Einstellungen statt zu «Mehr». */
-const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz: 'einstellungen' };
+const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz: 'einstellungen', portionen: 'einstellungen' };
 
 declare const __APP_VERSION__: string;
 
@@ -182,6 +183,8 @@ export function App() {
           <NavSettingsPage />
         ) : tab === 'einstellungen' ? (
           <SettingsPage goto={setTab} apk={apk} />
+        ) : tab === 'portionen' ? (
+          <FamilyPage portions />
         ) : tab === 'datenschutz' ? (
           <PrivacyPage />
         ) : (
@@ -283,6 +286,13 @@ function SettingsPage({ goto, apk }: { goto: (t: Tab) => void; apk: ReturnType<t
         </span>
       </button>
       <ShopSetting />
+      <button className="set-row" onClick={() => goto('portionen')}>
+        <Icon name="familie" />
+        <span className="grow">Portionen pro Person</span>
+        <span className="chev" aria-hidden>
+          ›
+        </span>
+      </button>
       <div className="set-box">
         <div className="set-box-h">
           <Icon name="aussehen" />

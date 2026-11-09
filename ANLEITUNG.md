@@ -456,6 +456,14 @@ Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel u
 1. App öffnen → Fenster «Willkommen bei myFam.» erscheint.
 2. Namen eingeben → «Los geht's» → Startseite begrüsst mit diesem Namen.
 
+## AE) Portionen in den Einstellungen (ab Version 0.30.0)
+- **Mehr → Familie** zeigt nur noch die Namen. Antippen: Name, Gmail-Adresse, Löschen.
+- Die Portionenfaktoren (× 1.0, × 0.85 …) findest du neu unter **Mehr → Einstellungen → Portionen pro Person**.
+
+**Zum Testen**
+1. Mehr → Familie → keine Faktoren mehr sichtbar.
+2. Mehr → Einstellungen → Portionen pro Person → Faktoren wie bisher, antippen zum Ändern.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

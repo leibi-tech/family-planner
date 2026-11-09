@@ -42,7 +42,8 @@ async function repairFactors(myId: string) {
   }
 }
 
-export function FamilyPage() {
+/** Seite «Familie» (Namen) bzw. mit portions: Einstellungen → Portionen (Faktoren, v0.30). */
+export function FamilyPage({ portions = false }: { portions?: boolean }) {
   const persons = useRecords<Person>('persons');
   const sync = useSync();
   const [editing, setEditing] = useState<Person | null>(null);
@@ -70,12 +71,16 @@ export function FamilyPage() {
 
   return (
     <section>
-      <CloudCard />
-      <p className="hint">
-        Der <b>Portionenfaktor</b> sagt, wie viel jemand im Vergleich zu {me ? 'dir' : 'einer normalen Portion'} (1.0) isst.
-        Daraus berechnet die App die Einkaufsmengen.
-        {!admin && ' Personen und Faktoren kann nur der Admin eurer Familie ändern.'}
-      </p>
+      {!portions && <CloudCard />}
+      {portions ? (
+        <p className="hint">
+          Der <b>Portionenfaktor</b> sagt, wie viel jemand im Vergleich zu {me ? 'dir' : 'einer normalen Portion'} (1.0) isst.
+          Daraus berechnet die App die Einkaufsmengen. Wer das nicht braucht, lässt alle auf 1.0.
+          {!admin && ' Faktoren kann nur der Admin eurer Familie ändern.'}
+        </p>
+      ) : (
+        !admin && <p className="hint">Personen kann nur der Admin eurer Familie ändern.</p>
+      )}
 
       <ul className="list">
         {sorted.map((p) => (
@@ -88,7 +93,7 @@ export function FamilyPage() {
                 {p.name}
                 {p.id === myId && <span className="row-sub">du</span>}
               </span>
-              <span className="badge">× {fmtFactor(p.factor / scale)}</span>
+              {portions && <span className="badge">× {fmtFactor(p.factor / scale)}</span>}
             </button>
           </li>
         ))}
@@ -96,11 +101,13 @@ export function FamilyPage() {
 
       {sorted.length === 0 && <p className="muted center">Noch keine Personen erfasst.</p>}
 
-      <div className="total">
-        Ganze Familie: <b>Faktor {fmtFactor(total)}</b>
-      </div>
+      {portions && (
+        <div className="total">
+          Ganze Familie: <b>Faktor {fmtFactor(total)}</b>
+        </div>
+      )}
 
-      {admin && (
+      {admin && !portions && (
         <button className="btn btn-primary btn-block" onClick={addPerson}>
           + Person hinzufügen
         </button>
@@ -113,6 +120,7 @@ export function FamilyPage() {
           scale={scale}
           meName={me?.name}
           isMe={editing.id === myId}
+          portions={portions}
           onClose={() => setEditing(null)}
         />
       )}
@@ -126,6 +134,7 @@ function PersonSheet({
   scale,
   meName,
   isMe,
+  portions,
   onClose,
 }: {
   person: Person;
@@ -133,6 +142,7 @@ function PersonSheet({
   scale: number;
   meName?: string;
   isMe: boolean;
+  portions: boolean;
   onClose: () => void;
 }) {
   const [name, setName] = useState(person.name);
@@ -173,8 +183,9 @@ function PersonSheet({
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h2>{isNew ? 'Neue Person' : 'Person bearbeiten'}</h2>
+        <h2>{portions ? `Portion: ${person.name}` : isNew ? 'Neue Person' : 'Person bearbeiten'}</h2>
 
+        {!portions && (<>
         <label className="field">
           <span>Name</span>
           <input
@@ -203,7 +214,9 @@ function PersonSheet({
               : 'Bitte eine gültige E-Mail-Adresse eingeben.'}
           </small>
         </label>
+        </>)}
 
+        {portions && (
         <div className="field">
           <span>Portionenfaktor</span>
           {isMe ? (
@@ -233,6 +246,7 @@ function PersonSheet({
             </>
           )}
         </div>
+        )}
 
         <div className="sheet-actions">
           <button className="btn btn-primary btn-block" onClick={save} disabled={!valid}>
@@ -241,7 +255,7 @@ function PersonSheet({
           <button className="btn btn-block" onClick={onClose}>
             Abbrechen
           </button>
-          {!isNew && (
+          {!isNew && !portions && (
             <button className={'btn btn-block ' + (confirmDelete ? 'btn-danger' : 'btn-ghost-danger')} onClick={del}>
               {confirmDelete ? `Wirklich «${person.name}» löschen?` : 'Löschen'}
             </button>
