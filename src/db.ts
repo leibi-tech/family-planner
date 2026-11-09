@@ -17,6 +17,8 @@ export interface Person extends BaseRecord {
   email?: string | null; // Gmail-Adresse für Termin-Einladungen (optional, v0.23)
 }
 
+declare const __TEST_SEED__: boolean;
+
 const DB_NAME = 'family-planner';
 const DB_VERSION = 10;
 export const STORES = ['persons', 'menus', 'days', 'shopping', 'manual', 'recurring', 'suggest', 'todos', 'chores', 'notes', 'care', 'greetings', 'docs'] as const;
@@ -32,6 +34,12 @@ function openDb(): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains('persons')) {
         const store = db.createObjectStore('persons', { keyPath: 'id' });
+        // Neue Installation: keine Startpersonen, die App fragt nach dem Namen (Welcome).
+        // Nur die Testversion legt die bisherigen Startwerte an (ausser ein Test will den ersten Start prüfen).
+        let testSeed = false;
+        try {
+          testSeed = __TEST_SEED__ && localStorage.getItem('fp-test-fresh') !== '1';
+        } catch {}
         const now = Date.now();
         const seed: Array<[string, number]> = [
           ['Tobias', 1.0],
@@ -39,7 +47,7 @@ function openDb(): Promise<IDBDatabase> {
           ['Kind 1', 0.4],
           ['Kind 2', 0.4],
         ];
-        seed.forEach(([name, factor], i) =>
+        if (testSeed) seed.forEach(([name, factor], i) =>
           store.put({ id: newId(), name, factor, sort: i, updatedAt: now, deleted: false } satisfies Person),
         );
       }

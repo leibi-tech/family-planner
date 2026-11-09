@@ -32,7 +32,7 @@ const result = await build({
   jsx: 'automatic',
   outdir: out,
   entryNames: 'app',
-  define: { 'process.env.NODE_ENV': '"production"', __APP_VERSION__: JSON.stringify(version), __SUPABASE_URL__: JSON.stringify(SUPABASE_URL), __SUPABASE_KEY__: JSON.stringify(SUPABASE_KEY) },
+  define: { 'process.env.NODE_ENV': '"production"', __APP_VERSION__: JSON.stringify(version), __SUPABASE_URL__: JSON.stringify(SUPABASE_URL), __SUPABASE_KEY__: JSON.stringify(SUPABASE_KEY), __TEST_SEED__: JSON.stringify(outDir !== 'docs') },
   metafile: true,
   logLevel: 'warning',
 });

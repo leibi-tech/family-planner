@@ -4,6 +4,7 @@ import { FamilyPage } from './pages/FamilyPage';
 import { MenusPage } from './pages/MenusPage';
 import { PlanPage } from './pages/PlanPage';
 import { useSync, WhoAmIPrompt } from './components/CloudCard';
+import { Welcome } from './components/Welcome';
 import { ShoppingPage } from './pages/ShoppingPage';
 import { TodoPage, useMe } from './pages/TodoPage';
 import { NotesPage } from './pages/NotesPage';
@@ -197,6 +198,7 @@ export function App() {
       </main>
 
       <WhoAmIPrompt />
+      <Welcome onJoin={() => setTab('familie')} />
       <GreetingGate />
 
       <TabBar pinned={pinned} tab={tab} inMore={inMore} myOpen={myOpen} onTab={setTab} />
