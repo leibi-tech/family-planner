@@ -274,3 +274,8 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - **Entscheid Tobias (Variante 2):** Neue Installationen legen keine Personen mehr an. Ein Willkommensfenster fragt «Wie heisst du?» und legt diese Person mit Faktor 1.0 an. Weitere Personen unter Mehr → Familie. Knopf «Ich trete einer bestehenden Familie bei» führt direkt zu Familie / Gemeinsam nutzen.
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
+
+## E52 – Portionenfaktoren in die Einstellungen (v0.30.0, 09.11.2026)
+- **Wunsch Tobias:** «Essensfaktoren in Einstellungen versorgen, das sieht blöd aus so und will längst nicht jeder.»
+- **Umsetzung:** Seite Familie zeigt nur Namen (ohne × 1.0, ohne Summe, ohne Erklärung); Person bearbeiten = Name, Gmail-Adresse, Löschen. Neue Unterseite Einstellungen → «Portionen pro Person» (Tab `portionen`, gleiche Komponente `FamilyPage portions`): Erklärung, Faktoren, Summe, Faktor ändern. Personen hinzufügen nur auf Familie.
+- Neue Personen bekommen weiterhin den eigenen Faktor (1.0). Die Einkaufsmengen rechnen unverändert mit den Faktoren; wer sie nie anpasst, hat überall 1.0.
