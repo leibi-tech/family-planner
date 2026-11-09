@@ -446,6 +446,16 @@ Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel u
 1. Mehr → Einstellungen → alles da? Unten «© 2026 Tobias Leibacher».
 2. Datenschutzerklärung antippen → Text erscheint. Zurück-Pfeil oben links → wieder Einstellungen.
 
+## AD) Erster Start fragt nach dem Namen (ab Version 0.29.0)
+- Wer die App neu installiert, wird nicht mehr mit «Tobias» begrüsst. Ein Fenster fragt «Wie heisst du?». Partner/in und Kinder fügt man danach unter Mehr → Familie dazu.
+- Wer einer bestehenden Familie beitreten will (z.B. Thadea auf einem neuen Handy): «Ich trete einer bestehenden Familie bei» → Gemeinsam nutzen → Code eingeben.
+- Bei dir und Thadea ändert sich nichts.
+- **Wer die App schon installiert hat** (z.B. Kilian): Mehr → Familie → «Tobias» antippen und den eigenen Namen eintragen, die anderen Personen anpassen oder löschen.
+
+**Zum Testen** (geht nur mit einer frischen Installation, z.B. auf einem anderen Handy oder in einem privaten Browser-Fenster unter https://leibi-tech.github.io/family-planner/)
+1. App öffnen → Fenster «Willkommen bei myFam.» erscheint.
+2. Namen eingeben → «Los geht's» → Startseite begrüsst mit diesem Namen.
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.

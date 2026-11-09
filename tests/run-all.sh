@@ -19,7 +19,7 @@ python3 -m http.server 8765 > /tmp/fp-web.log 2>&1 &
 WEB=$!
 sleep 1
 fail=0
-for t in ui-local look-nav shop-setting start-page sync-two todo-link password calendar calendar-edit calendar-invite calendar-views calendar-care greetings docs-scan docs-cloud apk; do
+for t in welcome ui-local look-nav shop-setting start-page sync-two todo-link password calendar calendar-edit calendar-invite calendar-views calendar-care greetings docs-scan docs-cloud apk; do
   echo "== $t"
   out=$(timeout 150 node tests/$t.mjs 2>&1 | grep -v "^\[{")
   echo "$out" | grep -E "^(OK|FAIL)" | sed 's/^OK   /  ok   /'

@@ -1,9 +1,9 @@
 # ROADMAP – Family-Planner
 
-Stand: 06.11.2026 · Version 0.28.0 · APK 1.3 · Name «myFam.»
+Stand: 09.11.2026 · Version 0.29.0 · APK 1.3 · Name «myFam.»
 
 ## Aktueller Stand
-- ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4.
+- ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4 (ab v0.29.0 ersetzt durch Willkommensfenster, E51).
 - ✅ **Schritt 2 – Menüs**: fertig, auf dem Handy getestet.
 - ✅ **Schritt 3 – Wochenplan**: fertig, auf dem Handy getestet.
 - ✅ **Schritt 4 – Einkaufsliste aus dem Plan** (inkl. Vorrats-Check und Abhaken): fertig, getestet.
@@ -28,6 +28,7 @@ Stand: 06.11.2026 · Version 0.28.0 · APK 1.3 · Name «myFam.»
 - ⏳ **Android-App (APK 1.0)**: Hülle mit Capacitor, lädt die App weiter von GitHub Pages (Updates automatisch), eigenes Symbol, wird auf GitHub gebaut und unter Releases bereitgestellt (E46). Läuft auf Tobias' Handy (06.11.2026), Kalender und Scannen gehen.
 - ⏳ **APK 1.1 / v0.26.0: Zurück-Taste, Herunterladen und Teilen in der APK** (E47). Tobias: mergen, neue APK drüber installieren, ausprobieren (ANLEITUNG AB). Gemergt.
 - ⏳ **APK 1.3 / v0.28.0: neuer Name «myFam.»** (E49), **Einstellungen als eigene Seite** mit Datenschutzerklärung (nachgeführt) und Copyright (E50). Tobias: mergen, Hinweis auf der Startseite → neue APK installieren. Die Web-App im Browser zeigt den neuen Namen erst nach neuem Hinzufügen zum Startbildschirm.
+- ⏳ **Erster Start fragt nach dem Namen (v0.29.0)**: Bei einer neuen Installation stand fest «Tobias» drin (Kilian bemerkt). Neu: Willkommensfenster «Wie heisst du?», keine fest eingetragenen Personen mehr, oder «Ich trete einer bestehenden Familie bei» → Seite Familie (E51). Bestehende Installationen unverändert. Tobias: mergen, ausprobieren (ANLEITUNG AD). Kein Datenbank-Update.
 - ✅ **APK 1.2 / v0.27.0: Hinweis «Neue Android-App bereit»** (gemergt) auf der Startseite mit Download-Knopf (E48). Tobias: mergen, Hinweis erscheint in der App (APK 1.1) → so installieren. Danach offen: Teilen an die App, dann erstes Widget.
 - ⏸️ **Passwort ändern (v0.13.0)**: gebaut und in der App, von Tobias aber noch nicht ausprobiert. Vorerst zurückgestellt (28.10.2026). «Passwort vergessen» folgt später (E-Mail-Dienst nötig).
 - ✅ **Notizen & Listen (v0.11.x)**: läuft auf dem Handy (bestätigt 28.10.2026).
