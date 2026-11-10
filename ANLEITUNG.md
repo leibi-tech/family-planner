@@ -464,13 +464,36 @@ Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel u
 1. Mehr → Familie → keine Faktoren mehr sichtbar.
 2. Mehr → Einstellungen → Portionen pro Person → Faktoren wie bisher, antippen zum Ändern.
 
+## AF) Datensicherung (ab Version 0.31.0)
+Eine Sicherung ist eine Datei mit allen Einträgen und Dokumenten. Am besten einmal im Monat machen und in Google Drive ablegen.
+
+**Sicherung erstellen**
+1. Mehr → Einstellungen → **Datensicherung**.
+2. **Sicherung erstellen** antippen (mit Internet, damit auch die Dokumente vom anderen Handy dabei sind).
+3. **Teilen** → **Drive** wählen → Speichern. Oder **Im Handy speichern** (landet im Ordner «Download»).
+
+**Etwas wurde aus Versehen gelöscht**
+1. Mehr → Einstellungen → Datensicherung → **Sicherungsdatei wählen** → die Datei aus Drive oder «Download» wählen.
+2. Die App zeigt, was fehlt → **… Einträge zurückholen**.
+3. Das Zurückgeholte erscheint auch auf den anderen Handys. Was seither neu dazukam oder geändert wurde, bleibt.
+
+**Umzug (z.B. neue Supabase-Datenbank)**
+1. Neue Familie einrichten (Mehr → Familie → Gemeinsam nutzen).
+2. Sicherung einlesen wie oben. Alles kommt in die neue Datenbank, Dokumente inklusive.
+3. Danach bei Mehr → Familie prüfen, ob du mit deiner Person verknüpft bist.
+
+**Zum Testen**
+1. Sicherung erstellen → «Sicherung bereit: … Einträge, … Dokumente».
+2. Datei in Drive ablegen. Am PC lässt sie sich wie ein Ordner öffnen (Dokumente als PDF).
+3. Sicherungsdatei wählen → «Alles aus dieser Sicherung ist schon in der App».
+
 ## F) Meine Daten
 - Ohne «Gemeinsam nutzen» liegen die Daten **nur auf deinem Handy**.
 - Mit «Gemeinsam nutzen» liegen sie zusätzlich verschlüsselt übertragen in eurer Supabase-Datenbank in Zürich. Nur Konten eures Haushalts sehen sie. Private ToDos sieht nur, wer sie erfasst hat.
 - **Kalender:** Die Termine bleiben bei Google. Der Zugangsschlüssel zu Google liegt geschützt in Supabase; die App selbst kann ihn nicht lesen. «Verbindung trennen» löscht ihn und meldet die App bei Google ab.
 - **Liebesgrüsse (ab 0.20.0):** liegen wie die anderen Daten in Supabase. Fotos werden vorher verkleinert (ca. 100–200 KB pro Foto).
 - **Dokumente (ab 0.21.0):** Die PDFs liegen in eurer Supabase-Ablage in Zürich, nur Konten eures Haushalts kommen daran. Zusätzlich bleibt eine Kopie auf dem Handy, das sie erfasst oder geöffnet hat. Private Dokumente sieht nur, wer sie erfasst hat. Gratis-Kontingent: 1 GB, ein gescanntes Blatt braucht etwa 100–300 KB (also mehrere tausend Seiten).
-- ⚠️ Gelöschtes wird auch auf den anderen Handys gelöscht. Ein Export-Knopf als zusätzliche Sicherung kommt noch (Wunschliste).
+- ⚠️ Gelöschtes wird auch auf den anderen Handys gelöscht. Darum ab und zu eine **Datensicherung** machen (Abschnitt AF).
 
 ## Wenn etwas nicht klappt
 Mach ein Foto oder einen Screenshot und schick es Claude.
