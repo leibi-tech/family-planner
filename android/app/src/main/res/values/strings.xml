@@ -4,4 +4,6 @@
     <string name="title_activity_main">myFam.</string>
     <string name="package_name">ch.leibitech.familyplanner</string>
     <string name="custom_url_scheme">ch.leibitech.familyplanner</string>
+    <string name="widget_termine_name">Termine (7 Tage)</string>
+    <string name="widget_termine_desc">Termine der Familie, 7 Tage ab heute</string>
 </resources>

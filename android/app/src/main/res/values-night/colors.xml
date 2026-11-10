@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="fp_bg">#1E1B2E</color>
+    <color name="fp_widget_bg">#F229253D</color>
+    <color name="fp_widget_text">#F1EEFF</color>
+    <color name="fp_widget_muted">#ABA5C8</color>
+    <color name="fp_widget_head">#B6A6FF</color>
+    <color name="fp_widget_day">#38325A</color>
 </resources>

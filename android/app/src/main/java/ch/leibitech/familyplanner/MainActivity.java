@@ -46,7 +46,9 @@ public class MainActivity extends BridgeActivity {
         // Speichern und Teilen für die App (window.FPAndroid). Danach neu laden,
         // damit die erste Seite die Verbindung sicher schon hat.
         web.addJavascriptInterface(new FpAndroid(), "FPAndroid");
-        if (!receiveShare(getIntent())) web.loadUrl(HOME);
+        String cal = calendarDay(getIntent());
+        if (cal != null) web.loadUrl(calendarUrl(cal));
+        else if (!receiveShare(getIntent())) web.loadUrl(HOME);
 
         // Zurück-Taste: die App entscheidet (Fenster schliessen, Seite zurück).
         // Gibt sie false zurück (Startseite), geht die App in den Hintergrund.
@@ -69,7 +71,36 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        final String cal = calendarDay(intent);
+        if (cal != null) {
+            // App läuft schon: direkt zum Kalender springen, sonst neu laden
+            final WebView web = getBridge().getWebView();
+            String url = web.getUrl();
+            if (url == null || !url.startsWith(HOME)) {
+                web.loadUrl(calendarUrl(cal));
+                return;
+            }
+            web.evaluateJavascript(
+                "(function(){try{return window.fpOpenCalendar?window.fpOpenCalendar('" + cal + "'):false}catch(e){return false}})()",
+                (result) -> {
+                    if (!"true".equals(result)) web.loadUrl(calendarUrl(cal));
+                }
+            );
+            return;
+        }
         receiveShare(intent);
+    }
+
+    /** Vom Widget «Termine» geöffnet? Gibt den Tag (JJJJ-MM-TT), "" (nur Kalender) oder null zurück. */
+    private String calendarDay(Intent intent) {
+        if (intent == null || !TermineWidget.ACTION_OPEN.equals(intent.getAction())) return null;
+        String day = intent.getStringExtra(TermineWidget.EXTRA_DAY);
+        setIntent(new Intent());
+        return day != null && day.matches("\\d{4}-\\d{2}-\\d{2}") ? day : "";
+    }
+
+    private static String calendarUrl(String day) {
+        return HOME + "?kalender=" + (day.isEmpty() ? "1" : day);
     }
 
     /**
@@ -214,6 +245,15 @@ public class MainActivity extends BridgeActivity {
             String s = shared;
             shared = null;
             return s == null ? "" : s;
+        }
+
+        /** Daten für ein Widget auf dem Startbildschirm (bisher: «termine»). */
+        @JavascriptInterface
+        public void setWidget(String name, String json) {
+            if (!TermineWidget.KEY.equals(name) || json == null || json.length() > 500000) return;
+            String url = currentUrl();
+            if (url == null || !url.startsWith(HOME)) return;
+            TermineWidget.save(getApplicationContext(), json);
         }
 
         /** Datei im Ordner «Download» speichern und gleich öffnen. */

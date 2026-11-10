@@ -275,6 +275,13 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
 
+## E56 – Widget «Termine · 7 Tage» (v0.34.0, APK 1.5, 10.11.2026)
+- **Entscheid Tobias:** erstes Widget = Termine, 7 Tage ab heute.
+- **Inhalt:** pro Tag eine Überschrift (Heute · Mo 10.11., Morgen · …, dann Wochentag), darunter die Termine mit Titel (ohne [Namen]), Zeit und Personen, links Farbstreifen der Personen (wie im Kalender). Tage ohne Termin: «frei». Oben «Stand hh:mm». Hell/Dunkel folgt dem Handy.
+- **Woher die Termine kommen:** Das Widget holt nichts selbst (Anmeldung und Google laufen über die App). Die App gibt der Hülle jedes Mal, wenn sie Termine holt (Startseite, Kalender), beim Start und beim Verlassen die Termine der nächsten **14 Tage** (`FPAndroid.setWidget`). So stimmt das Widget auch ein paar Tage ohne App-Öffnen; Tage nach dem gelieferten Zeitraum zeigen «noch unbekannt». Android zeichnet das Widget alle 30 Min. neu (Tageswechsel).
+- **Antippen:** Zeile → Kalender, Tagesansicht dieses Tages. Kopf → Kalender.
+- Termine, die nach dem letzten Öffnen der App dazukamen (z.B. von Thadea), erscheinen erst, wenn die App wieder Termine geholt hat.
+
 ## E55 – Neuigkeiten auf der Startseite (v0.33.0, 10.11.2026)
 - **Wunsch Tobias:** Bei jeder richtigen Neuerung (etwas kommt dazu, fällt weg oder geht anders) einmal eine kurze Meldung auf der Startseite. Wegdrücken mit ✕, dann für immer weg. Alle Änderungen in den Einstellungen nachlesen. **Keine** Meldung für Kleinigkeiten (z.B. «Knopf ist grösser»).
 - **Umsetzung:** Liste `NEWS` in `src/news.ts` (Version, Datum, Titel, kurzer Text). Karte «✨ Neu in myFam.» zeigt alle Einträge, die neuer sind als der Merker `fp-news-seen` (pro Handy, im Browser-Speicher). ✕ setzt den Merker auf die neueste Version. Ohne Merker (erstes Mal) nur die neueste Neuigkeit, nicht die ganze Liste.

@@ -32,6 +32,24 @@
 
         </activity>
 
+        <!-- Widget «Termine · 7 Tage» (E56) -->
+        <receiver
+            android:name=".TermineWidget"
+            android:label="@string/widget_termine_name"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_termine_info" />
+        </receiver>
+
+        <service
+            android:name=".TermineWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

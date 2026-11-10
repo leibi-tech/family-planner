@@ -4,6 +4,7 @@
 import { calendarCall } from './cloud';
 import { getMeta, setMeta } from './db';
 import { dateKey } from './model';
+import { pushWidget } from './widget';
 
 export interface CalEvent {
   id: string;
@@ -228,6 +229,7 @@ export async function fetchMonths(household: string, y: number, m: number, count
   for (const k of Object.keys(months)) if (k < limit) delete months[k];
   const cache: CalCache = { household, calendars: r.calendars, months, errors: r.errors ?? [], at: now };
   await setMeta(CACHE_KEY, cache);
+  void pushWidget(); // Widget «Termine» nachführen (APK)
   return cache;
 }
 

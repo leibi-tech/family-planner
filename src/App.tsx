@@ -14,9 +14,10 @@ import { DocsPage } from './pages/DocsPage';
 import { NewsPage } from './components/News';
 import { BackupPage } from './pages/BackupPage';
 import { GreetingGate, GreetingsPage, useThinAlbum } from './components/Greetings';
-import { readReturnFromGoogle } from './calendar';
+import { eventTarget, readReturnFromGoogle } from './calendar';
 import { readShareStart } from './docs';
-import { onNavBack, onOpenRequest, TAB_FOR } from './nav';
+import { pushWidget } from './widget';
+import { onNavBack, onOpenRequest, requestOpen, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
 import { onChange, put, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
@@ -67,11 +68,22 @@ const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz
 
 declare const __APP_VERSION__: string;
 
+/** Vom Widget «Termine» geöffnet? (?kalender=1 oder ?kalender=JJJJ-MM-TT für einen Tag) */
+function readWidgetStart(): string | null {
+  const m = /[?&]kalender=([0-9-]+)/.exec(location.search);
+  if (!m) return null;
+  history.replaceState(null, '', location.pathname + location.hash);
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(m[1]) ? m[1] : '';
+  if (day) requestOpen('event', eventTarget(day), null);
+  return day || 'kalender';
+}
+
 export function App() {
   // Die App startet immer mit der Startseite – ausser nach der Rückkehr von der Google-Anmeldung
   // oder wenn eine andere App ein Dokument geteilt hat.
   const [shared] = useState(readShareStart);
-  const [tab, setTabState] = useState<Tab>(() => (shared ? 'dokumente' : readReturnFromGoogle() ? 'kalender' : 'start'));
+  const [fromWidget] = useState(readWidgetStart);
+  const [tab, setTabState] = useState<Tab>(() => (shared ? 'dokumente' : fromWidget || readReturnFromGoogle() ? 'kalender' : 'start'));
   const setTab = (t: Tab) => {
     setTabState(t);
     window.scrollTo(0, 0);
@@ -106,6 +118,23 @@ export function App() {
     return () => {
       off1();
       off2();
+    };
+  }, []);
+
+  // Widget «Termine» (APK): beim Start und beim Verlassen der App nachführen, Antippen öffnet den Kalender
+  useEffect(() => {
+    void pushWidget();
+    const off = onChange('persons', () => void pushWidget());
+    const vis = () => document.visibilityState === 'hidden' && void pushWidget();
+    document.addEventListener('visibilitychange', vis);
+    (window as unknown as { fpOpenCalendar?: (day: string) => boolean }).fpOpenCalendar = (day) => {
+      if (day) requestOpen('event', eventTarget(day), null);
+      else setTab('kalender');
+      return true;
+    };
+    return () => {
+      off();
+      document.removeEventListener('visibilitychange', vis);
     };
   }, []);
 
