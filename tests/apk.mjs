@@ -85,5 +85,42 @@ const mk = async (installed) => {
   await c.close();
 }
 
+// v0.32 / APK 1.4: «Teilen» aus einer anderen App an die APK. Die Hülle hält die Datei bereit
+// (FPAndroid.takeShared, nur einmal) und öffnet die App mit ?teilen=1.
+{
+  const pdfText = '%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R >> endobj\n4 0 obj << /Type /Page /Parent 2 0 R >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n';
+  const share = async (file) => {
+    const c = await b.newContext({ viewport: { width: 390, height: 800 }, serviceWorkers: 'block' });
+    await c.addInitScript({ content: `window.__taken = 0; window.__shared = ${JSON.stringify(file ? JSON.stringify(file) : "")};
+      window.FPAndroid = { saveFile() {}, shareFile() {}, versionCode: () => 99, versionName: () => '1.4 (Build 99)',
+        takeShared: () => { window.__taken++; const s = window.__shared; window.__shared = ''; return s; } };` });
+    const q = await c.newPage(); q.on('pageerror', (e) => errs.push(String(e)));
+    await q.goto('http://localhost:8765/docs-test/?teilen=1'); await q.waitForSelector('.tabbar');
+    return { c, q };
+  };
+  {
+    const { c, q } = await share({ name: 'Rechnung Garage.pdf', mime: 'application/pdf', data: Buffer.from(pdfText, 'latin1').toString('base64') });
+    await q.waitForSelector('.docs-form', { timeout: 8000 });
+    ok((await q.locator('.topbar h1').innerText()) === 'Dokumente', 'APK: geteiltes PDF öffnet die Seite Dokumente');
+    ok((await q.locator('.docs-form-file').innerText()).includes('2 Seiten'), 'APK: «Neues Dokument» mit dem geteilten PDF (2 Seiten)');
+    await q.waitForTimeout(300);
+    ok(!q.url().includes('teilen') && await q.evaluate(() => window.__taken) === 1, 'APK: Datei nur einmal abgeholt, Adresse wieder ohne ?teilen');
+    await c.close();
+  }
+  {
+    const img = Buffer.from(await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 600; c.height = 800; const x = c.getContext('2d'); x.fillStyle = '#333'; x.fillRect(0, 0, 600, 800); x.fillStyle = '#f4f1ea'; x.fillRect(80, 80, 440, 640); return c.toDataURL('image/jpeg', 0.9).split(',')[1]; }), 'base64');
+    const { c, q } = await share({ name: 'IMG_2041.jpg', mime: 'image/jpeg', data: img.toString('base64') });
+    await q.waitForSelector('.scan', { timeout: 8000 });
+    ok(await q.locator('.scan').count() === 1, 'APK: geteiltes Foto öffnet den Scanner (Ecken, gerade ziehen)');
+    await c.close();
+  }
+  {
+    const { c, q } = await share('');
+    await q.waitForTimeout(500);
+    ok(await q.locator('.docs-form').count() === 0 && await q.locator('.scan').count() === 0, 'APK: ?teilen=1 ohne Datei → nur Seite Dokumente, kein Fenster');
+    await c.close();
+  }
+}
+
 ok(errs.length === 0, 'Keine Fehler ' + errs.join(' | '));
 await b.close();

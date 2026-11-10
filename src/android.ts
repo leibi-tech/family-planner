@@ -5,6 +5,7 @@ interface FPAndroidApi {
   shareFile(name: string, mime: string, base64: string): void;
   versionCode?(): number; // ab APK 1.2
   versionName?(): string;
+  takeShared?(): string; // ab APK 1.4: von einer anderen App geteilte Datei (JSON), sonst ''
 }
 const api = (): FPAndroidApi | undefined => (window as unknown as { FPAndroid?: FPAndroidApi }).FPAndroid;
 
@@ -27,6 +28,21 @@ export async function apkSave(blob: Blob, name: string) {
 /** Android-Teilen-Fenster mit der Datei öffnen (APK). */
 export async function apkShare(blob: Blob, name: string) {
   api()?.shareFile(name, blob.type || 'application/octet-stream', await toBase64(blob));
+}
+
+/** Von einer anderen App an die APK geteilte Datei abholen (nur einmal vorhanden). */
+export function apkTakeShared(): File | null {
+  try {
+    const raw = api()?.takeShared?.();
+    if (!raw) return null;
+    const o = JSON.parse(raw) as { name?: string; mime?: string; data?: string };
+    const bin = atob(o.data ?? '');
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new File([bytes], o.name || 'Dokument', { type: o.mime || '' });
+  } catch {
+    return null;
+  }
 }
 
 /**

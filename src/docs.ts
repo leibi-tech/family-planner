@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { fileKeys, getAllRaw, getFile, getMeta, newId, put, putFile, setMeta, type BaseRecord } from './db';
 import { CloudError, deleteDocFiles, downloadDocFile, getSession, uploadDocFile } from './cloud';
 import { getSyncState, onSyncChange } from './sync';
+import { apkTakeShared } from './android';
 
 export const CATEGORIES = [
   { id: 'versicherung', label: 'Versicherung' },
@@ -234,10 +235,13 @@ export function fmtSize(b: number): string {
 }
 
 // ---------- Teilen aus anderen Apps (Android «Teilen» → myFam.) ----------
-// Der Service Worker legt die geteilten Dateien in den Zwischenspeicher «fp-teilen».
+// Web-App: Der Service Worker legt die geteilten Dateien in den Zwischenspeicher «fp-teilen».
+// Android-App (APK 1.4): Die Hülle hält die Datei bereit (apkTakeShared).
 export const SHARE_CACHE = 'fp-teilen';
 
 export async function takeSharedFiles(): Promise<File[]> {
+  const fromApk = apkTakeShared();
+  if (fromApk) return [fromApk];
   if (!('caches' in window)) return [];
   try {
     const c = await caches.open(SHARE_CACHE);
