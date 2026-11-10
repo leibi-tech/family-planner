@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: NewsItem[] = [
   {
+    version: '0.34.0',
+    date: '10.11.2026',
+    title: 'Widget «Termine»',
+    text: 'Die Termine der nächsten 7 Tage direkt auf dem Startbildschirm. Lange auf eine freie Stelle drücken → Widgets → myFam. Antippen öffnet den Kalender. Braucht die Android-App 1.5.',
+  },
+  {
     version: '0.33.0',
     date: '10.11.2026',
     title: 'Neuigkeiten',

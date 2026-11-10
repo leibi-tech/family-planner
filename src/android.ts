@@ -6,6 +6,7 @@ interface FPAndroidApi {
   versionCode?(): number; // ab APK 1.2
   versionName?(): string;
   takeShared?(): string; // ab APK 1.4: von einer anderen App geteilte Datei (JSON), sonst ''
+  setWidget?(name: string, json: string): void; // ab APK 1.5: Daten für ein Widget
 }
 const api = (): FPAndroidApi | undefined => (window as unknown as { FPAndroid?: FPAndroidApi }).FPAndroid;
 
@@ -28,6 +29,11 @@ export async function apkSave(blob: Blob, name: string) {
 /** Android-Teilen-Fenster mit der Datei öffnen (APK). */
 export async function apkShare(blob: Blob, name: string) {
   api()?.shareFile(name, blob.type || 'application/octet-stream', await toBase64(blob));
+}
+
+/** Daten für ein Widget auf dem Startbildschirm an die Hülle geben (ab APK 1.5). */
+export function apkSetWidget(name: string, json: string) {
+  api()?.setWidget?.(name, json);
 }
 
 /** Von einer anderen App an die APK geteilte Datei abholen (nur einmal vorhanden). */

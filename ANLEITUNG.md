@@ -522,3 +522,20 @@ Ein PDF oder Foto aus einer anderen App direkt in die Dokumente schicken, z.B. e
 2. «Alle Neuigkeiten» antippen → Liste aller Neuerungen. Zurück.
 3. ✕ antippen → Karte weg. App schliessen und neu öffnen → bleibt weg.
 
+## AI) Widget «Termine» (ab APK 1.5 / Version 0.34.0)
+Die Termine der nächsten 7 Tage direkt auf dem Startbildschirm.
+
+**Installieren**
+1. Pull Request mergen, ca. 5 Minuten warten.
+2. App öffnen → auf der Startseite «📲 Neue Android-App bereit» → **Herunterladen** → **Öffnen** → **Aktualisieren**.
+3. App einmal öffnen (damit die Termine ans Widget gehen).
+
+**Widget hinzufügen**
+1. Auf dem Startbildschirm lange auf eine freie Stelle drücken → **Widgets**.
+2. **myFam.** suchen → «Termine (7 Tage)» lange drücken und auf den Startbildschirm ziehen.
+3. Grösse anpassen: Widget lange drücken, an den Punkten am Rand ziehen.
+
+**Gut zu wissen**
+- Das Widget zeigt den Stand vom letzten Öffnen der App (oben rechts «Stand 13:30»). Neue Termine von Thadea erscheinen, sobald du die App wieder öffnest.
+- Einen Termin antippen → Kalender mit diesem Tag. Oben auf «Termine · 7 Tage» → Kalender.
+
