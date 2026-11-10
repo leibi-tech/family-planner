@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { APK_URL, apkVersion, latestApk, type ApkVersion } from '../android';
 
-const KEY = 'fp-apk-latest'; // zuletzt gefundene Version, höchstens alle 3 Stunden neu fragen
+const KEY = 'fp-apk-latest'; // zuletzt gefundene Version, höchstens alle 10 Minuten neu fragen
 const LATER = 'fp-apk-later'; // «Später»: bis zum nächsten Start der App ausblenden
 
 const read = (k: string, store: Storage) => {
@@ -28,7 +28,7 @@ export function ApkUpdateCard() {
   useEffect(() => {
     if (!installed) return;
     const saved = read(KEY, localStorage) as { t: number; v: ApkVersion } | null;
-    if (saved && Date.now() - saved.t < 3 * 3600000) return setLatest(saved.v);
+    if (saved && Date.now() - saved.t < 10 * 60000) return setLatest(saved.v);
     if (!navigator.onLine) return;
     void latestApk().then((v) => {
       if (!v) return;
