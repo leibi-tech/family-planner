@@ -3,27 +3,40 @@ package ch.leibitech.familyplanner;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.content.FileProvider;
+import androidx.core.content.IntentCompat;
 import androidx.core.content.pm.PackageInfoCompat;
 import com.getcapacitor.BridgeActivity;
 import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import org.json.JSONObject;
 
 public class MainActivity extends BridgeActivity {
 
     // Nur die eigene App darf Dateien speichern/teilen
     static final String HOME = "https://leibi-tech.github.io/family-planner/";
+    // Gleiche Grenze wie in der App (Dokumente höchstens 20 MB)
+    static final int MAX_SHARE = 20 * 1024 * 1024;
+
+    // Von einer anderen App geteilte Datei, bis die App sie abholt (FPAndroid.takeShared)
+    private volatile String shared = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -33,7 +46,7 @@ public class MainActivity extends BridgeActivity {
         // Speichern und Teilen für die App (window.FPAndroid). Danach neu laden,
         // damit die erste Seite die Verbindung sicher schon hat.
         web.addJavascriptInterface(new FpAndroid(), "FPAndroid");
-        web.loadUrl(HOME);
+        if (!receiveShare(getIntent())) web.loadUrl(HOME);
 
         // Zurück-Taste: die App entscheidet (Fenster schliessen, Seite zurück).
         // Gibt sie false zurück (Startseite), geht die App in den Hintergrund.
@@ -51,6 +64,74 @@ public class MainActivity extends BridgeActivity {
                 }
             }
         );
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        receiveShare(intent);
+    }
+
+    /**
+     * «Teilen» aus einer anderen App: Datei einlesen, merken und die App mit ?teilen=1 öffnen.
+     * Die App holt die Datei dann mit FPAndroid.takeShared() ab und zeigt sie bei den Dokumenten.
+     */
+    private boolean receiveShare(Intent intent) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return false;
+        final Uri uri = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri.class);
+        final String type = intent.getType();
+        setIntent(new Intent()); // nicht ein zweites Mal übernehmen
+        if (uri == null) return false;
+        new Thread(() -> {
+            String json = null;
+            String problem = null;
+            try {
+                String mime = getContentResolver().getType(uri);
+                if (mime == null) mime = type == null ? "" : type;
+                String name = "Dokument";
+                try (Cursor c = getContentResolver().query(uri, new String[] { OpenableColumns.DISPLAY_NAME }, null, null, null)) {
+                    if (c != null && c.moveToFirst() && !c.isNull(0)) name = c.getString(0);
+                }
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                try (InputStream in = getContentResolver().openInputStream(uri)) {
+                    if (in == null) throw new Exception("Datei nicht lesbar");
+                    byte[] chunk = new byte[65536];
+                    int n;
+                    while ((n = in.read(chunk)) > 0) {
+                        buf.write(chunk, 0, n);
+                        if (buf.size() > MAX_SHARE) throw new IllegalStateException();
+                    }
+                }
+                JSONObject o = new JSONObject();
+                o.put("name", safeName(name));
+                o.put("mime", mime);
+                o.put("data", Base64.encodeToString(buf.toByteArray(), Base64.NO_WRAP));
+                json = o.toString();
+            } catch (IllegalStateException e) {
+                problem = "Die Datei ist zu gross (höchstens 20 MB).";
+            } catch (Exception e) {
+                problem = "Die Datei liess sich nicht übernehmen: " + e.getMessage();
+            }
+            final String result = json;
+            final String msg = problem;
+            runOnUiThread(() -> {
+                shared = result;
+                if (msg != null) toast(msg);
+                getBridge().getWebView().loadUrl(result != null ? HOME + "?teilen=1" : HOME);
+            });
+        }).start();
+        return true;
+    }
+
+    /** Adresse der angezeigten Seite (darf nur auf dem Haupt-Thread gelesen werden). */
+    private String currentUrl() {
+        FutureTask<String> task = new FutureTask<>(() -> getBridge().getWebView().getUrl());
+        runOnUiThread(task);
+        try {
+            return task.get(2, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void toast(String text) {
@@ -120,6 +201,19 @@ public class MainActivity extends BridgeActivity {
             } catch (Exception e) {
                 return "";
             }
+        }
+
+        /**
+         * Von einer anderen App geteilte Datei abholen (nur einmal):
+         * {"name": "...", "mime": "...", "data": "<base64>"} oder leer.
+         */
+        @JavascriptInterface
+        public String takeShared() {
+            String url = currentUrl();
+            if (url == null || !url.startsWith(HOME)) return "";
+            String s = shared;
+            shared = null;
+            return s == null ? "" : s;
         }
 
         /** Datei im Ordner «Download» speichern und gleich öffnen. */

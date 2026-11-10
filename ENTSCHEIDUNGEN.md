@@ -275,6 +275,11 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
 
+## E54 – «Teilen» an die Android-App (v0.32.0, APK 1.4, 10.11.2026)
+- **Entscheid Tobias:** vor dem ersten Widget zuerst «Teilen an die App».
+- **Was:** PDF oder Foto aus einer anderen App teilen → «myFam.» → Seite Dokumente mit «Neues Dokument» (PDF) oder dem Scanner (Foto). Nur eine Datei pro Mal, höchstens 20 MB (wie beim Wählen).
+- **Wie:** Die Web-App nutzt dafür den Service Worker (`share_target`), das geht in der APK nicht. Darum liest die Hülle die Datei selbst (`MainActivity.receiveShare`), hält sie bereit und öffnet die App mit `?teilen=1`. Die App holt sie mit `FPAndroid.takeShared()` ab (nur einmal, nur wenn die eigene App angezeigt wird). Geht auch offline.
+
 ## E53 – Datensicherung als ZIP-Datei (v0.31.0, 10.11.2026)
 - **Frage Tobias:** Haben wir ein Backup, falls Datenbank, KI oder sonst was umziehen muss? Bisher nicht (Supabase gratis bietet keine herunterladbaren Sicherungen). Entscheid Tobias: Sicherung **mit** Dokumenten.
 - **Ort:** Mehr → Einstellungen → Datensicherung. Jede Person kann sichern und einlesen.

@@ -422,7 +422,7 @@ Android installiert Updates nur, wenn jede Version mit dem gleichen Schlüssel u
 - Kalender: lädt er die Termine? (Neu mit Google verbinden öffnet Chrome; danach zurück in die App wechseln.)
 - Dokument öffnen und **Herunterladen / Teilen**: ab APK 1.1 (App 0.26.0). «Herunterladen» speichert im Ordner **Download** und öffnet die Datei gleich. «Teilen / öffnen mit …» öffnet das Android-Teilen-Fenster (WhatsApp, Mail, Drive …).
 - **Zurück-Taste** (ab APK 1.1): schliesst zuerst ein offenes Fenster, dann eine Seite zurück, dann zur Startseite. Auf der Startseite geht die App in den Hintergrund.
-- «Teilen» aus einer anderen App an den Family-Planner geht in der APK noch nicht (kommt später).
+- «Teilen» aus einer anderen App an die App geht ab APK 1.4 (siehe AG).
 
 **Update auf APK 1.1 (Zurück-Taste, Herunterladen, Teilen)**
 1. Pull Request mergen, ca. 5 Minuten warten (Actions → «Android-App bauen» → grüner Haken).
@@ -497,3 +497,18 @@ Eine Sicherung ist eine Datei mit allen Einträgen und Dokumenten. Am besten ein
 
 ## Wenn etwas nicht klappt
 Mach ein Foto oder einen Screenshot und schick es Claude.
+
+## AG) «Teilen» an die Android-App (ab APK 1.4 / Version 0.32.0)
+Ein PDF oder Foto aus einer anderen App direkt in die Dokumente schicken, z.B. eine Rechnung aus Gmail.
+
+**Installieren**
+1. Pull Request mergen, ca. 5 Minuten warten.
+2. App öffnen → auf der Startseite «📲 Neue Android-App bereit» → **Herunterladen** → **Öffnen** → **Aktualisieren**.
+3. Unten bei Mehr: Android-App **1.4**.
+
+**Zum Testen**
+1. Gmail (oder Drive, Galerie, Dateien) öffnen, ein PDF oder Foto → **Teilen** → **myFam.** wählen.
+2. PDF: Die App öffnet «Neues Dokument» → Art, Titel ausfüllen → Speichern.
+3. Foto: Der Scanner öffnet sich (Ecken prüfen, «Seite übernehmen», «Fertig»).
+4. Steht «myFam.» nicht in der Liste: ganz nach rechts wischen bzw. «Mehr» tippen.
+
