@@ -275,6 +275,12 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
 
+## E55 – Neuigkeiten auf der Startseite (v0.33.0, 10.11.2026)
+- **Wunsch Tobias:** Bei jeder richtigen Neuerung (etwas kommt dazu, fällt weg oder geht anders) einmal eine kurze Meldung auf der Startseite. Wegdrücken mit ✕, dann für immer weg. Alle Änderungen in den Einstellungen nachlesen. **Keine** Meldung für Kleinigkeiten (z.B. «Knopf ist grösser»).
+- **Umsetzung:** Liste `NEWS` in `src/news.ts` (Version, Datum, Titel, kurzer Text). Karte «✨ Neu in myFam.» zeigt alle Einträge, die neuer sind als der Merker `fp-news-seen` (pro Handy, im Browser-Speicher). ✕ setzt den Merker auf die neueste Version. Ohne Merker (erstes Mal) nur die neueste Neuigkeit, nicht die ganze Liste.
+- **Seite:** Einstellungen → Neuigkeiten, alle Einträge neueste zuoberst. Rückwirkend ab v0.16.0 nachgetragen.
+- **Regel für Claude:** Bei jeder richtigen Neuerung einen Eintrag zuoberst in `NEWS` ergänzen (gleiche Version wie `package.json`). Bei Kleinigkeiten und reinen Fehlerkorrekturen nicht.
+
 ## E54 – «Teilen» an die Android-App (v0.32.0, APK 1.4, 10.11.2026)
 - **Entscheid Tobias:** vor dem ersten Widget zuerst «Teilen an die App».
 - **Was:** PDF oder Foto aus einer anderen App teilen → «myFam.» → Seite Dokumente mit «Neues Dokument» (PDF) oder dem Scanner (Foto). Nur eine Datei pro Mal, höchstens 20 MB (wie beim Wählen).

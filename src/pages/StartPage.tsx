@@ -1,4 +1,5 @@
 import { ApkUpdateCard } from '../components/ApkUpdate';
+import { NewsCard } from '../components/News';
 import { useEffect, useMemo, useState } from 'react';
 import { useSync } from '../components/CloudCard';
 import { CareSheet, conflictWhen } from '../components/CareSheet';
@@ -153,6 +154,8 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
       <GreetingCard onAlbum={() => goto('gruesse')} />
 
       <ApkUpdateCard />
+
+      <NewsCard onAll={() => goto('neuigkeiten')} />
 
       {/* Wer schaut auf die Kinder? */}
       {(openConflicts.length > 0 || orphans.length > 0) && (
