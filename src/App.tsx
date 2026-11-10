@@ -11,6 +11,7 @@ import { NotesPage } from './pages/NotesPage';
 import { StartPage } from './pages/StartPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { DocsPage } from './pages/DocsPage';
+import { NewsPage } from './components/News';
 import { BackupPage } from './pages/BackupPage';
 import { GreetingGate, GreetingsPage, useThinAlbum } from './components/Greetings';
 import { readReturnFromGoogle } from './calendar';
@@ -24,7 +25,7 @@ import { apkVersion, installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
-type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse' | 'einstellungen' | 'datenschutz' | 'portionen' | 'sicherung';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse' | 'einstellungen' | 'datenschutz' | 'portionen' | 'sicherung' | 'neuigkeiten';
 
 const TITLES: Record<Tab, string> = {
   start: 'Start',
@@ -43,6 +44,7 @@ const TITLES: Record<Tab, string> = {
   datenschutz: 'Datenschutz',
   portionen: 'Portionen',
   sicherung: 'Datensicherung',
+  neuigkeiten: 'Neuigkeiten',
 };
 
 /** Name in der Menüleiste und auf «Mehr», mit Beschreibung und Kachelfarbe. */
@@ -61,7 +63,7 @@ const PAGE_INFO: Record<PinTab, { label: string; sub: string; color: number }> =
 const shortLabel = (id: PinTab) => (id === 'gruesse' ? 'Grüsse' : PAGE_INFO[id].label);
 
 /** Unterseiten: «Zurück» führt zu den Einstellungen statt zu «Mehr». */
-const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz: 'einstellungen', portionen: 'einstellungen', sicherung: 'einstellungen' };
+const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz: 'einstellungen', portionen: 'einstellungen', sicherung: 'einstellungen', neuigkeiten: 'einstellungen' };
 
 declare const __APP_VERSION__: string;
 
@@ -189,6 +191,8 @@ export function App() {
           <FamilyPage portions />
         ) : tab === 'sicherung' ? (
           <BackupPage />
+        ) : tab === 'neuigkeiten' ? (
+          <NewsPage />
         ) : tab === 'datenschutz' ? (
           <PrivacyPage />
         ) : (
@@ -314,6 +318,13 @@ function SettingsPage({ goto, apk }: { goto: (t: Tab) => void; apk: ReturnType<t
       <button className="set-row" onClick={() => goto('sicherung')}>
         <Icon name="sicherung" />
         <span className="grow">Datensicherung</span>
+        <span className="chev" aria-hidden>
+          ›
+        </span>
+      </button>
+      <button className="set-row" onClick={() => goto('neuigkeiten')}>
+        <Icon name="neu" />
+        <span className="grow">Neuigkeiten</span>
         <span className="chev" aria-hidden>
           ›
         </span>

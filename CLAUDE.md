@@ -29,6 +29,7 @@ Sie enthält die Projekt-Regeln. Technische Details stehen in `ENTWICKLUNG.md`.
 - Tests: `bash tests/run-all.sh` (baut eine Testversion gegen den Supabase-Nachbau `tests/mock-supabase.mjs`, Playwright im Handy-Format).
   Falls Playwright fehlt: `npm i --no-save playwright && npx playwright install chromium`. Klappt das nicht (Netzwerk gesperrt), Tobias sagen, dass die automatischen Tests nicht laufen konnten, und nichts ausliefern ohne sein OK.
 - Für neue Funktionen einen Test ergänzen (siehe `tests/README.md`).
+- **Neuigkeiten:** Bei jeder richtigen Neuerung (etwas kommt dazu, fällt weg oder geht anders) einen kurzen Eintrag zuoberst in `src/news.ts` ergänzen (gleiche Version wie `package.json`). Nicht bei Kleinigkeiten oder reinen Fehlerkorrekturen (E55).
 - Die echte Supabase-Datenbank und Google sind aus der Cloud nicht erreichbar und werden nie direkt verändert.
 
 ## Ausliefern

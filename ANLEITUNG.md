@@ -512,3 +512,13 @@ Ein PDF oder Foto aus einer anderen App direkt in die Dokumente schicken, z.B. e
 3. Foto: Der Scanner öffnet sich (Ecken prüfen, «Seite übernehmen», «Fertig»).
 4. Steht «myFam.» nicht in der Liste: ganz nach rechts wischen bzw. «Mehr» tippen.
 
+## AH) Neuigkeiten (ab Version 0.33.0)
+- Kommt in der App etwas Neues dazu, steht einmal eine Karte **«✨ Neu in myFam.»** auf der Startseite. Mit dem runden **✕** ist sie weg, für immer (auf diesem Handy).
+- Alles Bisherige kannst du unter **Mehr → Einstellungen → Neuigkeiten** nachlesen.
+- Für Kleinigkeiten (z.B. ein Knopf ist grösser) kommt keine Meldung.
+
+**Zum Testen**
+1. App neu öffnen → auf der Startseite «Neu in myFam.» mit dem Eintrag «Neuigkeiten».
+2. «Alle Neuigkeiten» antippen → Liste aller Neuerungen. Zurück.
+3. ✕ antippen → Karte weg. App schliessen und neu öffnen → bleibt weg.
+
