@@ -256,7 +256,7 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 
 ## E48 – Hinweis «Neue Android-App bereit» (v0.27.0, APK 1.2, 06.11.2026)
 - **Frage Tobias:** Muss jedes Update neu installiert werden? Antwort: nein, nur Änderungen am Android-Teil. Wunsch: Die App meldet eine neue APK selbst.
-- **Umsetzung:** Die App fragt (nur in der APK, höchstens alle 3 Stunden) die GitHub-Seite «Android-App» (Release `android`) ab und liest «Version 1.2 (Build 7)» aus dem Text. Ist die Build-Nummer höher als die installierte (`FPAndroid.versionCode()`, APK 1.1 ohne diese Funktion = Build 5), erscheint auf der Startseite ein Hinweis mit Download-Knopf. Installieren muss man immer selbst bestätigen (Android).
+- **Umsetzung:** Die App fragt (nur in der APK, höchstens alle 10 Minuten; bis v0.34.0 alle 3 Stunden, dann kam der Hinweis zu spät) die GitHub-Seite «Android-App» (Release `android`) ab und liest «Version 1.2 (Build 7)» aus dem Text. Ist die Build-Nummer höher als die installierte (`FPAndroid.versionCode()`, APK 1.1 ohne diese Funktion = Build 5), erscheint auf der Startseite ein Hinweis mit Download-Knopf. Installieren muss man immer selbst bestätigen (Android).
 - Der Release-Text wird vom Workflow geschrieben; das Muster «Version … (Build N)» darf sich nicht ändern.
 
 ## E49 – Neuer Name «myFam.» (v0.28.0, APK 1.3, 06.11.2026)

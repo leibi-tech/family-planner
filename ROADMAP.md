@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 10.11.2026 · Version 0.34.0 · APK 1.5 · Name «myFam.»
+Stand: 10.11.2026 · Version 0.34.1 · APK 1.5 · Name «myFam.»
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4 (ab v0.29.0 ersetzt durch Willkommensfenster, E51).
@@ -142,6 +142,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **10.11.2026 (5)**: Tobias fand das Widget nicht: Handy hatte noch APK 1.4, der Hinweis «Neue Android-App bereit» kam nicht, weil die App GitHub nur alle 3 Stunden fragte. v0.34.1: alle 10 Minuten.
 - **10.11.2026 (4)**: v0.33.0 gemergt. Entscheid Tobias: erstes Widget = Termine, 7 Tage ab heute. v0.34.0 / APK 1.5: `src/widget.ts` (`widgetData`, `pushWidget` nach `fetchMonths`, beim Start, beim Verlassen), `FPAndroid.setWidget`, `TermineWidget.java` + `TermineWidgetService.java` (Liste mit Tagesüberschriften), Öffnen über `?kalender=…` / `window.fpOpenCalendar`. Neuer Test `tests/widget.mjs`. Widget selbst ohne automatischen Test (nur Bau auf GitHub). Alle Tests ok.
 - **10.11.2026 (3)**: v0.32.0 gemergt. Wunsch Tobias: Neuigkeiten-Meldung auf der Startseite, einmalig, mit ✕ für immer weg, Liste in den Einstellungen, nur bei richtigen Neuerungen. v0.33.0: `src/news.ts` (Liste `NEWS`, Merker `fp-news-seen`), `src/components/News.tsx` (Karte, Seite `neuigkeiten`), Liste rückwirkend ab v0.16.0. Neuer Test `tests/news.mjs`. Alle Tests ok.
 - **10.11.2026 (2)**: Frage Tobias: Widgets oder fehlt noch was? Offen war «Teilen an die App». Entscheid Tobias: zuerst Teilen. v0.32.0 / APK 1.4: Intent-Filter `SEND` (PDF, Bilder) im Manifest, `MainActivity.receiveShare` liest die Datei (max. 20 MB) und lädt `?teilen=1`, `FPAndroid.takeShared()` gibt sie einmal ab (nur auf der eigenen Seite). `apkTakeShared` in `src/android.ts`, `takeSharedFiles` fragt zuerst die APK. Test in `tests/apk.mjs` (PDF, Foto, leer). Android-Teil ohne automatischen Test (Bau auf GitHub). Alle Tests ok.
