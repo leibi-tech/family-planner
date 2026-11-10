@@ -11,6 +11,7 @@ import { NotesPage } from './pages/NotesPage';
 import { StartPage } from './pages/StartPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { DocsPage } from './pages/DocsPage';
+import { BackupPage } from './pages/BackupPage';
 import { GreetingGate, GreetingsPage, useThinAlbum } from './components/Greetings';
 import { readReturnFromGoogle } from './calendar';
 import { readShareStart } from './docs';
@@ -23,7 +24,7 @@ import { apkVersion, installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
 import { NAV_SLOTS, PINNABLE, setNav, setTheme, useNav, useTheme, type PinTab } from './prefs';
 
-type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse' | 'einstellungen' | 'datenschutz' | 'portionen';
+type Tab = 'start' | 'plan' | 'einkauf' | 'todo' | 'notizen' | 'mehr' | 'menues' | 'familie' | 'kalender' | 'dokumente' | 'leiste' | 'gruesse' | 'einstellungen' | 'datenschutz' | 'portionen' | 'sicherung';
 
 const TITLES: Record<Tab, string> = {
   start: 'Start',
@@ -41,6 +42,7 @@ const TITLES: Record<Tab, string> = {
   einstellungen: 'Einstellungen',
   datenschutz: 'Datenschutz',
   portionen: 'Portionen',
+  sicherung: 'Datensicherung',
 };
 
 /** Name in der Menüleiste und auf «Mehr», mit Beschreibung und Kachelfarbe. */
@@ -54,12 +56,12 @@ const PAGE_INFO: Record<PinTab, { label: string; sub: string; color: number }> =
   gruesse: { label: 'Unsere Grüsse', sub: 'Album mit Liebesgrüssen', color: 4 },
   dokumente: { label: 'Dokumente', sub: 'Scannen: Versicherungen, Garantien, Quittungen', color: 4 },
   familie: { label: 'Familie', sub: 'Personen, gemeinsam nutzen', color: 5 },
-  einstellungen: { label: 'Einstellungen', sub: 'Portionen, Aussehen, Menüleiste, Datenschutz', color: 1 },
+  einstellungen: { label: 'Einstellungen', sub: 'Portionen, Aussehen, Menüleiste, Datensicherung', color: 1 },
 };
 const shortLabel = (id: PinTab) => (id === 'gruesse' ? 'Grüsse' : PAGE_INFO[id].label);
 
 /** Unterseiten: «Zurück» führt zu den Einstellungen statt zu «Mehr». */
-const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz: 'einstellungen', portionen: 'einstellungen' };
+const PARENT: Partial<Record<Tab, Tab>> = { leiste: 'einstellungen', datenschutz: 'einstellungen', portionen: 'einstellungen', sicherung: 'einstellungen' };
 
 declare const __APP_VERSION__: string;
 
@@ -185,6 +187,8 @@ export function App() {
           <SettingsPage goto={setTab} apk={apk} />
         ) : tab === 'portionen' ? (
           <FamilyPage portions />
+        ) : tab === 'sicherung' ? (
+          <BackupPage />
         ) : tab === 'datenschutz' ? (
           <PrivacyPage />
         ) : (
@@ -307,6 +311,13 @@ function SettingsPage({ goto, apk }: { goto: (t: Tab) => void; apk: ReturnType<t
           </button>
         </div>
       </div>
+      <button className="set-row" onClick={() => goto('sicherung')}>
+        <Icon name="sicherung" />
+        <span className="grow">Datensicherung</span>
+        <span className="chev" aria-hidden>
+          ›
+        </span>
+      </button>
       <button className="set-row" onClick={() => goto('datenschutz')}>
         <Icon name="schloss" />
         <span className="grow">Datenschutzerklärung</span>

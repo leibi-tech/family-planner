@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 09.11.2026 · Version 0.30.0 · APK 1.3 · Name «myFam.»
+Stand: 10.11.2026 · Version 0.31.0 · APK 1.3 · Name «myFam.»
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4 (ab v0.29.0 ersetzt durch Willkommensfenster, E51).
@@ -28,6 +28,7 @@ Stand: 09.11.2026 · Version 0.30.0 · APK 1.3 · Name «myFam.»
 - ⏳ **Android-App (APK 1.0)**: Hülle mit Capacitor, lädt die App weiter von GitHub Pages (Updates automatisch), eigenes Symbol, wird auf GitHub gebaut und unter Releases bereitgestellt (E46). Läuft auf Tobias' Handy (06.11.2026), Kalender und Scannen gehen.
 - ⏳ **APK 1.1 / v0.26.0: Zurück-Taste, Herunterladen und Teilen in der APK** (E47). Tobias: mergen, neue APK drüber installieren, ausprobieren (ANLEITUNG AB). Gemergt.
 - ⏳ **APK 1.3 / v0.28.0: neuer Name «myFam.»** (E49), **Einstellungen als eigene Seite** mit Datenschutzerklärung (nachgeführt) und Copyright (E50). Tobias: mergen, Hinweis auf der Startseite → neue APK installieren. Die Web-App im Browser zeigt den neuen Namen erst nach neuem Hinzufügen zum Startbildschirm.
+- ⏳ **Datensicherung (v0.31.0)**: Mehr → Einstellungen → Datensicherung. «Sicherung erstellen» = eine ZIP-Datei mit allen Einträgen (daten.json) und allen Dokumenten (als PDF lesbar), herunterladen oder teilen (z.B. Google Drive). «Sicherung einlesen» holt zurück, was fehlt oder gelöscht wurde, Bestehendes bleibt; das Zurückgeholte geht an alle Handys. Auch für einen Umzug der Datenbank (E53). Tobias: mergen, Sicherung erstellen und in Google Drive ablegen (ANLEITUNG AF). Kein Datenbank-Update.
 - ⏳ **Portionen in die Einstellungen (v0.30.0)**: Wunsch Tobias: Faktoren sehen auf «Familie» komisch aus und braucht nicht jeder. Familie zeigt nur noch Namen (Name, Gmail, löschen). Faktoren unter Mehr → Einstellungen → «Portionen pro Person» (E52). Tobias: mergen, ausprobieren (ANLEITUNG AE). Kein Datenbank-Update.
 - ✅ **Erster Start fragt nach dem Namen (v0.29.0)**: Bei einer neuen Installation stand fest «Tobias» drin (Kilian bemerkt). Neu: Willkommensfenster «Wie heisst du?», keine fest eingetragenen Personen mehr, oder «Ich trete einer bestehenden Familie bei» → Seite Familie (E51). Bestehende Installationen unverändert. Tobias: mergen, ausprobieren (ANLEITUNG AD). Kein Datenbank-Update.
 - ✅ **APK 1.2 / v0.27.0: Hinweis «Neue Android-App bereit»** (gemergt) auf der Startseite mit Download-Knopf (E48). Tobias: mergen, Hinweis erscheint in der App (APK 1.1) → so installieren. Danach offen: Teilen an die App, dann erstes Widget.
@@ -43,7 +44,7 @@ Stand: 09.11.2026 · Version 0.30.0 · APK 1.3 · Name «myFam.»
 | 4 | Einkaufsliste aus dem Wochenplan: Mengen nach Faktor berechnen, runden, zusammenfassen, Herkunft anzeigen. Vorgezogen aus Schritt 5: Vorrats-Check mit Rückgängig, Abhaken im Laden | ✅ fertig |
 | 5 | Einkaufsliste: Artikel von Hand (mit Vorschlägen aus früheren Einträgen, löschbar mit ✕), wiederkehrende Artikel (Intervall in Wochen), Erledigte ausblenden | ✅ fertig, getestet |
 | 7 | Detail-Anpassungen (Wunschliste von Tobias, sammeln und am Schluss umsetzen) | offen |
-| 6 | Datensicherung: Export/Import als Datei | zurückgestellt (siehe unten) |
+| 6 | Datensicherung: Export/Import als Datei | ⏳ v0.31.0 gebaut (E53) |
 
 ## Phase 2 – Gemeinsame Nutzung (Ziel 2)
 Synchronisation über Supabase. Läuft: Konto, Haushalt mit Code, Rollen, automatischer Abgleich (offline-fähig). Jeder Eintrag hat eine eindeutige ID, einen Änderungszeitpunkt und beim Löschen eine Löschmarke.
@@ -78,7 +79,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
    - ⏳ **K4 (v0.17.0)** Betreuungs-Warnung «Wer schaut auf die Kinder?»: beide Eltern (Personen mit eigenem Google-Kalender) gleichzeitig weg, nur Termine mit Uhrzeit, keine Warnung wenn alle Kinder mitgehen. Betreuung erfassen («Jemand betreut» / «Kinder gehen mit» + Notiz), in der eigenen Datenbank mit den Terminen verknüpft; verschoben/gelöscht → «Termin geändert – Betreuung prüfen». Rückfrage bei fremden Terminen als ToDo mit «Termin öffnen».
    - ⏳ **K5 (v0.17.0)** Startseite: Warnungen (nächste 14 Tage) und Termine heute/morgen; Antippen öffnet die Tagesansicht.
 4. **Passwort** (mit Tobias abgesprochen, 26.10.2026): zuerst ✅ «Passwort ändern» (v0.13.0, ohne E-Mail-Dienst), dann «Passwort vergessen» mit kostenlosem E-Mail-Dienst (z.B. Brevo als SMTP in Supabase, Link in der Mail, Bildschirm «Neues Passwort»). Spätestens vor dem Play Store.
-5. Kleinigkeiten, wenn Zeit: Export-Knopf (siehe Datensicherung).
+5. ✅ Export-Knopf: Datensicherung v0.31.0 (E53).
 6. **Dokumente** (Idee Tobias 30.10.2026, E37, E41): Versicherungsdokumente, Garantiescheine, Quittungen.
    - ❌ D1 (v0.18.0) Machbarkeitstest NAS: abgelöst, Tobias will die Dokumente vorerst in der App-Cloud (30.10.2026).
    - ⏳ **D2 (v0.21.0) Seite «Dokumente»:** scannen (eigener Scanner, PDF), PDF/Foto wählen, «Teilen» aus anderen Apps, Arten (Versicherung, Garantie, Quittung/Rechnung, Vertrag, Gesundheit, Steuern, Schule/Kinder, Anderes), Datum, «Garantie bis / Gültig bis», Notiz, Suche, Hinweis 30 Tage vor Ablauf. Datei in Supabase Storage, Kopie auf dem Handy (offline). Tobias: ANLEITUNG Y.
@@ -94,7 +95,6 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 
 ### Zurückgestellt
 - **Menü-Vorlagen** (eingebaute Sammlung typischer Familienmenüs): vorerst weggelassen, Tobias entscheidet später.
-- **Datensicherung (Export/Import)**: Die Daten liegen ohnehin in der Supabase-Datenbank und auf beiden Handys. Eine Sicherungsdatei schützt nur vor Sonderfällen (versehentlich gelöscht und auf alle Geräte übertragen; Supabase-Gratisprojekt wird nach längerer Inaktivität pausiert; Fehler beim Update). Darum nicht dringend, aber vor dem Play Store sinnvoll.
 
 ## Frühere Arbeiten (Phase 2 und Folgeschritte)
 - ✅ v0.8.1 (Rollen & Personen) eingespielt, Datenbank-Update in Supabase ausgeführt. Tipp: Im SQL Editor muss oben rechts «Database» stehen, nicht «Logs».
@@ -108,7 +108,7 @@ Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseit
 ## Wunschliste Detail-Anpassungen (Schritt 7)
 - [x] Tagesplanung kopieren: einzelne Tage (auf mehrere Tage, auch in andere Wochen) und ganze Wochen (beliebige Woche), jeweils «Kopieren nach …» oder «Übernehmen von …» (v0.6.0, auf dem Handy getestet ✅)
 - [x] Einkaufsliste getrennt nach «Lebensmittel» und «Anderes» mit Umschalter oben; neue Artikel gehen in die gewählte Sparte (v0.6.0, auf dem Handy getestet ✅)
-- [ ] Export-Knopf: Sicherungsdatei aller Daten erstellen und wieder einlesen (zurückgestellt, siehe oben)
+- [x] Export-Knopf: Sicherungsdatei aller Daten erstellen und wieder einlesen (v0.31.0, E53)
 - [x] Nachkauf: Wird nach dem Einkauf im Plan mehr gebraucht, erscheint nur die zusätzliche Menge als offener Artikel («+ 200 g, Nachkauf · 200 g schon gekauft») (v0.7.1)
 
 ## Ideen ToDo für später (nicht beschlossen)
@@ -139,6 +139,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **10.11.2026**: Frage Tobias: Gibt es ein Datenbackup, falls Datenbank, KI oder anderes umziehen muss? Antwort: noch nicht (App nutzt keine KI; Code liegt auf GitHub, Termine bei Google). Entscheid Tobias 1: Sicherung mit Dokumenten. v0.31.0: `src/zip.ts` (eigene ZIP-Hilfe), `src/backup.ts`, `src/pages/BackupPage.tsx` (Tab `sicherung` unter Einstellungen). Neuer Test `tests/backup.mjs`. Alle Tests ok.
 - **06.11.2026 (5)**: Wunsch Tobias: Datenschutzerklärung ergänzen, Einstellungen als eigenes Menü mit Datenschutz und Copyright. In v0.28.0 dazu: Seite `einstellungen` (anheftbar), `PrivacyPage` lädt `datenschutz.html`, Tests `look-nav`/`shop-setting` angepasst (E50). Alle Tests ok.
 - **06.11.2026 (4)**: Wunsch Tobias: App heisst «myFam.». v0.28.0 / APK 1.3: Name in `strings.xml`, `capacitor.config.json`, Manifest, Titel, Einladungstext. Repository, Adresse, Android-Kennung und Datenschutzseite bleiben (E49).
 - **06.11.2026 (3)**: Frage Tobias, ob jedes Update neu installiert werden muss (nein, nur Android-Teil). Wunsch: Hinweis bei neuer APK. v0.27.0 / APK 1.2: `ApkUpdateCard` (Startseite), `latestApk()` liest den Release-Text, `FPAndroid.versionCode()/versionName()`. Test `tests/apk.mjs` erweitert. Alle Tests ok.

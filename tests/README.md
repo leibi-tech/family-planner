@@ -4,6 +4,7 @@ Laufen in der Cloud-Umgebung, nicht auf dem PC. Aufruf im Projektordner: `bash t
 
 - `mock-supabase.mjs` – Nachbau von Supabase (Anmeldung, Tabelle `records` mit «neuere Änderung gewinnt», private Einträge über `owner_id`, Mitgliedschaft).
 - `welcome.mjs` – erster Start (v0.29): keine Startpersonen, Fenster «Wie heisst du?», «Ich trete einer bestehenden Familie bei». Die übrigen Tests nutzen die Startwerte Tobias / Frau / Kind 1 / Kind 2, die nur die Testversion anlegt (`__TEST_SEED__`); `localStorage fp-test-fresh=1` schaltet sie ab.
+- `backup.mjs` – Datensicherung (v0.31): ZIP erstellen (mit Python geprüft), Dokument aus der Ablage, gelöscht → einlesen → bei allen zurück, später Geändertes bleibt, «Es fehlt nichts», falsche Datei, neues Handy ohne doppelte Person.
 - `portions.mjs` – Familie ohne Faktoren, Einstellungen → Portionen: Faktoren und Summe, ändern, Zurück.
 - `ui-local.mjs` – Notizen und Listen ohne Haushalt (Handy-Format): erfassen, Unterpunkte, abhaken, privat, Pin, löschen.
 - `look-nav.mjs` – neues Aussehen (v0.19): Menüleiste selber einrichten (anheften, lösen, verschieben, bleibt gespeichert), Mehr-Kacheln, Hell/Dunkel.

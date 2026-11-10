@@ -818,3 +818,11 @@ h1, h2, h3, .sheet h2 { font-family: var(--f-head); font-weight: 600; letter-spa
 .ask-list li.off .ask-box { border-color: var(--muted); }
 .ask-name, .ask-qty { min-width: 0; width: 100%; padding: 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; }
 .ask-unit { min-width: 0; width: 100%; }
+
+/* Datensicherung (v0.31) */
+.backup-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.backup-actions .btn { flex: 1 1 auto; }
+.backup-preview p { margin: 0 0 6px; }
+.backup-preview ul { margin: 0; padding-left: 20px; }
+.backup-preview li { margin-bottom: 2px; }
+.backup .set-box .hint { margin: 0; }

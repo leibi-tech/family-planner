@@ -16,6 +16,7 @@ const PATHS: Record<string, string> = {
   aussehen: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 010 16z" fill="currentColor"/>',
   wolke: '<path d="M7 18h10a4 4 0 00.5-8 6 6 0 00-11.3 1.5A3.3 3.3 0 007 18z"/>',
   sync: '<path d="M4 12a8 8 0 0114-5.3L20 9M20 4v5h-5M20 12a8 8 0 01-14 5.3L4 15M4 20v-5h5"/>',
+  sicherung: '<path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a3 3 0 003 3h10a3 3 0 003-3v-3"/>',
   warn: '<path d="M12 3.5l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.3"/>',
 };
 

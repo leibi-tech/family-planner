@@ -275,6 +275,15 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
 
+## E53 – Datensicherung als ZIP-Datei (v0.31.0, 10.11.2026)
+- **Frage Tobias:** Haben wir ein Backup, falls Datenbank, KI oder sonst was umziehen muss? Bisher nicht (Supabase gratis bietet keine herunterladbaren Sicherungen). Entscheid Tobias: Sicherung **mit** Dokumenten.
+- **Ort:** Mehr → Einstellungen → Datensicherung. Jede Person kann sichern und einlesen.
+- **Inhalt:** eine ZIP-Datei `myFam-Sicherung-JJJJ-MM-TT.zip` mit `daten.json` (alle Einträge dieses Handys: Personen, Menüs, Wochenplan, Einkauf, ToDos, Ämtli, Notizen, Betreuung, Grüsse, Angaben zu den Dokumenten), `dokumente/` (die Dateien unter ihrem Namen, am PC direkt lesbar) und `LIESMICH.txt`. Dokumente, die nicht auf dem Handy sind, holt die App für die Sicherung aus der Ablage (ohne Kopie aufs Handy). Private Einträge anderer Personen sind nicht dabei (das Handy kennt sie nicht). Termine bleiben bei Google.
+- **Einlesen:** zeigt zuerst, was fehlt. Zurück kommt nur, was fehlt oder gelöscht ist; was in der App steht, bleibt (auch wenn es seit der Sicherung geändert wurde). Zurückgeholtes bekommt einen neuen Zeitstempel und geht beim Abgleich an alle Handys; Dokumente werden neu in die Ablage geladen.
+- **Umzug:** Neue Datenbank → neue Familie einrichten → Sicherung einlesen. Eine neu erfasste Person mit gleichem Namen wird durch die gesicherte ersetzt (keine Doppelten).
+- **Format:** ZIP ohne Komprimierung, eigene kleine Hilfe `src/zip.ts` (keine neue Bibliothek). Lesen kann auch komprimierte ZIP-Dateien.
+- Keine automatische Sicherung (bräuchte einen Server-Dienst). Erinnerung zum regelmässigen Sichern: später, falls gewünscht.
+
 ## E52 – Portionenfaktoren in die Einstellungen (v0.30.0, 09.11.2026)
 - **Wunsch Tobias:** «Essensfaktoren in Einstellungen versorgen, das sieht blöd aus so und will längst nicht jeder.»
 - **Umsetzung:** Seite Familie zeigt nur Namen (ohne × 1.0, ohne Summe, ohne Erklärung); Person bearbeiten = Name, Gmail-Adresse, Löschen. Neue Unterseite Einstellungen → «Portionen pro Person» (Tab `portionen`, gleiche Komponente `FamilyPage portions`): Erklärung, Faktoren, Summe, Faktor ändern. Personen hinzufügen nur auf Familie.
