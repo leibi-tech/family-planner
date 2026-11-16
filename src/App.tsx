@@ -21,6 +21,7 @@ import { onNavBack, onOpenRequest, requestOpen, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
 import { onChange, put, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
+import { googleTodos, useGoogleTasks } from './gtasks';
 import { Icon } from './icons';
 import { apkVersion, installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
@@ -153,7 +154,9 @@ export function App() {
   const todos = useRecords<Todo>('todos');
   const persons = useRecords<Person>('persons');
   const me = useMe(persons);
-  const myOpen = (todos ?? []).filter((t) => !t.done && !t.cleared && isMine(t, me)).length;
+  const gtasks = useGoogleTasks();
+  const myOpen =
+    (todos ?? []).filter((t) => !t.done && !t.cleared && isMine(t, me)).length + googleTodos(gtasks.cache, me).filter((t) => !t.done).length;
 
   useEffect(() => {
     requestPersistentStorage().then(setPersistent);

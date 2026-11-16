@@ -837,3 +837,7 @@ h1, h2, h3, .sheet h2 { font-family: var(--f-head); font-weight: 600; letter-spa
 .news-list li.set-box { display: block; margin: 0; }
 .news-list li p { margin: 4px 0 0; line-height: 1.45; }
 .news-meta { font-size: 13px; margin-bottom: 4px; }
+
+/* Google-ToDos (v0.35) */
+.gtask-badge { display: inline-flex; align-items: center; justify-content: center; width: 1.25em; height: 1.25em; margin-right: 4px; border-radius: 4px; background: #1a73e8; color: #fff; font-size: 0.75em; font-weight: 700; vertical-align: 0.1em; }
+.gtask-hint { display: flex; flex-direction: column; gap: 8px; }

@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: NewsItem[] = [
   {
+    version: '0.35.0',
+    date: '16.11.2026',
+    title: 'Google-ToDos',
+    text: 'Deine ToDos aus Google erscheinen unter «Meine» mit einem blauen G. Nur du siehst sie. Abhaken, ändern und neue erfassen geht direkt in der App (mit Internet). Dafür Google einmal neu verbinden.',
+  },
+  {
     version: '0.34.0',
     date: '10.11.2026',
     title: 'Widget «Termine»',

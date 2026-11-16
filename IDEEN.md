@@ -7,4 +7,4 @@ Bereits gesammelte, noch nicht entschiedene Ideen stehen in der ROADMAP unter «
 
 ## Eingang
 <!-- Format: - **TT.MM.JJJJ** – Idee in Tobias' Worten. (Rückfragen von Claude: …) -->
-- **16.11.2026** – Google-ToDo-Liste (Google Tasks) mit der App verknüpfen, das wären ToDos, die nur ich sehe (privat). (Claude: machbar, gleicher Weg wie der Kalender, Google-Konto muss einmal neu verbunden werden. Rückfragen: Wo anzeigen – unter «Meine» gemischt oder eigene Liste «Google»? Nur sehen/abhaken oder auch erfassen/ändern?)
+_(noch leer)_

@@ -33,7 +33,9 @@ const SCOPES = [
   'email',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+  'https://www.googleapis.com/auth/tasks', // Google-ToDos (v0.35), nur für die eigene Person
 ].join(' ');
+const GTASKS = 'https://tasks.googleapis.com/tasks/v1';
 const DEFAULT_APP_URL = 'https://leibi-tech.github.io/family-planner/';
 
 class HttpError extends Error {
@@ -619,6 +621,172 @@ async function actDelete(user: { id: string }, body: any): Promise<Response> {
   return json({ ok: true });
 }
 
+// ---------- Google-ToDos (Google Tasks, v0.35) ----------
+// Nur die eigenen ToDos der angemeldeten Person: Es wird immer das EIGENE Google-Konto benutzt,
+// nie das eines anderen Familienmitglieds. Die ToDos landen nicht in der gemeinsamen Datenbank.
+export interface GTask {
+  id: string;
+  listId: string;
+  title: string;
+  notes: string;
+  due: string | null; // JJJJ-MM-TT
+  done: boolean;
+  completedAt: string | null;
+  updated: string | null;
+}
+
+/** Fehlt die Erlaubnis oder ist Google Tasks im Cloud-Projekt ausgeschaltet? */
+class TasksState extends Error {
+  constructor(public state: 'scope' | 'disabled') {
+    super(state);
+  }
+}
+
+async function gtasks(acc: Account, path: string, init: { method?: string; body?: unknown } = {}): Promise<any> {
+  const tok = await accessToken(acc);
+  const method = init.method ?? 'GET';
+  const headers: Record<string, string> = { Authorization: `Bearer ${tok}` };
+  if (init.body !== undefined) headers['Content-Type'] = 'application/json';
+  const res = await fetch(GTASKS + path, { method, headers, body: init.body === undefined ? undefined : JSON.stringify(init.body) });
+  const text = await res.text();
+  if (res.status === 401) throw new HttpError(409, `Die Verbindung zu Google (${acc.google_email ?? 'Konto'}) ist abgelaufen. Bitte neu verbinden.`);
+  if (res.status === 403) {
+    if (/SERVICE_DISABLED|accessNotConfigured|has not been used|is disabled/i.test(text)) throw new TasksState('disabled');
+    if (/SCOPE_INSUFFICIENT|insufficient/i.test(text)) throw new TasksState('scope');
+    throw new HttpError(403, 'Google erlaubt den Zugriff auf diese ToDo-Liste nicht.');
+  }
+  if (res.status === 404 || res.status === 410) throw new HttpError(404, 'Dieses ToDo gibt es in Google nicht mehr.');
+  if (res.status === 400) throw new HttpError(400, 'Google hat die Angaben nicht angenommen.');
+  if (!res.ok) throw new HttpError(502, `Google antwortet nicht richtig (${res.status}).`);
+  return text ? JSON.parse(text) : null;
+}
+
+export function simplifyTask(t: any, listId: string): GTask | null {
+  if (!t || t.deleted || !t.id) return null;
+  const title = String(t.title ?? '').trim();
+  if (!title && !t.notes) return null; // leere Zeilen, die Google beim Erfassen anlegt
+  return {
+    id: t.id,
+    listId,
+    title: title || '(ohne Titel)',
+    notes: String(t.notes ?? '').slice(0, 4000),
+    due: typeof t.due === 'string' ? t.due.slice(0, 10) : null,
+    done: t.status === 'completed',
+    completedAt: t.completed ?? null,
+    updated: t.updated ?? null,
+  };
+}
+
+const taskPath = (listId: string, taskId?: string) =>
+  `/lists/${encodeURIComponent(listId)}/tasks` + (taskId ? `/${encodeURIComponent(taskId)}` : '');
+
+/** Alle Listen und ToDos der eigenen Person (erledigte der letzten 30 Tage). */
+async function actTasks(user: { id: string }): Promise<Response> {
+  const acc = await getAccount(user.id);
+  if (!acc) return json({ state: 'none' });
+  try {
+    const l = await gtasks(acc, '/users/@me/lists?maxResults=100');
+    const lists = (l?.items ?? []).map((x: any) => ({ id: String(x.id), title: String(x.title ?? 'Liste') }));
+    const tasks: GTask[] = [];
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    // Offene ToDos (alle) und erledigte der letzten 30 Tage getrennt holen:
+    // «completedMin» würde sonst die offenen ausfiltern.
+    const queries = [
+      { maxResults: '100', showCompleted: 'false' },
+      { maxResults: '100', showCompleted: 'true', showHidden: 'true', completedMin: since },
+    ];
+    for (const list of lists.slice(0, 20)) {
+      for (const base of queries) {
+        let page: string | undefined;
+        for (let i = 0; i < 5; i++) {
+          const q = new URLSearchParams(base);
+          if (page) q.set('pageToken', page);
+          const b = await gtasks(acc, `${taskPath(list.id)}?${q}`);
+          for (const t of b?.items ?? []) {
+            const s = simplifyTask(t, list.id);
+            if (s && !tasks.some((x) => x.id === s.id)) tasks.push(s);
+          }
+          page = b?.nextPageToken;
+          if (!page) break;
+        }
+      }
+    }
+    return json({ state: 'ok', email: acc.google_email, lists, tasks });
+  } catch (e) {
+    if (e instanceof TasksState) return json({ state: e.state, email: acc.google_email });
+    throw e;
+  }
+}
+
+function taskBody(t: any, partial: boolean): any {
+  const out: any = {};
+  if (!partial || t?.title !== undefined) {
+    const title = String(t?.title ?? '').trim().slice(0, 1000);
+    if (!title) throw new HttpError(400, 'Bitte einen Titel eingeben.');
+    out.title = title;
+  }
+  if (!partial || t?.notes !== undefined) out.notes = String(t?.notes ?? '').slice(0, 8000);
+  if (!partial || t?.due !== undefined) {
+    if (t?.due === null || t?.due === '' || t?.due === undefined) out.due = null;
+    else if (isDate(String(t.due))) out.due = `${t.due}T00:00:00.000Z`;
+    else throw new HttpError(400, 'Ungültiges Datum.');
+  }
+  if (t?.done !== undefined) {
+    out.status = t.done ? 'completed' : 'needsAction';
+    if (!t.done) out.completed = null;
+  }
+  return out;
+}
+
+async function ownTasksAccount(user: { id: string }): Promise<Account> {
+  const acc = await getAccount(user.id);
+  if (!acc) throw new HttpError(409, 'Noch nicht mit Google verbunden.');
+  return acc;
+}
+const tasksCall = async <T>(f: () => Promise<T>): Promise<T> => {
+  try {
+    return await f();
+  } catch (e) {
+    if (e instanceof TasksState)
+      throw new HttpError(409, e.state === 'scope' ? 'Für die Google-ToDos bitte Google neu verbinden.' : 'Google Tasks ist im Google-Cloud-Projekt noch nicht eingeschaltet.');
+    throw e;
+  }
+};
+
+async function actTaskCreate(user: { id: string }, body: any): Promise<Response> {
+  const acc = await ownTasksAccount(user);
+  const listId = String(body?.listId || '@default');
+  const b = taskBody(body?.task, false);
+  if (body?.task?.done) b.status = 'completed';
+  else delete b.status;
+  if (b.due === null) delete b.due;
+  const t = await tasksCall(() => gtasks(acc, taskPath(listId), { method: 'POST', body: b }));
+  return json({ ok: true, task: simplifyTask(t, listId) });
+}
+
+async function actTaskUpdate(user: { id: string }, body: any): Promise<Response> {
+  const acc = await ownTasksAccount(user);
+  const listId = String(body?.listId ?? '');
+  const taskId = String(body?.taskId ?? '');
+  if (!listId || !taskId) throw new HttpError(400, 'ToDo fehlt.');
+  const b = taskBody(body?.task, true);
+  const t = await tasksCall(() => gtasks(acc, taskPath(listId, taskId), { method: 'PATCH', body: b }));
+  return json({ ok: true, task: simplifyTask(t, listId) });
+}
+
+async function actTaskDelete(user: { id: string }, body: any): Promise<Response> {
+  const acc = await ownTasksAccount(user);
+  const listId = String(body?.listId ?? '');
+  const taskId = String(body?.taskId ?? '');
+  if (!listId || !taskId) throw new HttpError(400, 'ToDo fehlt.');
+  try {
+    await tasksCall(() => gtasks(acc, taskPath(listId, taskId), { method: 'DELETE' }));
+  } catch (e) {
+    if (!(e instanceof HttpError && e.status === 404)) throw e; // schon weg = ok
+  }
+  return json({ ok: true });
+}
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   const url = new URL(req.url);
@@ -648,6 +816,14 @@ export async function handler(req: Request): Promise<Response> {
         return await actDelete(user, body);
       case 'master':
         return await actMaster(user, body);
+      case 'tasks':
+        return await actTasks(user);
+      case 'taskCreate':
+        return await actTaskCreate(user, body);
+      case 'taskUpdate':
+        return await actTaskUpdate(user, body);
+      case 'taskDelete':
+        return await actTaskDelete(user, body);
       default:
         return json({ error: 'Unbekannte Aktion.' }, 400);
     }

@@ -58,6 +58,7 @@ const google = {
   masters: {},
 };
 
+const gtasks = { calls: [], mode: {}, lists: {}, items: {} }; // gefälschtes Google Tasks
 const R = (body, status = 200, headers = {}) => new Response(body === null ? null : JSON.stringify(body), { status, headers });
 globalThis.fetch = async (input, init = {}) => {
   const url = new URL(typeof input === 'string' ? input : input.url);
@@ -110,6 +111,30 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.href.startsWith('https://oauth2.googleapis.com/revoke')) {
     google.revoked.push(url.searchParams.get('token'));
     return R({});
+  }
+  if (url.host === 'tasks.googleapis.com') {
+    const at = (h.Authorization || '').replace('Bearer ', '');
+    gtasks.calls.push({ at, method, path: url.pathname, q: Object.fromEntries(url.searchParams), body: init.body ? JSON.parse(init.body) : null });
+    if (gtasks.mode[at] === 'scope') return R({ error: { status: 'PERMISSION_DENIED', details: [{ reason: 'ACCESS_TOKEN_SCOPE_INSUFFICIENT' }] } }, 403);
+    if (gtasks.mode[at] === 'disabled') return R({ error: { status: 'PERMISSION_DENIED', details: [{ reason: 'SERVICE_DISABLED' }] } }, 403);
+    if (url.pathname === '/tasks/v1/users/@me/lists') return R({ items: gtasks.lists[at] ?? [] });
+    const m = url.pathname.match(/^\/tasks\/v1\/lists\/([^/]+)\/tasks(?:\/([^/]+))?$/);
+    if (m) {
+      const list = decodeURIComponent(m[1]);
+      const items = (gtasks.items[at + '|' + list] ??= []);
+      const id = m[2] && decodeURIComponent(m[2]);
+      if (method === 'GET') {
+        const showCompleted = url.searchParams.get('showCompleted') !== 'false';
+        const cmin = url.searchParams.get('completedMin');
+        return R({ items: items.filter((t) => (t.status === 'completed' ? showCompleted && (!cmin || t.completed >= cmin) : !cmin)) });
+      }
+      const body = init.body ? JSON.parse(init.body) : null;
+      if (method === 'POST') { const t = { id: 'nt' + gtasks.calls.length, status: 'needsAction', ...body }; items.push(t); return R(t); }
+      const t = items.find((x) => x.id === id);
+      if (!t) return R({}, 404);
+      if (method === 'PATCH') { Object.assign(t, body); if (body.status === 'completed') t.completed = new Date().toISOString(); return R(t); }
+      if (method === 'DELETE') { items.splice(items.indexOf(t), 1); return new Response(null, { status: 204 }); }
+    }
   }
   if (url.host === 'www.googleapis.com') {
     const at = (h.Authorization || '').replace('Bearer ', '');
@@ -299,6 +324,44 @@ th.access_token = null;
 th.refresh_token = 'rt-widerrufen';
 const ev2 = await post('tok-tobias', { action: 'events', household: 'H1', from: '2026-10-01T00:00:00Z', to: '2026-12-01T00:00:00Z' });
 ok(!ev2.body.events.some((e) => e.id === 'e2') && ev2.body.events.some((e) => e.id === 'e1') && ev2.body.errors.length === 1 && /thadea@gmail.com/.test(ev2.body.errors[0]), 'abgelaufene Verbindung: Rest kommt, Hinweis mit Konto');
+
+// 11b) Google-ToDos (v0.35): nur das eigene Konto
+const recent = new Date(Date.now() - 2 * 86400000).toISOString();
+const old = new Date(Date.now() - 60 * 86400000).toISOString();
+gtasks.lists['at-t'] = [{ id: 'L1', title: 'Meine Aufgaben' }];
+gtasks.items['at-t|L1'] = [
+  { id: 't1', title: 'Steuern', notes: 'Belege', due: '2026-11-20T00:00:00.000Z', status: 'needsAction' },
+  { id: 't2', title: 'Erledigt neu', status: 'completed', completed: recent, hidden: true },
+  { id: 't3', title: 'Erledigt alt', status: 'completed', completed: old },
+  { id: 't4', title: '', status: 'needsAction' },
+];
+gtasks.lists['at-th'] = [{ id: 'LT', title: 'Thadea' }];
+gtasks.items['at-th|LT'] = [{ id: 'x1', title: 'Geschenk Tobias', status: 'needsAction' }];
+let tr = await post('tok-tobias', { action: 'tasks' });
+const tt = tr.body.tasks ?? [];
+ok(tr.body.state === 'ok' && tt.length === 2 && tt.find((t) => t.id === 't1')?.due === '2026-11-20' && tt.find((t) => t.id === 't1')?.notes === 'Belege', 'ToDos: offene + kürzlich erledigte, Datum als JJJJ-MM-TT, leere Zeilen weg');
+ok(tt.some((t) => t.id === 't2' && t.done) && !tt.some((t) => t.id === 't3'), 'erledigt vor über 30 Tagen nicht mehr dabei');
+ok(!gtasks.calls.some((c) => c.at === 'at-th'), 'nur das eigene Google-Konto wird gelesen (nie das von Thadea)');
+ok((await post('tok-fremd', { action: 'tasks' })).body.state === 'none', 'ohne Google-Verbindung: «none»');
+await post('tok-tobias', { action: 'taskUpdate', listId: 'L1', taskId: 't1', task: { done: true } });
+let gc = gtasks.calls.at(-1);
+ok(gc.method === 'PATCH' && gc.body.status === 'completed' && !('title' in gc.body), 'Abhaken: nur Status an Google');
+await post('tok-tobias', { action: 'taskUpdate', listId: 'L1', taskId: 't1', task: { done: false, title: 'Steuern 2026', notes: '', due: null } });
+gc = gtasks.calls.at(-1);
+ok(gc.body.status === 'needsAction' && gc.body.completed === null && gc.body.title === 'Steuern 2026' && gc.body.due === null, 'Wieder öffnen, Titel ändern, Datum entfernen');
+tr = await post('tok-tobias', { action: 'taskCreate', listId: 'L1', task: { title: 'Velo', notes: 'Kette', due: '2026-12-01' } });
+gc = gtasks.calls.at(-1);
+ok(gc.method === 'POST' && gc.path === '/tasks/v1/lists/L1/tasks' && gc.body.due === '2026-12-01T00:00:00.000Z' && !('status' in gc.body) && tr.body.task.title === 'Velo', 'Neu erfassen mit Datum');
+ok((await post('tok-tobias', { action: 'taskCreate', listId: 'L1', task: { title: '  ' } })).status === 400, 'leerer Titel abgelehnt');
+ok((await post('tok-tobias', { action: 'taskUpdate', listId: 'L1', taskId: 't1', task: { due: '20.11.2026' } })).status === 400, 'falsches Datum abgelehnt');
+ok((await post('tok-tobias', { action: 'taskDelete', listId: 'L1', taskId: 't1' })).status === 200 && !gtasks.items['at-t|L1'].some((t) => t.id === 't1'), 'Löschen');
+ok((await post('tok-tobias', { action: 'taskDelete', listId: 'L1', taskId: 't1' })).status === 200, 'nochmals löschen (schon weg) = ok');
+gtasks.mode['at-t'] = 'scope';
+ok((await post('tok-tobias', { action: 'tasks' })).body.state === 'scope', 'Erlaubnis fehlt → «scope» (App zeigt «neu verbinden»)');
+ok((await post('tok-tobias', { action: 'taskCreate', task: { title: 'x' } })).status === 409, 'Erlaubnis fehlt: Schreiben mit Hinweis abgelehnt');
+gtasks.mode['at-t'] = 'disabled';
+ok((await post('tok-tobias', { action: 'tasks' })).body.state === 'disabled', 'Google Tasks im Cloud-Projekt aus → «disabled»');
+delete gtasks.mode['at-t'];
 
 // 12) Trennen
 await post('tok-tobias', { action: 'disconnect' });
