@@ -522,6 +522,36 @@ Ein PDF oder Foto aus einer anderen App direkt in die Dokumente schicken, z.B. e
 2. «Alle Neuigkeiten» antippen → Liste aller Neuerungen. Zurück.
 3. ✕ antippen → Karte weg. App schliessen und neu öffnen → bleibt weg.
 
+## AJ) Google-ToDos (ab Version 0.35.0, einmalig einrichten)
+Deine ToDos aus Google (Google Tasks) erscheinen unter **ToDo → Meine** mit einem blauen **G**. Nur du siehst sie.
+
+**Teil 1 – Google Cloud (am PC, ca. 5 Minuten)**
+1. **console.cloud.google.com** öffnen, oben das Projekt **Family-Planner** wählen.
+2. Oben im Suchfeld **Google Tasks API** eingeben, öffnen → **Aktivieren**.
+3. Im Suchfeld **Google Auth Platform** öffnen → links **Datenzugriff** (Data Access) → **Bereiche hinzufügen oder entfernen** → im Filter `tasks` eingeben → Häkchen bei **…/auth/tasks** → **Aktualisieren** → unten **Speichern**.
+
+**Teil 2 – Supabase (geht auch am Handy)**
+4. supabase.com → Projekt **family-planner** → **Edge Functions** → **google-kalender** → **Code**.
+5. Datei `supabase/functions/google-kalender/index-zum-kopieren.txt` (auf GitHub, nach dem Mergen) öffnen, alles kopieren, im Editor alles ersetzen → **Deploy**. «Verify JWT» bleibt aus.
+
+**Teil 3 – App**
+6. Pull Request mergen, 1–2 Minuten warten, App schliessen und neu öffnen (Version 0.35.0).
+7. **ToDo → Meine**: Dort steht «Deine Google-ToDos können hier erscheinen» → **Google neu verbinden** → bei Google **«Aufgaben»** erlauben (alle Häkchen). Deine Kalender-Auswahl bleibt.
+8. Zurück in der App (öffnet sich im Kalender): **Schliessen**, dann **ToDo** antippen.
+
+**Zum Testen**
+1. Unter «Meine» erscheinen deine Google-ToDos mit **G**, auch auf der Startseite.
+2. Eines abhaken → in der Google-App (oder Gmail → Tasks) ist es auch erledigt.
+3. Eines antippen, Titel oder Datum ändern → Speichern.
+4. **+** → Sichtbarkeit **G Google** → Speichern → erscheint in Google.
+5. Thadea sieht deine Google-ToDos nicht. Wenn sie will, kann sie bei sich dasselbe machen (Schritt 7).
+
+**Gut zu wissen**
+- Ändern geht nur mit Internet. Ohne Internet siehst du den letzten Stand.
+- Neue ToDos, die du direkt in Google erfasst, erscheinen nach spätestens 5 Minuten (oder beim nächsten Öffnen).
+- «Erledigte löschen» löscht erledigte Google-ToDos auch in Google.
+- Steht bei «Meine» «Google-ToDos sind im Google-Cloud-Projekt noch nicht eingeschaltet»: Schritt 2 fehlt.
+
 ## AI) Widget «Termine» (ab APK 1.5 / Version 0.34.0)
 Die Termine der nächsten 7 Tage direkt auf dem Startbildschirm.
 

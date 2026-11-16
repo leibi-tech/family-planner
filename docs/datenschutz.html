@@ -19,7 +19,7 @@
 <body>
 <main>
   <h1>Datenschutz – myFam.</h1>
-  <p class="muted">Stand: 6. November 2026 · myFam. hiess bis November 2026 «Family-Planner».</p>
+  <p class="muted">Stand: 16. November 2026 · myFam. hiess bis November 2026 «Family-Planner».</p>
 
   <h2>Worum es geht</h2>
   <p>myFam. (früher «Family-Planner») ist eine private App einer Familie: Menüplan, Einkaufsliste, ToDos, Notizen, Kalender, Dokumente und Grüsse. Sie wird nicht verkauft, enthält keine Werbung und ist nur für die Familie und eingeladene Personen gedacht.</p>
@@ -42,12 +42,13 @@
     <li><b>Betreuung:</b> Notizen dazu, wer bei einem Termin auf die Kinder schaut, verknüpft mit dem Termin.</li>
   </ul>
 
-  <h2>Google Kalender</h2>
+  <h2>Google Kalender und Google-ToDos</h2>
   <p>Wer seinen Google Kalender verbindet, erlaubt der App:</p>
   <ul>
     <li>die Liste der eigenen Kalender zu lesen, damit man auswählen kann, welche angezeigt werden;</li>
     <li>Termine der ausgewählten Kalender anzuzeigen, zu erstellen, zu ändern und zu löschen;</li>
-    <li>beim Erfassen eines Termins Familienmitglieder mit ihrer Gmail-Adresse einzuladen. Google schickt ihnen dann eine Einladung.</li>
+    <li>beim Erfassen eines Termins Familienmitglieder mit ihrer Gmail-Adresse einzuladen. Google schickt ihnen dann eine Einladung;</li>
+    <li>die eigenen Google-ToDos (Google Tasks) anzuzeigen, abzuhaken, zu erstellen, zu ändern und zu löschen. Diese ToDos sieht nur die Person selbst: Sie werden weder den anderen Mitgliedern des Haushalts gezeigt noch in der Datenbank gespeichert; nur eine Kopie bleibt auf dem eigenen Gerät.</li>
   </ul>
   <p>Die Termine der ausgewählten Kalender werden den anderen Mitgliedern des eigenen Haushalts in der App angezeigt. Sie werden nicht in der Datenbank gespeichert, sondern jeweils direkt bei Google abgerufen; nur eine Kopie bleibt auf den Geräten des Haushalts.</p>
   <p>Gespeichert wird der Zugangsschlüssel zu Google und die E-Mail-Adresse des Google-Kontos, geschützt in der Datenbank (Supabase, Zürich). Die App selbst kann den Schlüssel nicht lesen; nur die Server-Funktion verwendet ihn, um Termine abzurufen und zu bearbeiten.</p>
@@ -57,7 +58,7 @@
   <ul>
     <li><b>Supabase</b> (Server in Zürich): Anmeldung, Datenbank, Dokumenten-Ablage und Server-Funktionen.</li>
     <li><b>GitHub Pages</b> (GitHub, USA): liefert die App aus. Beim Laden erhält GitHub technisch nötige Angaben wie die IP-Adresse des Geräts. Die Android-App fragt bei GitHub ausserdem nach, ob es eine neue Version gibt.</li>
-    <li><b>Google</b>: nur für den Kalender (siehe oben) und nur, wenn man ihn verbindet.</li>
+    <li><b>Google</b>: nur für den Kalender und die eigenen Google-ToDos (siehe oben) und nur, wenn man ihn verbindet.</li>
     <li><b>Rezept-Import:</b> Fügt man den Link zu einem Rezept ein, holt eine Server-Funktion die Webseite ab. Dabei wird nur der Link übermittelt, keine persönlichen Daten.</li>
   </ul>
   <p>Schriften und Symbole sind in der App enthalten; es werden keine Inhalte von weiteren Dritten nachgeladen.</p>

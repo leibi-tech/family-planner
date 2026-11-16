@@ -35,6 +35,7 @@ import {
 } from '../notes';
 import { fmtDue, isMine, isOverdue, sortTodos, type Todo } from '../todos';
 import { useMe } from './TodoPage';
+import { googleTodos, isGoogle, toggleGoogleTask, useGoogleTasks } from '../gtasks';
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
@@ -51,6 +52,8 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
   const menus = useRecords<Menu>('menus');
   const days = useRecords<PlanDay>('days');
   const todos = useRecords<Todo>('todos');
+  const gtasks = useGoogleTasks();
+  const [gErr, setGErr] = useState<string | null>(null);
   const notes = useRecords<Note>('notes');
   const me = useMe(persons);
   const care = useRecords<CareInfo>('care');
@@ -108,9 +111,12 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
   const menuById = new Map(menus.map((m) => [m.id, m]));
 
   // ---- Meine ToDos ----
-  const myTodos = sortTodos(todos.filter((t) => !t.done && !t.cleared && isMine(t, me)));
+  const myTodos = sortTodos([...todos.filter((t) => !t.done && !t.cleared && isMine(t, me)), ...googleTodos(gtasks.cache, me).filter((t) => !t.done)]);
   const todayKey = dateKey(now);
-  const toggleTodo = (t: Todo) => put<Todo>('todos', { ...t, done: true, doneAt: Date.now(), doneBy: me });
+  const toggleTodo = async (t: Todo) => {
+    if (isGoogle(t)) return setGErr(await toggleGoogleTask(t));
+    await put<Todo>('todos', { ...t, done: true, doneAt: Date.now(), doneBy: me });
+  };
 
   // ---- Angeheftet / zuletzt geändert ----
   const pinned = notes.filter((n) => isPinnedFor(n, me)).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -283,6 +289,11 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
           <p className="muted dash-empty">{me ? 'Nichts zu tun. 🎉' : 'Lege unter «Familie» fest, wer du bist.'}</p>
         ) : (
           <ul className="dash-todos">
+            {gErr && (
+              <li className="warn" onClick={() => setGErr(null)}>
+                {gErr}
+              </li>
+            )}
             {myTodos.slice(0, MAX_TODOS).map((t) => {
               const late = isOverdue(t, todayKey);
               return (
@@ -292,7 +303,13 @@ export function StartPage({ goto }: { goto: (tab: string) => void }) {
                   </button>
                   <button className="dash-todo-main" onClick={() => requestOpen('todo', t.id, 'start')}>
                     <span className="dash-todo-title">
-                      {t.private && <span aria-label="privat">🔒 </span>}
+                      {isGoogle(t) ? (
+                        <span className="gtask-badge" aria-label="Google-ToDo">
+                          G
+                        </span>
+                      ) : (
+                        t.private && <span aria-label="privat">🔒 </span>
+                      )}
                       {t.choreId && <span aria-label="Ämtli">🔁 </span>}
                       {t.noteId && <span aria-label="mit Notiz">📝 </span>}
                       {t.eventRef && <span aria-label="mit Termin">📅 </span>}

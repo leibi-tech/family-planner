@@ -275,6 +275,13 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
 
+## E57 – Google-ToDos unter «Meine» (v0.35.0, 16.11.2026)
+- **Wunsch Tobias:** Google-ToDo-Liste mit der App verknüpfen, nur für mich sichtbar. Entscheide: **A1** unter «Meine» zwischen den anderen ToDos (mit Google-Zeichen), **B2** auch erfassen und ändern.
+- **Privat:** Die Funktion `google-kalender` liest und schreibt immer nur mit dem **eigenen** Google-Konto der angemeldeten Person (anders als beim Kalender, wo alle Konten des Haushalts gelesen werden). Die ToDos kommen **nicht** in die gemeinsame Datenbank, nur als Kopie auf das eigene Handy (`meta` → `googleTasks`, mit Konto-ID; meldet sich ein anderes Konto an, wird die Kopie nicht gezeigt). So sieht Thadea sie nie.
+- **Anzeige:** alle Listen gemischt unter «Meine» und «Alle» (wie eigene private ToDos), nicht bei anderen Personen. Blaues «G» statt Schloss. Auch auf der Startseite und im Zähler der Menüleiste. Erledigte der letzten 30 Tage.
+- **Ändern (nur online):** Abhaken (sofort angezeigt, bei Fehler zurück), Titel, Datum, Notiz, Löschen («auch in Google»). «Erledigte löschen» löscht erledigte Google-ToDos auch in Google. Neues ToDo: dritte Wahl «Google» bei Sichtbarkeit, bei mehreren Listen Liste wählen. Google kennt nur ein Datum ohne Uhrzeit, keine Zuweisung.
+- **Erlaubnis:** neuer Google-Bereich `tasks`. Bestehende Verbindungen haben ihn nicht → Hinweis «Google neu verbinden» unter «Meine» (ausblendbar). Die Kalender-Auswahl bleibt beim Neu-Verbinden erhalten. Google Tasks API muss im Cloud-Projekt eingeschaltet sein, sonst Hinweis.
+
 ## E56 – Widget «Termine · 7 Tage» (v0.34.0, APK 1.5, 10.11.2026)
 - **Entscheid Tobias:** erstes Widget = Termine, 7 Tage ab heute.
 - **Inhalt:** pro Tag eine Überschrift (Heute · Mo 10.11., Morgen · …, dann Wochentag), darunter die Termine mit Titel (ohne [Namen]), Zeit und Personen, links Farbstreifen der Personen (wie im Kalender). Tage ohne Termin: «frei». Oben «Stand hh:mm». Hell/Dunkel folgt dem Handy.

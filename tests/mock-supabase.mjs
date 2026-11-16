@@ -9,6 +9,7 @@ const log = [];
 const storage = new Map(); // Pfad -> {type, data}
 let storageFail = false;
 const passwords = {}; // E-Mail -> Passwort
+const gtasks = { writes: [] }; // Google-ToDos-Nachbau: gtasks[uid] = { state, lists, tasks }
 const gcal = { accounts: {}, googleList: [], events: {}, personOf: {}, errors: [], connectUrl: '', writes: [], repeats: {}, seq: 0 }; // Kalender-Nachbau
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' };
 const send = (res, code, body) => { res.writeHead(code, { ...cors, 'Content-Type': 'application/json' }); res.end(body === undefined ? '' : JSON.stringify(body)); };
@@ -65,6 +66,8 @@ http.createServer(async (req, res) => {
   if (p === '/__control/log') return send(res, 200, log);
   if (p === '/__control/gcal') { Object.assign(gcal, body); return send(res, 200, {}); }
   if (p === '/__control/gcal-dump') return send(res, 200, gcal);
+  if (p === '/__control/gtasks') { for (const k of Object.keys(gtasks)) delete gtasks[k]; Object.assign(gtasks, { writes: [] }, body); return send(res, 200, {}); }
+  if (p === '/__control/gtasks-dump') return send(res, 200, gtasks);
 
   // Nachbau der Funktion «google-kalender» (v0.14)
   if (p === '/functions/v1/google-kalender' && req.method === 'POST') {
@@ -76,6 +79,30 @@ http.createServer(async (req, res) => {
     if (body.action === 'calendars') return send(res, 200, { email: st.email, calendars: gcal.googleList, selected: st.selected });
     if (body.action === 'select') { st.selected = body.calendars; return send(res, 200, { ok: true, calendars: body.calendars }); }
     if (body.action === 'disconnect') { delete gcal.accounts[uid]; return send(res, 200, { ok: true }); }
+    // Google-ToDos (v0.35): gtasks[uid] = { state, lists, tasks } – immer nur das eigene Konto
+    if (body.action === 'tasks') {
+      if (!st) return send(res, 200, { state: 'none' });
+      const g = gtasks[uid];
+      if (!g || g.state !== 'ok') return send(res, 200, { state: g?.state ?? 'scope', email: st.email });
+      return send(res, 200, { state: 'ok', email: st.email, lists: g.lists, tasks: g.tasks });
+    }
+    if (['taskCreate', 'taskUpdate', 'taskDelete'].includes(body.action)) {
+      const g = gtasks[uid];
+      if (!st || !g || g.state !== 'ok') return send(res, 409, { error: 'Für die Google-ToDos bitte Google neu verbinden.' });
+      gtasks.writes.push({ uid, op: body.action, listId: body.listId, taskId: body.taskId, task: body.task });
+      if (body.action === 'taskCreate') {
+        const t = { id: 't' + (++gcal.seq), listId: body.listId, title: body.task.title, notes: body.task.notes ?? '', due: body.task.due ?? null, done: false, completedAt: null, updated: new Date().toISOString() };
+        g.tasks.push(t);
+        return send(res, 200, { ok: true, task: t });
+      }
+      const t = g.tasks.find((x) => x.id === body.taskId);
+      if (!t) return send(res, 404, { error: 'Dieses ToDo gibt es in Google nicht mehr.' });
+      if (body.action === 'taskDelete') { g.tasks.splice(g.tasks.indexOf(t), 1); return send(res, 200, { ok: true }); }
+      if (gtasks.failNext) { gtasks.failNext = false; return send(res, 502, { error: 'Google antwortet nicht richtig (500).' }); }
+      Object.assign(t, body.task);
+      if ('done' in body.task) t.completedAt = body.task.done ? new Date().toISOString() : null;
+      return send(res, 200, { ok: true, task: t });
+    }
     const own = st && st.selected.some((c) => c.id === body.calendarId);
     if (['create', 'update', 'delete', 'master'].includes(body.action) && !own) return send(res, 403, { error: 'Diesen Kalender kannst du nicht ändern (nicht in deiner Auswahl).' });
     const toEv = (e) => {

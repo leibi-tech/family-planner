@@ -4,7 +4,18 @@ import { useRecords } from '../hooks';
 import { useSync } from '../components/CloudCard';
 import type { Note } from '../notes';
 import { navBack, onOpenRequest, requestOpen, takePending } from '../nav';
-import { eventTarget } from '../calendar';
+import { eventTarget, startConnect } from '../calendar';
+import {
+  createGoogleTask,
+  deleteGoogleTask,
+  googleTodos,
+  isGoogle,
+  listName,
+  toggleGoogleTask,
+  updateGoogleTask,
+  useGoogleTasks,
+  type GCache,
+} from '../gtasks';
 import { addDays, dateKey, fmtDay, isoWeek, mondayOf } from '../model';
 import {
   choreRuleLabel,
@@ -120,10 +131,15 @@ function TodoList({
   const [hideDone, setHideDone] = usePersisted<'0' | '1'>('fp-todo-hidedone', '0');
   const [editing, setEditing] = useState<{ todo: Todo; isNew: boolean } | null>(null);
   const [quick, setQuick] = useState('');
+  const sync = useSync();
+  const { cache: gcache } = useGoogleTasks();
+  const gtodos = googleTodos(gcache, me);
+  const [gMsg, setGMsg] = useState<string | null>(null);
+  const [gHintOff, setGHintOff] = usePersisted<'0' | '1'>('fp-gtasks-hint-off', '0');
   const fromRef = useRef<string | null>(null); // von der Startseite geöffnet: «Schliessen» führt dorthin zurück
   useEffect(() => {
     if (!openReq) return;
-    const t = todos.find((x) => x.id === openReq.id);
+    const t = todos.find((x) => x.id === openReq.id) ?? gtodos.find((x) => x.id === openReq.id);
     if (t) {
       fromRef.current = openReq.from;
       setEditing({ todo: t, isNew: false });
@@ -131,7 +147,8 @@ function TodoList({
     onOpenHandled();
   }, [openReq]);
 
-  const visibleAll = todos.filter((t) => !t.cleared);
+  // Google-ToDos (privat, nur auf diesem Handy) gehören wie private ToDos zu «Meine» und «Alle»
+  const visibleAll = [...todos.filter((t) => !t.cleared), ...gtodos];
   const mine = visibleAll.filter((t) => isMine(t, me));
   // Pro Person: was ihr zugewiesen ist. Private ToDos gehören nur zu «Meine» – private der anderen
   // sind auf diesem Handy gar nicht vorhanden (Datenbank-Regel), eigene private erscheinen nie bei anderen.
@@ -165,11 +182,23 @@ function TodoList({
     setQuick('');
   };
 
-  const toggle = (t: Todo) =>
-    put<Todo>('todos', t.done ? { ...t, done: false, doneAt: null, doneBy: null } : { ...t, done: true, doneAt: Date.now(), doneBy: me });
+  const toggle = async (t: Todo) => {
+    if (isGoogle(t)) return setGMsg(await toggleGoogleTask(t));
+    await put<Todo>('todos', t.done ? { ...t, done: false, doneAt: null, doneBy: null } : { ...t, done: true, doneAt: Date.now(), doneBy: me });
+  };
 
   const clearDone = async () => {
+    setGMsg(null);
     for (const t of doneList) {
+      if (isGoogle(t)) {
+        // Erledigte Google-ToDos werden auch in Google gelöscht (nur mit Internet)
+        try {
+          await deleteGoogleTask(t);
+        } catch (e: any) {
+          setGMsg(e?.message ?? String(e));
+        }
+        continue;
+      }
       if (t.choreId) await put<Todo>('todos', { ...t, cleared: true }); // bleibt in der Ämtli-Übersicht
       else await remove<Todo>('todos', t);
     }
@@ -220,6 +249,33 @@ function TodoList({
       </div>
       <p className="hint small-hint">Enter = schnell erfassen · + = mit Datum, Zuweisung, Notiz</p>
 
+      {view === 'mine' && gcache && gcache.state !== 'ok' && gHintOff !== '1' && (
+        <div className="import-banner gtask-hint">
+          {gcache.state === 'scope' ? (
+            <>
+              <span>Deine Google-ToDos können hier erscheinen. Dafür Google einmal neu verbinden und «Aufgaben» erlauben.</span>
+              <button
+                className="btn btn-primary"
+                disabled={!navigator.onLine || !sync.household}
+                onClick={() => startConnect(sync.household!.id).catch((e) => setGMsg(e?.message ?? String(e)))}
+              >
+                Google neu verbinden
+              </button>
+            </>
+          ) : (
+            <span>Google-ToDos sind im Google-Cloud-Projekt noch nicht eingeschaltet (Anleitung Abschnitt AJ).</span>
+          )}
+          <button className="btn" onClick={() => setGHintOff('1')}>
+            Nicht mehr zeigen
+          </button>
+        </div>
+      )}
+      {gMsg && (
+        <p className="warn" onClick={() => setGMsg(null)}>
+          {gMsg}
+        </p>
+      )}
+
       {view === 'mine' && !me && (
         <p className="warn">Dein Konto ist noch keiner Person zugeordnet. Unter «Familie» festlegen, wer du bist.</p>
       )}
@@ -247,7 +303,13 @@ function TodoList({
                 </button>
                 <button className="todo-main" onClick={() => setEditing({ todo: t, isNew: false })}>
                   <span className="shop-name todo-title">
-                    {t.private && <span aria-label="privat">🔒 </span>}
+                    {isGoogle(t) ? (
+                      <span className="gtask-badge" aria-label="Google-ToDo">
+                        G
+                      </span>
+                    ) : (
+                      t.private && <span aria-label="privat">🔒 </span>
+                    )}
                     {t.choreId && <span aria-label="Ämtli">🔁 </span>}
                     {t.noteId && <span aria-label="mit Notiz">📝 </span>}
                     {t.eventRef && <span aria-label="mit Termin">📅 </span>}
@@ -294,6 +356,7 @@ function TodoList({
           isNew={editing.isNew}
           persons={persons}
           me={me}
+          gcache={gcache}
           onClose={() => {
             setEditing(null);
             if (fromRef.current) {
@@ -314,15 +377,27 @@ function TodoSheet({
   isNew,
   persons,
   me,
+  gcache,
   onClose,
 }: {
   todo: Todo;
   isNew: boolean;
   persons: Person[];
   me: string | null;
+  gcache: GCache | null;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(todo.title);
+  const google = isGoogle(todo);
+  const gLists = gcache?.state === 'ok' ? gcache.lists : [];
+  // Neues ToDo: «Google» als dritte Wahl bei der Sichtbarkeit (nur wenn Google-ToDos geladen sind)
+  const canGoogle = isNew && gLists.length > 0;
+  const [toGoogle, setToGoogle] = useState(false);
+  const [gList, setGList] = useState(gLists[0]?.id ?? '@default');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const online = navigator.onLine;
+  const viaGoogle = google || toGoogle;
   const [note, setNote] = useState(todo.note);
   const [due, setDue] = useState(todo.due ?? '');
   const [priv, setPriv] = useState(todo.private);
@@ -340,8 +415,23 @@ function TodoSheet({
     if (v) setAssignees(me ? [me] : []);
   };
 
+  const saveGoogle = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const input = { title: title.trim(), notes: note.trim(), due: due || null };
+      if (google) await updateGoogleTask(todo, input);
+      else await createGoogleTask(gList, input);
+      onClose();
+    } catch (e: any) {
+      setErr(e?.message ?? String(e));
+      setBusy(false);
+    }
+  };
+
   const save = async () => {
     if (!valid) return;
+    if (viaGoogle) return saveGoogle();
     const next: Todo = {
       ...todo,
       title: title.trim(),
@@ -363,6 +453,17 @@ function TodoSheet({
 
   const del = async () => {
     if (!confirmDelete) return setConfirmDelete(true);
+    if (google) {
+      setBusy(true);
+      try {
+        await deleteGoogleTask(todo);
+        onClose();
+      } catch (e: any) {
+        setErr(e?.message ?? String(e));
+        setBusy(false);
+      }
+      return;
+    }
     if (todo.private) await put('todos', { id: todo.id, updatedAt: todo.updatedAt, deleted: true });
     else await remove<Todo>('todos', todo);
     onClose();
@@ -406,6 +507,11 @@ function TodoSheet({
             </button>
           </div>
         )}
+        {google && (
+          <p className="import-banner gtask-banner">
+            <span className="gtask-badge">G</span> Google-ToDo{listName(todo.google!.listId) ? ` · Liste «${listName(todo.google!.listId)}»` : ''} · nur du siehst es
+          </p>
+        )}
         {fromChore && <p className="import-banner">🔁 Aus dem Ämtli-Plan (Woche ab {fmtDay(parseDate(todo.choreWeek!))})</p>}
 
         <label className="field">
@@ -438,22 +544,59 @@ function TodoSheet({
           )}
         </div>
 
-        {!fromChore && (
+        {!fromChore && !google && (
           <div className="field">
             <span>Sichtbarkeit</span>
-            <div className="seg">
-              <button className={!priv ? 'on' : ''} onClick={() => setPrivate(false)}>
+            <div className={'seg' + (canGoogle ? ' seg3' : '')}>
+              <button
+                className={!priv && !toGoogle ? 'on' : ''}
+                onClick={() => {
+                  setToGoogle(false);
+                  setPrivate(false);
+                }}
+              >
                 👪 Familie
               </button>
-              <button className={priv ? 'on' : ''} onClick={() => setPrivate(true)}>
+              <button
+                className={priv && !toGoogle ? 'on' : ''}
+                onClick={() => {
+                  setToGoogle(false);
+                  setPrivate(true);
+                }}
+              >
                 🔒 Privat
               </button>
+              {canGoogle && (
+                <button
+                  className={toGoogle ? 'on' : ''}
+                  onClick={() => {
+                    setToGoogle(true);
+                    setPrivate(true);
+                  }}
+                >
+                  G Google
+                </button>
+              )}
             </div>
-            {priv && <small className="muted">Nur du siehst dieses ToDo. Es kann niemandem zugewiesen werden.</small>}
+            {priv && !toGoogle && <small className="muted">Nur du siehst dieses ToDo. Es kann niemandem zugewiesen werden.</small>}
+            {toGoogle && <small className="muted">Kommt in deine Google-ToDos. Nur du siehst es.</small>}
           </div>
         )}
 
-        {!priv && (
+        {toGoogle && gLists.length > 1 && (
+          <label className="field">
+            <span>Liste in Google</span>
+            <select className="select" value={gList} onChange={(e) => setGList(e.target.value)} aria-label="Liste in Google">
+              {gLists.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {!priv && !viaGoogle && (
           <div className="field">
             <span>Wer macht es?</span>
             <div className="chips">
@@ -479,18 +622,20 @@ function TodoSheet({
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
         </label>
 
-        {!isNew && creator && <p className="muted small-note">Erfasst von {creator}</p>}
+        {!isNew && creator && !google && <p className="muted small-note">Erfasst von {creator}</p>}
+        {viaGoogle && !online && <p className="warn">Google-ToDos kann man nur mit Internet ändern.</p>}
+        {err && <p className="warn">{err}</p>}
 
         <div className="sheet-actions">
-          <button className="btn btn-primary" disabled={!valid} onClick={save}>
+          <button className="btn btn-primary" disabled={!valid || busy || (viaGoogle && !online)} onClick={save}>
             Speichern
           </button>
           <button className="btn" onClick={onClose}>
             Abbrechen
           </button>
           {!isNew && (
-            <button className={confirmDelete ? 'btn btn-danger' : 'btn btn-ghost-danger'} onClick={del}>
-              {confirmDelete ? 'Wirklich löschen?' : 'Löschen'}
+            <button className={confirmDelete ? 'btn btn-danger' : 'btn btn-ghost-danger'} disabled={busy || (google && !online)} onClick={del}>
+              {confirmDelete ? (google ? 'Wirklich löschen? Auch in Google.' : 'Wirklich löschen?') : 'Löschen'}
             </button>
           )}
         </div>
