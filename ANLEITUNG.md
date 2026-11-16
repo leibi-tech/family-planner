@@ -569,3 +569,20 @@ Die Termine der nächsten 7 Tage direkt auf dem Startbildschirm.
 - Das Widget zeigt den Stand vom letzten Öffnen der App (oben rechts «Stand 13:30»). Neue Termine von Thadea erscheinen, sobald du die App wieder öffnest.
 - Einen Termin antippen → Kalender mit diesem Tag. Oben auf «Termine · 7 Tage» → Kalender.
 
+## AK) Widget «ToDos» (ab APK 1.6 / Version 0.36.0)
+Deine offenen ToDos und die für alle direkt auf dem Startbildschirm. Nur zum Ansehen.
+
+**Installieren**
+1. Pull Request mergen, ca. 5 Minuten warten.
+2. App öffnen → auf der Startseite «📲 Neue Android-App bereit» → **Herunterladen** → **Öffnen** → **Aktualisieren**.
+3. App einmal öffnen (damit die ToDos ans Widget gehen).
+
+**Widget hinzufügen**
+1. Auf dem Startbildschirm lange auf eine freie Stelle drücken → **Widgets**.
+2. **myFam.** suchen → «ToDos» lange drücken und auf den Startbildschirm ziehen.
+3. Grösse anpassen: Widget lange drücken, an den Punkten am Rand ziehen.
+
+**Gut zu wissen**
+- Überfällige stehen zuoberst (rot), dann nach Datum, ohne Datum am Schluss. «alle» = niemandem zugeteilt. «G ·» = Google-ToDo.
+- Ein ToDo antippen → es öffnet sich in der App (dort abhaken). Oben auf «ToDos» → ToDo-Seite.
+- Das Widget zeigt den Stand vom letzten Öffnen der App (oben rechts «Stand 13:30»). Neue ToDos von Thadea erscheinen, sobald du die App wieder öffnest.

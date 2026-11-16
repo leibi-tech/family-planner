@@ -1,6 +1,6 @@
 # ROADMAP – Family-Planner
 
-Stand: 16.11.2026 · Version 0.35.0 · APK 1.5 · Name «myFam.»
+Stand: 16.11.2026 · Version 0.36.0 · APK 1.6 · Name «myFam.»
 
 ## Aktueller Stand
 - ✅ **Schritt 1 – Grundgerüst + Familie**: App ist installierbar und läuft offline. Seite «Familie»: Personen mit Portionenfaktor erfassen, ändern und löschen. Startwerte: Tobias 1.0, Frau 0.8, Kind 1 0.4, Kind 2 0.4 (ab v0.29.0 ersetzt durch Willkommensfenster, E51).
@@ -28,6 +28,7 @@ Stand: 16.11.2026 · Version 0.35.0 · APK 1.5 · Name «myFam.»
 - ⏳ **Android-App (APK 1.0)**: Hülle mit Capacitor, lädt die App weiter von GitHub Pages (Updates automatisch), eigenes Symbol, wird auf GitHub gebaut und unter Releases bereitgestellt (E46). Läuft auf Tobias' Handy (06.11.2026), Kalender und Scannen gehen.
 - ⏳ **APK 1.1 / v0.26.0: Zurück-Taste, Herunterladen und Teilen in der APK** (E47). Tobias: mergen, neue APK drüber installieren, ausprobieren (ANLEITUNG AB). Gemergt.
 - ⏳ **APK 1.3 / v0.28.0: neuer Name «myFam.»** (E49), **Einstellungen als eigene Seite** mit Datenschutzerklärung (nachgeführt) und Copyright (E50). Tobias: mergen, Hinweis auf der Startseite → neue APK installieren. Die Web-App im Browser zeigt den neuen Namen erst nach neuem Hinzufügen zum Startbildschirm.
+- ⏳ **APK 1.6 / v0.36.0: Widget «ToDos»** (Wunsch Tobias: 1c, 3a, nur anzeigen): meine offenen ToDos (auch private und Google) und die ohne Zuteilung, überfällige rot zuerst, mit Datum und Farbe pro Person, «Stand hh:mm». Antippen → ToDo öffnet sich, Kopf → ToDo-Seite. Daten kommen aus der App (E58). Abhaken im Widget zurückgestellt (bräuchte eigenen Abgleich im Android-Teil). Tobias: mergen, neue APK installieren, Widget hinzufügen (ANLEITUNG AK). Kein Datenbank-Update.
 - ⏳ **Google-ToDos (v0.35.0)**: Wunsch Tobias (A1, B2): die eigenen Google-ToDos (Google Tasks, alle Listen) erscheinen unter «Meine» und «Alle» mit blauem «G», auch auf der Startseite und im Zähler. Nur die eigene Person sieht sie, nichts in der gemeinsamen Datenbank. Abhaken, ändern, löschen und neu erfassen («Sichtbarkeit: Google», Liste wählen) direkt in Google, nur mit Internet (E57). Tobias: **Google Tasks API einschalten, Funktion google-kalender neu einspielen**, mergen, Google neu verbinden (ANLEITUNG AJ). Kein Datenbank-Update.
 - ✅ **APK 1.5 / v0.34.0: Widget «Termine · 7 Tage»** (läuft, bestätigt 16.11.2026; A3, Wunsch Tobias): Termine der Familie, 7 Tage ab heute, pro Tag eine Überschrift (Heute, Morgen, Mi 12.11.), «frei» ohne Termine, Farbstreifen pro Person, «Stand hh:mm». Antippen einer Zeile → Tagesansicht, Kopf → Kalender. Daten kommen aus der App (14 Tage, jedes Mal wenn sie Termine holt); das Widget holt nichts selbst (E56). Tobias: mergen, neue APK installieren, Widget hinzufügen (ANLEITUNG AI). Kein Datenbank-Update.
 - ⏳ **Neuigkeiten (v0.33.0)**: Wunsch Tobias: Bei richtigen Neuerungen (neu, fällt weg, geht anders) einmal eine kurze Karte «✨ Neu in myFam.» auf der Startseite, mit grossem ✕ für immer weg (pro Handy). Alle Neuerungen unter Einstellungen → Neuigkeiten. Keine Meldung für Kleinigkeiten (E55). Tobias: mergen, ausprobieren (ANLEITUNG AH). Kein Datenbank-Update, keine neue APK.
@@ -55,7 +56,7 @@ Synchronisation über Supabase. Läuft: Konto, Haushalt mit Code, Rollen, automa
 
 ## Phase 3 – Eigene Android-App (APK), kein Play Store
 **Entscheid Tobias (26.10.2026):** Die App kommt **nie** in den Play Store (zu aufwendig, keine fremden Nutzer betreuen). Falls nötig eine APK (Capacitor) für die Familie und evtl. Kollegen, direkt installiert. Bis dahin bleibt die installierte Web-App die Hauptform.
-**Gestartet 06.11.2026 (Wunsch Tobias, für Widgets):** Schritt A1 APK ohne Widget (APK 1.0, E46). A2 Lücken der APK geschlossen: Zurück-Taste, Herunterladen/Teilen (APK 1.1), Teilen an die App (APK 1.4). Evtl. später Google-Scanner. A3 erstes Widget «Termine · 7 Tage» (APK 1.5). Weitere Widgets (Einkaufsliste, Menü heute, ToDos) nach Rückmeldung.
+**Gestartet 06.11.2026 (Wunsch Tobias, für Widgets):** Schritt A1 APK ohne Widget (APK 1.0, E46). A2 Lücken der APK geschlossen: Zurück-Taste, Herunterladen/Teilen (APK 1.1), Teilen an die App (APK 1.4). Evtl. später Google-Scanner. A3 erstes Widget «Termine · 7 Tage» (APK 1.5). A4 Widget «ToDos» (APK 1.6, nur anzeigen). Weitere Widgets (Einkaufsliste, Menü heute) und Abhaken im Widget nach Rückmeldung.
 
 ## Nächste Schritte (Stand 26.10.2026, mit Tobias abgesprochen)
 Neue Richtung: **Notizen/Listen und eine Startseite (Dashboard)**. Die Startseite zeigt auf einen Blick, was für die Familie heute wichtig ist.
@@ -143,6 +144,7 @@ Neue Ideen von unterwegs kommen zuerst in `IDEEN.md` (Eingang) und werden in der
 Erst alle Grundfunktionen bauen, Detail-Anpassungen sammeln wir und machen sie am Schluss (Schritt 7).
 
 ## Sitzungsprotokoll
+- **16.11.2026 (2)**: Wunsch Tobias: ToDo-Widget. Antworten 1c (meine + ohne Zuteilung), 3a (wie Startseite). Frage, warum Abhaken nicht wie bei Google geht: Widget kommt ohne offene App nicht an Anmeldung/Daten; eigener Abgleich im Android-Teil wäre nötig. Entscheid Tobias: vorerst nur anzeigen. v0.36.0 / APK 1.6: `todoWidgetData`/`pushTodoWidget` in `src/widget.ts`, `onGoogleTasksChange`, `?todo=` / `window.fpOpenTodo`, `TodoWidget.java` + `TodoWidgetService.java`, `MainActivity.widgetOpen`. Neuer Test `tests/widget-todos.mjs`.
 - **10.11.2026 (5)**: Tobias fand das Widget nicht: Handy hatte noch APK 1.4, der Hinweis «Neue Android-App bereit» kam nicht, weil die App GitHub nur alle 3 Stunden fragte. v0.34.1: alle 10 Minuten.
 - **10.11.2026 (4)**: v0.33.0 gemergt. Entscheid Tobias: erstes Widget = Termine, 7 Tage ab heute. v0.34.0 / APK 1.5: `src/widget.ts` (`widgetData`, `pushWidget` nach `fetchMonths`, beim Start, beim Verlassen), `FPAndroid.setWidget`, `TermineWidget.java` + `TermineWidgetService.java` (Liste mit Tagesüberschriften), Öffnen über `?kalender=…` / `window.fpOpenCalendar`. Neuer Test `tests/widget.mjs`. Widget selbst ohne automatischen Test (nur Bau auf GitHub). Alle Tests ok.
 - **10.11.2026 (3)**: v0.32.0 gemergt. Wunsch Tobias: Neuigkeiten-Meldung auf der Startseite, einmalig, mit ✕ für immer weg, Liste in den Einstellungen, nur bei richtigen Neuerungen. v0.33.0: `src/news.ts` (Liste `NEWS`, Merker `fp-news-seen`), `src/components/News.tsx` (Karte, Seite `neuigkeiten`), Liste rückwirkend ab v0.16.0. Neuer Test `tests/news.mjs`. Alle Tests ok.

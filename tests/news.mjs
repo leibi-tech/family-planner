@@ -20,7 +20,7 @@ const open = async (seen) => {
   await card.locator('text=Alle Neuigkeiten').click();
   ok((await p.locator('.topbar h1').innerText()) === 'Neuigkeiten', '«Alle Neuigkeiten» öffnet die Seite');
   const n = await p.locator('[data-testid=news-list] li').count();
-  ok(n >= 10 && (await p.locator('[data-testid=news-list] li').first().innerText()).includes('Version 0.35.0'), 'Liste mit allen Neuerungen, neueste zuoberst (' + n + ')');
+  ok(n >= 10 && (await p.locator('[data-testid=news-list] li').first().innerText()).includes('Version 0.36.0'), 'Liste mit allen Neuerungen, neueste zuoberst (' + n + ')');
   await p.locator('[data-back]').first().click();
   ok((await p.locator('.topbar h1').innerText()) === 'Einstellungen', 'Zurück → Einstellungen');
   ok(await p.locator('.set-row:has-text("Neuigkeiten")').count() === 1, 'Einstellungen: Eintrag «Neuigkeiten»');
@@ -32,13 +32,13 @@ const open = async (seen) => {
   await ctx.close();
 }
 {
-  const { ctx, p } = await open('0.33.0');
+  const { ctx, p } = await open('0.34.0');
   const t = await p.locator('[data-testid=news]').innerText();
-  ok(await p.locator('[data-testid=news] .news-item').count() === 2 && t.includes('Google-ToDos') && t.includes('Widget') && !t.includes('Teilen an die App'), 'Zuletzt 0.33.0 gesehen: genau die zwei neueren Neuigkeiten');
+  ok(await p.locator('[data-testid=news] .news-item').count() === 2 && t.includes('Google-ToDos') && t.includes('Widget «ToDos»') && !t.includes('Widget «Termine»'), 'Zuletzt 0.34.0 gesehen: genau die zwei neueren Neuigkeiten');
   await ctx.close();
 }
 {
-  const { ctx, p } = await open('0.35.0');
+  const { ctx, p } = await open('0.36.0');
   ok(await p.locator('[data-testid=news]').count() === 0, 'Alles gesehen: keine Karte');
   await ctx.close();
 }

@@ -46,8 +46,8 @@ public class MainActivity extends BridgeActivity {
         // Speichern und Teilen für die App (window.FPAndroid). Danach neu laden,
         // damit die erste Seite die Verbindung sicher schon hat.
         web.addJavascriptInterface(new FpAndroid(), "FPAndroid");
-        String cal = calendarDay(getIntent());
-        if (cal != null) web.loadUrl(calendarUrl(cal));
+        String[] w = widgetOpen(getIntent());
+        if (w != null) web.loadUrl(w[0]);
         else if (!receiveShare(getIntent())) web.loadUrl(HOME);
 
         // Zurück-Taste: die App entscheidet (Fenster schliessen, Seite zurück).
@@ -71,19 +71,19 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        final String cal = calendarDay(intent);
-        if (cal != null) {
-            // App läuft schon: direkt zum Kalender springen, sonst neu laden
+        final String[] w = widgetOpen(intent);
+        if (w != null) {
+            // App läuft schon: direkt zum Kalender bzw. ToDo springen, sonst neu laden
             final WebView web = getBridge().getWebView();
             String url = web.getUrl();
             if (url == null || !url.startsWith(HOME)) {
-                web.loadUrl(calendarUrl(cal));
+                web.loadUrl(w[0]);
                 return;
             }
             web.evaluateJavascript(
-                "(function(){try{return window.fpOpenCalendar?window.fpOpenCalendar('" + cal + "'):false}catch(e){return false}})()",
+                "(function(){try{return " + w[1] + "}catch(e){return false}})()",
                 (result) -> {
-                    if (!"true".equals(result)) web.loadUrl(calendarUrl(cal));
+                    if (!"true".equals(result)) web.loadUrl(w[0]);
                 }
             );
             return;
@@ -91,16 +91,32 @@ public class MainActivity extends BridgeActivity {
         receiveShare(intent);
     }
 
-    /** Vom Widget «Termine» geöffnet? Gibt den Tag (JJJJ-MM-TT), "" (nur Kalender) oder null zurück. */
-    private String calendarDay(Intent intent) {
-        if (intent == null || !TermineWidget.ACTION_OPEN.equals(intent.getAction())) return null;
-        String day = intent.getStringExtra(TermineWidget.EXTRA_DAY);
-        setIntent(new Intent());
-        return day != null && day.matches("\\d{4}-\\d{2}-\\d{2}") ? day : "";
-    }
-
-    private static String calendarUrl(String day) {
-        return HOME + "?kalender=" + (day.isEmpty() ? "1" : day);
+    /**
+     * Von einem Widget geöffnet? Gibt { Adresse beim Neuladen, JavaScript bei laufender App } zurück, sonst null.
+     * «Termine»: Tag (JJJJ-MM-TT) oder nur Kalender. «ToDos»: ein bestimmtes ToDo oder nur die ToDo-Seite.
+     */
+    private String[] widgetOpen(Intent intent) {
+        if (intent == null) return null;
+        String action = intent.getAction();
+        if (TermineWidget.ACTION_OPEN.equals(action)) {
+            String day = intent.getStringExtra(TermineWidget.EXTRA_DAY);
+            setIntent(new Intent());
+            if (day == null || !day.matches("\\d{4}-\\d{2}-\\d{2}")) day = "";
+            return new String[] {
+                HOME + "?kalender=" + (day.isEmpty() ? "1" : day),
+                "window.fpOpenCalendar?window.fpOpenCalendar('" + day + "'):false",
+            };
+        }
+        if (TodoWidget.ACTION_OPEN.equals(action)) {
+            String id = intent.getStringExtra(TodoWidget.EXTRA_ID);
+            setIntent(new Intent());
+            if (id == null || !id.matches("[A-Za-z0-9:_.-]{1,200}")) id = "";
+            return new String[] {
+                HOME + "?todo=" + (id.isEmpty() ? "1" : Uri.encode(id)),
+                "window.fpOpenTodo?window.fpOpenTodo('" + id + "'):false",
+            };
+        }
+        return null;
     }
 
     /**
@@ -247,13 +263,14 @@ public class MainActivity extends BridgeActivity {
             return s == null ? "" : s;
         }
 
-        /** Daten für ein Widget auf dem Startbildschirm (bisher: «termine»). */
+        /** Daten für ein Widget auf dem Startbildschirm: «termine» (APK 1.5) oder «todos» (APK 1.6). */
         @JavascriptInterface
         public void setWidget(String name, String json) {
-            if (!TermineWidget.KEY.equals(name) || json == null || json.length() > 500000) return;
+            if (json == null || json.length() > 500000) return;
             String url = currentUrl();
             if (url == null || !url.startsWith(HOME)) return;
-            TermineWidget.save(getApplicationContext(), json);
+            if (TermineWidget.KEY.equals(name)) TermineWidget.save(getApplicationContext(), json);
+            else if (TodoWidget.KEY.equals(name)) TodoWidget.save(getApplicationContext(), json);
         }
 
         /** Datei im Ordner «Download» speichern und gleich öffnen. */

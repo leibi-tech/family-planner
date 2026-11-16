@@ -140,12 +140,14 @@ function TodoList({
   useEffect(() => {
     if (!openReq) return;
     const t = todos.find((x) => x.id === openReq.id) ?? gtodos.find((x) => x.id === openReq.id);
+    // Google-ToDo direkt nach dem Start (Widget): warten, bis die Kopie geladen ist
+    if (!t && isGoogle({ id: openReq.id }) && !gcache) return;
     if (t) {
       fromRef.current = openReq.from;
       setEditing({ todo: t, isNew: false });
     }
     onOpenHandled();
-  }, [openReq]);
+  }, [openReq, gcache]);
 
   // Google-ToDos (privat, nur auf diesem Handy) gehören wie private ToDos zu «Meine» und «Alle»
   const visibleAll = [...todos.filter((t) => !t.cleared), ...gtodos];
