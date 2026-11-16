@@ -106,6 +106,12 @@ export function useGoogleTasks(): { cache: GCache | null; error: string | null }
   return { cache: cache?.state === 'ok' || cache?.state === 'scope' || cache?.state === 'disabled' ? cache : null, error };
 }
 
+/** Bei jeder Änderung der Google-ToDos (z.B. für das Widget). */
+export const onGoogleTasksChange = (fn: () => void) => {
+  ev.addEventListener('change', fn);
+  return () => ev.removeEventListener('change', fn);
+};
+
 export const isGoogle = (t: Pick<Todo, 'id'>) => t.id.startsWith(GPREFIX);
 
 /** Google-ToDo als ToDo der App darstellen (privat, mir zugewiesen). */

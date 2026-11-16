@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: NewsItem[] = [
   {
+    version: '0.36.0',
+    date: '16.11.2026',
+    title: 'Widget «ToDos»',
+    text: 'Deine offenen ToDos und die für alle direkt auf dem Startbildschirm, überfällige zuerst (rot). Lange auf eine freie Stelle drücken → Widgets → myFam. → ToDos. Antippen öffnet das ToDo. Braucht die Android-App 1.6.',
+  },
+  {
     version: '0.35.0',
     date: '16.11.2026',
     title: 'Google-ToDos',

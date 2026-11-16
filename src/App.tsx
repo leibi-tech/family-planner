@@ -16,12 +16,12 @@ import { BackupPage } from './pages/BackupPage';
 import { GreetingGate, GreetingsPage, useThinAlbum } from './components/Greetings';
 import { eventTarget, readReturnFromGoogle } from './calendar';
 import { readShareStart } from './docs';
-import { pushWidget } from './widget';
+import { pushTodoWidget, pushWidget } from './widget';
 import { onNavBack, onOpenRequest, requestOpen, TAB_FOR } from './nav';
 import { useRecords } from './hooks';
 import { onChange, put, type Person } from './db';
 import { generateChoreTodos, isMine, type Todo } from './todos';
-import { googleTodos, useGoogleTasks } from './gtasks';
+import { googleTodos, onGoogleTasksChange, useGoogleTasks } from './gtasks';
 import { Icon } from './icons';
 import { apkVersion, installBack } from './android';
 import { SHOP_SETTINGS_ID, getShopSettings, shopMode, type ShopMode } from './shopping';
@@ -79,12 +79,25 @@ function readWidgetStart(): string | null {
   return day || 'kalender';
 }
 
+/** Vom Widget «ToDos» geöffnet? (?todo=1 oder ?todo=<ID> für ein bestimmtes ToDo) */
+function readTodoWidgetStart(): boolean {
+  const m = /[?&]todo=([^&#]+)/.exec(location.search);
+  if (!m) return false;
+  history.replaceState(null, '', location.pathname + location.hash);
+  const id = decodeURIComponent(m[1]);
+  if (id !== '1') requestOpen('todo', id, null);
+  return true;
+}
+
 export function App() {
   // Die App startet immer mit der Startseite – ausser nach der Rückkehr von der Google-Anmeldung
   // oder wenn eine andere App ein Dokument geteilt hat.
   const [shared] = useState(readShareStart);
   const [fromWidget] = useState(readWidgetStart);
-  const [tab, setTabState] = useState<Tab>(() => (shared ? 'dokumente' : fromWidget || readReturnFromGoogle() ? 'kalender' : 'start'));
+  const [fromTodoWidget] = useState(readTodoWidgetStart);
+  const [tab, setTabState] = useState<Tab>(() =>
+    shared ? 'dokumente' : fromWidget || readReturnFromGoogle() ? 'kalender' : fromTodoWidget ? 'todo' : 'start',
+  );
   const setTab = (t: Tab) => {
     setTabState(t);
     window.scrollTo(0, 0);
@@ -122,10 +135,13 @@ export function App() {
     };
   }, []);
 
-  // Widget «Termine» (APK): beim Start und beim Verlassen der App nachführen, Antippen öffnet den Kalender
+  // Widgets «Termine» und «ToDos» (APK): beim Start, bei Änderungen und beim Verlassen der App nachführen.
+  // Antippen öffnet den Kalender bzw. das ToDo.
   useEffect(() => {
     void pushWidget();
     const off = onChange('persons', () => void pushWidget());
+    const offT = onChange('todos', () => void pushTodoWidget(500));
+    const offG = onGoogleTasksChange(() => void pushTodoWidget(500));
     const vis = () => document.visibilityState === 'hidden' && void pushWidget();
     document.addEventListener('visibilitychange', vis);
     (window as unknown as { fpOpenCalendar?: (day: string) => boolean }).fpOpenCalendar = (day) => {
@@ -133,8 +149,15 @@ export function App() {
       else setTab('kalender');
       return true;
     };
+    (window as unknown as { fpOpenTodo?: (id: string) => boolean }).fpOpenTodo = (id) => {
+      if (id) requestOpen('todo', id, null);
+      else setTab('todo');
+      return true;
+    };
     return () => {
       off();
+      offT();
+      offG();
       document.removeEventListener('visibilitychange', vis);
     };
   }, []);

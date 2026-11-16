@@ -6,4 +6,5 @@
     <color name="fp_widget_muted">#ABA5C8</color>
     <color name="fp_widget_head">#B6A6FF</color>
     <color name="fp_widget_day">#38325A</color>
+    <color name="fp_widget_late">#FF8A8A</color>
 </resources>

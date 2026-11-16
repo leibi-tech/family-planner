@@ -275,6 +275,13 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
 
+## E58 – Widget «ToDos» (v0.36.0, APK 1.6, 16.11.2026)
+- **Entscheid Tobias:** 1c (meine ToDos und die ohne Zuteilung), 3a (wie auf der Startseite: überfällige rot zuerst, dann nach Datum, ohne Datum am Schluss, mit Datum und Farbe pro Person). **Nur anzeigen, kein Abhaken im Widget.**
+- **Warum kein Abhaken (vorerst):** Die APK ist eine Hülle um die Web-App. Anmeldung und Abgleich mit Supabase laufen nur in der offenen App. Abhaken im Widget hiesse: Android-Code redet selbst mit Supabase und Google (Anmeldung übergeben, eigener Hintergrund-Abgleich). Machbar, aber aufwendig; zurückgestellt.
+- **Inhalt:** offene ToDos: mir zugeteilt, eigene private, eigene Google-ToDos («G ·» vor dem Titel) und alle ohne Zuteilung («alle», Familien-Grün). Zeile: Titel, darunter «überfällig · Mo 3.11. · Tobias» (rot bei überfällig, violett bei heute). Kopf «ToDos», Anzahl, «Stand hh:mm». Höchstens 50, danach «… und x weitere».
+- **Woher die Daten kommen:** wie E56 von der App (`FPAndroid.setWidget('todos', …)`), beim Start, beim Verlassen und bei jeder Änderung an ToDos oder Google-ToDos. «heute» / «überfällig» rechnet das Widget selbst (alle 30 Min. neu gezeichnet), damit es auch am nächsten Tag stimmt.
+- **Antippen:** Zeile → dieses ToDo öffnet sich (`?todo=<ID>` bzw. `window.fpOpenTodo`). Kopf → ToDo-Seite.
+
 ## E57 – Google-ToDos unter «Meine» (v0.35.0, 16.11.2026)
 - **Wunsch Tobias:** Google-ToDo-Liste mit der App verknüpfen, nur für mich sichtbar. Entscheide: **A1** unter «Meine» zwischen den anderen ToDos (mit Google-Zeichen), **B2** auch erfassen und ändern.
 - **Privat:** Die Funktion `google-kalender` liest und schreibt immer nur mit dem **eigenen** Google-Konto der angemeldeten Person (anders als beim Kalender, wo alle Konten des Haushalts gelesen werden). Die ToDos kommen **nicht** in die gemeinsame Datenbank, nur als Kopie auf das eigene Handy (`meta` → `googleTasks`, mit Konto-ID; meldet sich ein anderes Konto an, wird die Kopie nicht gezeigt). So sieht Thadea sie nie.
