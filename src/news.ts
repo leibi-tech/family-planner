@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: NewsItem[] = [
   {
+    version: '0.37.1',
+    date: '27.11.2026',
+    title: 'myFam. mit Claude',
+    text: 'Wer Claude nutzt, kann myFam. dort als Connector verbinden (Einstellungen → Connectors). Dann kann Claude die Einkaufsliste, ToDos und Termine ansehen und Neues eintragen, auch per Sprache. Löschen kann Claude nichts. Neues von Claude erscheint, sobald du die App öffnest.',
+  },
+  {
     version: '0.36.0',
     date: '16.11.2026',
     title: 'Widget «ToDos»',
