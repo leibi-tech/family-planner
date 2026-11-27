@@ -1,0 +1,1335 @@
+// Supabase Edge Function «claude-connector» (v0.37)
+// Ein «Connector» für Claude (claude.ai, Claude-App): Claude kann damit im Namen eines Kontos
+// die Einkaufsliste, die ToDos und den Kalender von myFam. lesen und Neues erfassen/ändern.
+// Löschen kann Claude nichts (Entscheid Tobias 24.11.2026, E59).
+//
+// Technik: MCP-Server (Model Context Protocol, «Streamable HTTP», nur JSON) mit eigener
+// OAuth-Anmeldung, wie Claude sie für Connectors verlangt:
+//   GET  /.well-known/oauth-protected-resource      Wer meldet an? (→ diese Funktion)
+//   GET  /.well-known/oauth-authorization-server    Adressen der Anmeldung (auch openid-configuration)
+//   POST /register                                  Claude meldet sich als «App» an (ohne Datenbank, signiert)
+//   GET  /authorize                                 → Anmeldeseite claude.html in der App (GitHub Pages)
+//   POST /approve                                   Anmeldeseite: Konto bestätigt → einmaliger Code
+//   POST /token                                     Code bzw. Erneuerungs-Schlüssel → Zugangs-Schlüssel
+//   POST /  (oder /mcp)                             MCP: Werkzeuge auflisten und ausführen
+//
+// Zugriff auf die Daten: mit der Supabase-Anmeldung des Kontos (wie die App selbst). Darum gelten
+// alle Sicherheitsregeln der Datenbank (private Einträge, Haushalt). Der Kalender läuft über die
+// bestehende Funktion «google-kalender».
+//
+// Quelle: diese Datei (nutzt src/shopping.ts und src/model.ts der App). Zum Einspielen in Supabase
+// die gebündelte Fassung «index-zum-kopieren.txt» nehmen (entsteht bei node scripts/build.mjs).
+// «Verify JWT» muss AUS sein. Geheimnisse: keine neuen (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+// und SUPABASE_ANON_KEY stellt Supabase bereit).
+
+import {
+  buildShoppingList,
+  intervalLabel,
+  isDue,
+  itemKey,
+  norm,
+  shopWeekId,
+  type Extra,
+  type ManualItem,
+  type RecurringItem,
+  type ShopItem,
+  type ShopWeek,
+} from '../../../src/shopping.ts';
+import { UNITS, addDays, dateKey, isoWeek, mondayOf, type Category, type Menu, type PlanDay } from '../../../src/model.ts';
+
+declare const Deno: any;
+declare const __FP_VERSION__: string;
+declare const __FP_ANON_KEY__: string;
+const env = (k: string): string | undefined =>
+  typeof Deno !== 'undefined' ? Deno.env.get(k) : (globalThis as any).process?.env?.[k];
+
+const FN = 'claude-connector';
+const VERSION = typeof __FP_VERSION__ !== 'undefined' ? __FP_VERSION__ : 'dev';
+const sbUrl = () => (env('SUPABASE_URL') ?? '').replace(/\/$/, '');
+const BASE = () => `${sbUrl()}/functions/v1/${FN}`;
+const APP_URL = () => env('FP_APP_URL') || 'https://leibi-tech.github.io/family-planner/';
+const anonKey = () => env('SUPABASE_ANON_KEY') || (typeof __FP_ANON_KEY__ !== 'undefined' ? __FP_ANON_KEY__ : '');
+
+const CORS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, mcp-protocol-version, mcp-session-id',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Expose-Headers': 'WWW-Authenticate, Mcp-Session-Id',
+};
+const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...extra } });
+
+class HttpError extends Error {
+  constructor(public status: number, message: string, public code = 'invalid_request') {
+    super(message);
+  }
+}
+
+// ---------- Signieren und Zufall ----------
+const enc = new TextEncoder();
+const b64url = (buf: ArrayBuffer | Uint8Array) => {
+  const bytes = new Uint8Array(buf as ArrayBuffer);
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+const fromB64url = (s: string) => {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4));
+  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+};
+function serviceKey(): string {
+  const k = env('FP_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY');
+  if (!k) throw new HttpError(500, 'Server-Schlüssel fehlt.');
+  return k;
+}
+async function hmac(data: string): Promise<string> {
+  const key = await crypto.subtle.importKey('raw', enc.encode('claude-connector:' + serviceKey()), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return b64url(await crypto.subtle.sign('HMAC', key, enc.encode(data)));
+}
+async function sign(payload: object): Promise<string> {
+  const body = b64url(enc.encode(JSON.stringify(payload)));
+  return `${body}.${await hmac(body)}`;
+}
+async function unsign<T>(token: string): Promise<T | null> {
+  const [body, sig, rest] = String(token ?? '').split('.');
+  if (!body || !sig || rest !== undefined) return null;
+  if ((await hmac(body)) !== sig) return null;
+  try {
+    return JSON.parse(fromB64url(body));
+  } catch {
+    return null;
+  }
+}
+const randomToken = () => b64url(crypto.getRandomValues(new Uint8Array(32)));
+const sha256 = async (s: string) => b64url(await crypto.subtle.digest('SHA-256', enc.encode(s)));
+
+// ---------- Datenbank mit Server-Schlüssel (nur Tabelle claude_connections) ----------
+async function adminDb(path: string, init: RequestInit = {}): Promise<any> {
+  const key = serviceKey();
+  const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json', ...(init.headers as any) };
+  if (key.startsWith('eyJ')) headers.Authorization = `Bearer ${key}`;
+  const res = await fetch(`${sbUrl()}/rest/v1/${path}`, { ...init, headers });
+  const text = await res.text();
+  if (!res.ok) {
+    if (/claude_connections/.test(text) && /does not exist|schema cache/i.test(text))
+      throw new HttpError(500, 'Die Datenbank ist noch nicht auf dem neusten Stand: bitte «update-0.37.sql» in Supabase ausführen.');
+    throw new HttpError(500, `Datenbank-Fehler (${res.status}).`);
+  }
+  return text ? JSON.parse(text) : null;
+}
+
+interface Connection {
+  id: string;
+  user_id: string;
+  household_id: string;
+  client_id: string;
+  redirect_uri: string;
+  sb_refresh: string;
+  sb_access: string | null;
+  sb_expires: number | null;
+  code_hash: string | null;
+  code_challenge: string | null;
+  code_expires: number | null;
+  refresh_hash: string | null;
+}
+
+// ---------- Supabase-Anmeldung des Kontos ----------
+const jwtExp = (jwt: string): number => {
+  try {
+    return Number(JSON.parse(fromB64url(jwt.split('.')[1])).exp) * 1000 || Date.now() + 30 * 60000;
+  } catch {
+    return Date.now() + 30 * 60000;
+  }
+};
+async function sbUser(accessToken: string): Promise<{ id: string; email: string } | null> {
+  const res = await fetch(`${sbUrl()}/auth/v1/user`, { headers: { Authorization: `Bearer ${accessToken}`, apikey: anonKey() } }).catch(() => null);
+  if (!res || !res.ok) return null;
+  const u = await res.json();
+  return u?.id ? { id: u.id, email: u.email } : null;
+}
+/** Gültiger Supabase-Zugang für eine Verbindung (wird bei Bedarf erneuert). null = Anmeldung abgelaufen. */
+async function sbAccess(c: Connection): Promise<string | null> {
+  if (c.sb_access && (c.sb_expires ?? 0) > Date.now() + 90_000) return c.sb_access;
+  const res = await fetch(`${sbUrl()}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: { apikey: anonKey(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: c.sb_refresh }),
+  }).catch(() => null);
+  if (!res) throw new HttpError(502, 'Supabase-Anmeldung nicht erreichbar.');
+  if (!res.ok) return null;
+  const s = await res.json();
+  c.sb_access = s.access_token;
+  c.sb_refresh = s.refresh_token ?? c.sb_refresh;
+  c.sb_expires = jwtExp(s.access_token);
+  await adminDb(`claude_connections?id=eq.${c.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ sb_access: c.sb_access, sb_refresh: c.sb_refresh, sb_expires: c.sb_expires, last_used: new Date().toISOString() }),
+  });
+  return c.sb_access;
+}
+
+// ---------- OAuth: Metadaten ----------
+const SCOPE = 'myfam';
+function resourceMetadata() {
+  return {
+    resource: BASE(),
+    authorization_servers: [BASE()],
+    scopes_supported: [SCOPE],
+    bearer_methods_supported: ['header'],
+    resource_name: 'myFam.',
+  };
+}
+function serverMetadata() {
+  const b = BASE();
+  return {
+    issuer: b,
+    authorization_endpoint: `${b}/authorize`,
+    token_endpoint: `${b}/token`,
+    registration_endpoint: `${b}/register`,
+    response_types_supported: ['code'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    code_challenge_methods_supported: ['S256'],
+    token_endpoint_auth_methods_supported: ['none'],
+    scopes_supported: [SCOPE],
+    client_id_metadata_document_supported: true,
+    subject_types_supported: ['public'],
+  };
+}
+
+/** Wohin darf Claude nach der Anmeldung zurückspringen? Nur zu Claude selbst (und lokal für Claude Code). */
+export function allowedRedirect(uri: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(uri);
+  } catch {
+    return false;
+  }
+  if (u.hash) return false;
+  if (u.protocol === 'http:') return u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+  if (u.protocol !== 'https:') return false;
+  const h = u.hostname;
+  return ['claude.ai', 'claude.com'].some((d) => h === d || h.endsWith('.' + d));
+}
+
+interface ClientInfo {
+  redirects: string[] | null; // null = jede erlaubte Rücksprung-Adresse (Client-ID als Adresse)
+  name: string;
+}
+async function readClient(clientId: string): Promise<ClientInfo | null> {
+  if (/^https:\/\//.test(clientId)) {
+    // Client-ID als Adresse («client ID metadata document»): nur von Claude
+    if (!allowedRedirect(clientId)) return null;
+    return { redirects: null, name: 'Claude' };
+  }
+  const c = await unsign<{ k: string; r: string[]; n: string }>(clientId);
+  if (!c || c.k !== 'c' || !Array.isArray(c.r)) return null;
+  return { redirects: c.r, name: c.n || 'Claude' };
+}
+
+async function actRegister(req: Request): Promise<Response> {
+  const body = await req.json().catch(() => null);
+  const uris: string[] = Array.isArray(body?.redirect_uris) ? body.redirect_uris.map(String) : [];
+  if (!uris.length || uris.length > 10) return json({ error: 'invalid_redirect_uri', error_description: 'redirect_uris fehlt.' }, 400);
+  const bad = uris.find((u) => !allowedRedirect(u));
+  if (bad) return json({ error: 'invalid_redirect_uri', error_description: `Rücksprung-Adresse nicht erlaubt: ${bad}` }, 400);
+  const name = String(body?.client_name ?? 'Claude').slice(0, 60);
+  const clientId = await sign({ k: 'c', r: uris, n: name });
+  return json(
+    {
+      client_id: clientId,
+      client_id_issued_at: Math.floor(Date.now() / 1000),
+      client_name: name,
+      redirect_uris: uris,
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
+      token_endpoint_auth_method: 'none',
+      scope: SCOPE,
+    },
+    201,
+  );
+}
+
+const textPage = (msg: string, status = 400) =>
+  new Response(msg, { status, headers: { ...CORS, 'Content-Type': 'text/plain; charset=utf-8' } });
+
+async function actAuthorize(url: URL): Promise<Response> {
+  const p = url.searchParams;
+  const clientId = p.get('client_id') ?? '';
+  const redirect = p.get('redirect_uri') ?? '';
+  const client = await readClient(clientId);
+  if (!client) return textPage('Unbekannte App (client_id). Bitte den Connector in Claude neu hinzufügen.');
+  const okRedirect = client.redirects ? client.redirects.includes(redirect) : allowedRedirect(redirect);
+  if (!okRedirect) return textPage('Rücksprung-Adresse nicht erlaubt.');
+  const back = (error: string, desc: string) => {
+    const u = new URL(redirect);
+    u.searchParams.set('error', error);
+    u.searchParams.set('error_description', desc);
+    if (p.get('state')) u.searchParams.set('state', p.get('state')!);
+    return new Response(null, { status: 302, headers: { ...CORS, Location: u.toString() } });
+  };
+  if (p.get('response_type') !== 'code') return back('unsupported_response_type', 'Nur response_type=code.');
+  if (!p.get('code_challenge') || p.get('code_challenge_method') !== 'S256') return back('invalid_request', 'PKCE (S256) fehlt.');
+  const reqToken = await sign({ k: 'r', c: clientId, ru: redirect, st: p.get('state') ?? '', cc: p.get('code_challenge'), t: Date.now() });
+  const page = new URL('claude.html', APP_URL());
+  page.hash = new URLSearchParams({ req: reqToken, app: client.name }).toString();
+  return new Response(null, { status: 302, headers: { ...CORS, Location: page.toString() } });
+}
+
+/** Anmeldeseite (claude.html): Konto hat sich angemeldet und «Erlauben» (oder «Ablehnen») getippt. */
+async function actApprove(req: Request): Promise<Response> {
+  const body = await req.json().catch(() => ({}));
+  const r = await unsign<{ k: string; c: string; ru: string; st: string; cc: string; t: number }>(String(body?.req ?? ''));
+  if (!r || r.k !== 'r') throw new HttpError(400, 'Ungültige Anfrage. Bitte in Claude nochmals «Verbinden» tippen.');
+  if (Date.now() - r.t > 30 * 60000) throw new HttpError(400, 'Die Anfrage ist abgelaufen. Bitte in Claude nochmals «Verbinden» tippen.');
+  const back = new URL(r.ru);
+  if (r.st) back.searchParams.set('state', r.st);
+  if (body?.deny) {
+    back.searchParams.set('error', 'access_denied');
+    return json({ redirect: back.toString() });
+  }
+  const access = String(body?.access_token ?? '');
+  const refresh = String(body?.refresh_token ?? '');
+  const user = access && refresh ? await sbUser(access) : null;
+  if (!user) throw new HttpError(401, 'Anmeldung fehlgeschlagen. Bitte nochmals versuchen.');
+  const mem = await userRest(access, `members?select=household_id,person_id&user_id=eq.${user.id}`);
+  if (!mem?.length) throw new HttpError(403, 'Dieses Konto gehört noch zu keiner Familie. Bitte zuerst in der App einer Familie beitreten.');
+  const code = randomToken();
+  // Aufräumen: nie eingelöste Codes von früher
+  await adminDb(`claude_connections?user_id=eq.${user.id}&refresh_hash=is.null&code_expires=lt.${Date.now() - 3600_000}`, { method: 'DELETE' });
+  await adminDb('claude_connections', {
+    method: 'POST',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({
+      user_id: user.id,
+      household_id: mem[0].household_id,
+      client_id: r.c,
+      redirect_uri: r.ru,
+      sb_refresh: refresh,
+      sb_access: access,
+      sb_expires: jwtExp(access),
+      code_hash: await sha256(code),
+      code_challenge: r.cc,
+      code_expires: Date.now() + 5 * 60000,
+    }),
+  });
+  back.searchParams.set('code', code);
+  return json({ redirect: back.toString() });
+}
+
+async function issueTokens(c: Connection): Promise<Response> {
+  const refresh = randomToken();
+  await adminDb(`claude_connections?id=eq.${c.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ code_hash: null, code_expires: null, refresh_hash: await sha256(refresh), last_used: new Date().toISOString() }),
+  });
+  const access = await sign({ k: 'a', s: c.id, e: Date.now() + 3600_000 });
+  return json({ access_token: access, token_type: 'Bearer', expires_in: 3600, refresh_token: refresh, scope: SCOPE });
+}
+
+async function actToken(req: Request): Promise<Response> {
+  const raw = await req.text();
+  let p: Record<string, string> = {};
+  try {
+    p = (req.headers.get('content-type') ?? '').includes('json') ? JSON.parse(raw) : Object.fromEntries(new URLSearchParams(raw));
+  } catch {}
+  const fail = (error: string, desc: string) => json({ error, error_description: desc }, 400);
+  if (p.grant_type === 'authorization_code') {
+    if (!p.code || !p.code_verifier) return fail('invalid_request', 'code oder code_verifier fehlt.');
+    const rows: Connection[] = await adminDb(`claude_connections?code_hash=eq.${encodeURIComponent(await sha256(p.code))}&select=*`);
+    const c = rows?.[0];
+    if (!c || (c.code_expires ?? 0) < Date.now()) return fail('invalid_grant', 'Code ungültig oder abgelaufen.');
+    if (p.redirect_uri && p.redirect_uri !== c.redirect_uri) return fail('invalid_grant', 'redirect_uri passt nicht.');
+    if (p.client_id && p.client_id !== c.client_id) return fail('invalid_grant', 'client_id passt nicht.');
+    if ((await sha256(p.code_verifier)) !== c.code_challenge) return fail('invalid_grant', 'PKCE-Prüfung fehlgeschlagen.');
+    return issueTokens(c);
+  }
+  if (p.grant_type === 'refresh_token') {
+    if (!p.refresh_token) return fail('invalid_request', 'refresh_token fehlt.');
+    const rows: Connection[] = await adminDb(`claude_connections?refresh_hash=eq.${encodeURIComponent(await sha256(p.refresh_token))}&select=*`);
+    const c = rows?.[0];
+    if (!c) return fail('invalid_grant', 'Verbindung nicht mehr gültig. Bitte neu verbinden.');
+    if (p.client_id && p.client_id !== c.client_id) return fail('invalid_grant', 'client_id passt nicht.');
+    return issueTokens(c);
+  }
+  return json({ error: 'unsupported_grant_type' }, 400);
+}
+
+// ---------- Zugriff auf die Daten als angemeldetes Konto ----------
+async function userRest(token: string, path: string, init: RequestInit = {}): Promise<any> {
+  const res = await fetch(`${sbUrl()}/rest/v1/${path}`, {
+    ...init,
+    headers: { apikey: anonKey(), Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(init.headers as any) },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new HttpError(502, `Datenbank-Fehler (${res.status}).`);
+  return text ? JSON.parse(text) : null;
+}
+
+interface Person {
+  id: string;
+  name: string;
+  factor: number;
+  sort: number;
+  email?: string | null;
+}
+interface Ctx {
+  token: string;
+  uid: string;
+  household: string;
+  me: string | null; // Personen-ID
+  persons: Person[];
+  today: string; // JJJJ-MM-TT (Zürich)
+}
+
+async function loadRecords<T>(ctx: Ctx, store: string, filter = ''): Promise<T[]> {
+  const rows: Array<{ data: any }> = await userRest(
+    ctx.token,
+    `records?select=data&household_id=eq.${ctx.household}&store=eq.${store}&deleted=is.false${filter}&limit=5000`,
+  );
+  return (rows ?? []).map((r) => r.data).filter((d) => d && !d.deleted);
+}
+async function saveRecord(ctx: Ctx, store: string, rec: any, ownerId?: string): Promise<void> {
+  const row: any = { household_id: ctx.household, store, id: rec.id, data: rec, updated_at: rec.updatedAt, deleted: !!rec.deleted };
+  if (ownerId) row.owner_id = ownerId;
+  await userRest(ctx.token, 'records', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([row]) });
+}
+const inList = (ids: string[]) => `(${ids.map((i) => `"${i}"`).join(',')})`;
+
+/** Heutiges Datum in Zürich. */
+export function zurichToday(now = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
+const parseKey = (k: string) => {
+  const [y, m, d] = k.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+const isDateKey = (s: unknown): s is string => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(+parseKey(s));
+const isTime = (s: unknown): s is string => typeof s === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const fmtDate = (k: string) => {
+  const d = parseKey(k);
+  return `${WD[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+};
+
+function personName(ctx: Ctx, id: string | null | undefined): string {
+  return ctx.persons.find((p) => p.id === id)?.name ?? '?';
+}
+/** Namen («Thadea», «ich») in Personen-IDs. Unbekannte Namen → Fehler mit den bekannten Namen. */
+function personIds(ctx: Ctx, names: unknown): string[] {
+  if (!Array.isArray(names)) return [];
+  const out: string[] = [];
+  for (const raw of names) {
+    const n = String(raw ?? '').trim().toLowerCase();
+    if (!n) continue;
+    let p: Person | undefined;
+    if (['ich', 'mich', 'mir', 'me', 'self'].includes(n)) p = ctx.persons.find((x) => x.id === ctx.me);
+    else p = ctx.persons.find((x) => x.name.trim().toLowerCase() === n) ?? ctx.persons.filter((x) => x.name.toLowerCase().startsWith(n)).at(0);
+    if (!p) throw new HttpError(400, `Unbekannte Person «${raw}». In der Familie: ${ctx.persons.map((x) => x.name).join(', ')}.`);
+    if (!out.includes(p.id)) out.push(p.id);
+  }
+  return out;
+}
+
+/** Woche: «diese» (Standard), «naechste», «letzte» oder ein Datum JJJJ-MM-TT in der Woche. */
+function weekMonday(ctx: Ctx, w: unknown): Date {
+  const today = mondayOf(parseKey(ctx.today));
+  const s = String(w ?? '').trim().toLowerCase();
+  if (!s || s === 'diese' || s === 'aktuelle') return today;
+  if (s.startsWith('n')) return addDays(today, 7);
+  if (s.startsWith('l') || s.startsWith('v')) return addDays(today, -7);
+  if (isDateKey(s)) return mondayOf(parseKey(s));
+  throw new HttpError(400, 'Woche: «diese», «naechste», «letzte» oder ein Datum JJJJ-MM-TT.');
+}
+
+// ---------- Einkaufsliste ----------
+interface ShopData {
+  monday: Date;
+  wid: string;
+  week: ShopWeek;
+  weekExists: boolean;
+  items: ShopItem[];
+  manual: ManualItem[];
+}
+async function loadShop(ctx: Ctx, monday: Date): Promise<ShopData> {
+  const wid = shopWeekId(monday);
+  const dayIds = Array.from({ length: 7 }, (_, i) => dateKey(addDays(monday, i)));
+  const [days, menus, recurring, manual, weeks] = await Promise.all([
+    loadRecords<PlanDay>(ctx, 'days', `&id=in.${encodeURIComponent(inList(dayIds))}`),
+    loadRecords<Menu>(ctx, 'menus'),
+    loadRecords<RecurringItem>(ctx, 'recurring'),
+    loadRecords<ManualItem>(ctx, 'manual', `&data->>week=eq.${wid}`),
+    loadRecords<ShopWeek>(ctx, 'shopping', `&id=eq.${wid}`),
+  ]);
+  const extras: Extra[] = [
+    ...manual.map((m) => ({ ...m, source: { day: '', slot: '', menu: m.from || 'von Hand', kind: 'manual' as const } })),
+    ...recurring.filter((r) => isDue(r, monday)).map((r) => ({ ...r, source: { day: '', slot: '', menu: intervalLabel(r.intervalWeeks), kind: 'recurring' as const } })),
+  ];
+  const items = buildShoppingList(monday, new Map(days.map((d) => [d.id, d])), new Map(menus.map((m) => [m.id, m])), ctx.persons as any, extras);
+  const w = weeks[0];
+  const week: ShopWeek = w
+    ? { ...w, removed: w.removed ?? [], checked: w.checked ?? [], hidden: w.hidden ?? [], bought: w.bought ?? {} }
+    : { id: wid, removed: [], checked: [], hidden: [], bought: {}, updatedAt: 0, deleted: false };
+  return { monday, wid, week, weekExists: !!w, items, manual };
+}
+
+type ItemState = 'offen' | 'abgehakt' | 'zu Hause' | 'erledigt';
+/** Zustand eines Artikels wie in der App (inkl. Nachkauf: nur die zusätzliche Menge ist offen). */
+function itemState(week: ShopWeek, i: ShopItem): { state: ItemState; qty: number | null } {
+  const b = week.bought?.[i.key];
+  const wasDone = week.checked.includes(i.key) || (week.hidden ?? []).includes(i.key);
+  if (wasDone && i.qty != null && b != null && i.qty > b + 1e-9) return { state: week.removed.includes(i.key) ? 'zu Hause' : 'offen', qty: Math.round((i.qty - b) * 100) / 100 };
+  if ((week.hidden ?? []).includes(i.key)) return { state: 'erledigt', qty: i.qty };
+  if (week.removed.includes(i.key)) return { state: 'zu Hause', qty: i.qty };
+  if (week.checked.includes(i.key)) return { state: 'abgehakt', qty: i.qty };
+  return { state: 'offen', qty: i.qty };
+}
+const qtyText = (qty: number | null, unit: string) => (qty == null ? '' : ` ${qty}${unit ? ' ' + unit : ''}`);
+function sourceText(i: ShopItem): string {
+  const menus = [...new Set(i.sources.filter((s) => s.kind === 'plan' || !s.kind).map((s) => s.menu))];
+  const other = [...new Set(i.sources.filter((s) => s.kind === 'manual' || s.kind === 'recurring').map((s) => s.menu))];
+  const all = [...menus.map((m) => `Menü ${m}`), ...other];
+  return all.length ? ` (${all.join(', ')})` : '';
+}
+
+async function toolShoppingList(ctx: Ctx, a: any): Promise<string> {
+  const s = await loadShop(ctx, weekMonday(ctx, a?.woche));
+  const head = `Einkaufsliste KW ${isoWeek(s.monday)} (${fmtDate(dateKey(s.monday))} – ${fmtDate(dateKey(addDays(s.monday, 6)))})`;
+  const rows = s.items.map((i) => ({ i, ...itemState(s.week, i) })).filter((r) => r.state !== 'erledigt');
+  if (!rows.length) return `${head}\nDie Liste ist leer.`;
+  const out = [head];
+  for (const [cat, label] of [['lebensmittel', 'Lebensmittel'], ['anderes', 'Anderes']] as const) {
+    const list = rows.filter((r) => r.i.category === cat).sort((a, b) => a.i.product.localeCompare(b.i.product, 'de-CH'));
+    if (!list.length) continue;
+    out.push(`\n${label}:`);
+    for (const r of list) {
+      const mark = r.state === 'abgehakt' ? '[x]' : r.state === 'zu Hause' ? '[zu Hause vorhanden]' : '[ ]';
+      out.push(`- ${mark} ${r.i.product}${qtyText(r.qty, r.i.unit)}${sourceText(r.i)}`);
+    }
+  }
+  const open = rows.filter((r) => r.state === 'offen').length;
+  out.push(`\n${open} offen, ${rows.filter((r) => r.state === 'abgehakt').length} abgehakt.`);
+  return out.join('\n');
+}
+
+const UNIT_ALIASES: Record<string, string> = {
+  stk: 'Stk.', 'stk.': 'Stk.', stück: 'Stk.', stueck: 'Stk.', st: 'Stk.', pck: 'Pck.', 'pck.': 'Pck.', packung: 'Pck.', packungen: 'Pck.', pack: 'Pck.',
+  dose: 'Dose', dosen: 'Dose', bund: 'Bund', el: 'EL', tl: 'TL', prise: 'Prise', g: 'g', gramm: 'g', kg: 'kg', kilo: 'kg', ml: 'ml', l: 'l', liter: 'l', dl: 'dl', cl: 'cl',
+};
+function cleanUnit(u: unknown): string {
+  const s = String(u ?? '').trim();
+  if (!s) return '';
+  return UNIT_ALIASES[s.toLowerCase()] ?? ((UNITS as readonly string[]).find((x) => x.toLowerCase() === s.toLowerCase()) ?? s.slice(0, 12));
+}
+function newId(): string {
+  return crypto.randomUUID();
+}
+
+async function toolShoppingAdd(ctx: Ctx, a: any): Promise<string> {
+  const list: any[] = Array.isArray(a?.artikel) ? a.artikel : [];
+  if (!list.length) throw new HttpError(400, 'Keine Artikel angegeben.');
+  if (list.length > 50) throw new HttpError(400, 'Höchstens 50 Artikel auf einmal.');
+  const s = await loadShop(ctx, weekMonday(ctx, a?.woche));
+  const week = s.week;
+  let weekChanged = false;
+  const added: string[] = [];
+  let t = Date.now();
+  for (const x of list) {
+    const product = String(x?.produkt ?? '').trim().slice(0, 100);
+    if (!product) continue;
+    const n = x?.menge == null || x.menge === '' ? null : Number(String(x.menge).replace(',', '.'));
+    const qty = n != null && isFinite(n) && n > 0 ? Math.round(n * 1000) / 1000 : null;
+    const unit = qty == null ? '' : cleanUnit(x?.einheit);
+    const category: Category = x?.kategorie === 'anderes' ? 'anderes' : 'lebensmittel';
+    const rec: ManualItem = { id: newId(), week: s.wid, product, qty, unit, category, updatedAt: t++, deleted: false };
+    await saveRecord(ctx, 'manual', rec);
+    added.push(`${product}${qtyText(qty, unit)}`);
+    // War der Artikel «zu Hause» oder schon gekauft: wieder auf die Liste (wie in der App)
+    const k = itemKey(product, unit);
+    const isDone = week.checked.includes(k) || (week.hidden ?? []).includes(k);
+    const reopen = isDone && (qty == null || week.bought?.[k] == null);
+    if (week.removed.includes(k) || reopen) {
+      week.removed = week.removed.filter((h) => h !== k);
+      if (reopen) {
+        week.hidden = (week.hidden ?? []).filter((h) => h !== k);
+        week.checked = week.checked.filter((h) => h !== k);
+      }
+      weekChanged = true;
+    }
+  }
+  if (!added.length) throw new HttpError(400, 'Keine Artikel angegeben.');
+  if (weekChanged) await saveRecord(ctx, 'shopping', { ...week, updatedAt: Date.now() });
+  return `Auf die Einkaufsliste (KW ${isoWeek(s.monday)}) gesetzt: ${added.join(', ')}.`;
+}
+
+/** Artikel der Liste zu einem Namen finden (genau, dann Wortanfang, dann enthält). */
+function findItems(items: ShopItem[], name: string): ShopItem[] {
+  const n = norm(name);
+  const exact = items.filter((i) => norm(i.product) === n);
+  if (exact.length) return exact;
+  const start = items.filter((i) => norm(i.product).startsWith(n) || n.startsWith(norm(i.product)));
+  if (start.length) return start;
+  return items.filter((i) => norm(i.product).includes(n));
+}
+
+async function toolShoppingCheck(ctx: Ctx, a: any): Promise<string> {
+  const names: string[] = (Array.isArray(a?.produkte) ? a.produkte : []).map((x: unknown) => String(x ?? '').trim()).filter(Boolean);
+  if (!names.length) throw new HttpError(400, 'Keine Artikel angegeben.');
+  const check = a?.abgehakt !== false;
+  const s = await loadShop(ctx, weekMonday(ctx, a?.woche));
+  const week = s.week;
+  const done: string[] = [];
+  const missing: string[] = [];
+  for (const name of names) {
+    const found = findItems(s.items, name);
+    if (!found.length) {
+      missing.push(name);
+      continue;
+    }
+    for (const i of found) {
+      const b = { ...(week.bought ?? {}) };
+      if (check) {
+        b[i.key] = i.qty ?? null;
+        if (!week.checked.includes(i.key)) week.checked = [...week.checked, i.key];
+        week.hidden = (week.hidden ?? []).filter((h) => h !== i.key);
+        week.removed = week.removed.filter((h) => h !== i.key);
+      } else {
+        delete b[i.key];
+        week.checked = week.checked.filter((k) => k !== i.key);
+        week.hidden = (week.hidden ?? []).filter((h) => h !== i.key);
+      }
+      week.bought = b;
+      done.push(i.product);
+    }
+  }
+  if (done.length) await saveRecord(ctx, 'shopping', { ...week, updatedAt: Date.now() });
+  const parts = [];
+  if (done.length) parts.push(`${check ? 'Abgehakt' : 'Wieder offen'}: ${[...new Set(done)].join(', ')}.`);
+  if (missing.length) parts.push(`Nicht auf der Liste (KW ${isoWeek(s.monday)}): ${missing.join(', ')}.`);
+  return parts.join(' ');
+}
+
+// ---------- ToDos ----------
+interface Todo {
+  id: string;
+  title: string;
+  note: string;
+  due: string | null;
+  assignees: string[];
+  private: boolean;
+  createdBy: string | null;
+  createdAt: number;
+  done: boolean;
+  doneAt: number | null;
+  doneBy: string | null;
+  cleared?: boolean;
+  choreId?: string;
+  updatedAt: number;
+  deleted: boolean;
+  [k: string]: unknown;
+}
+const isMine = (t: Todo, me: string | null) =>
+  t.private || (!!me && (t.assignees.includes(me) || (t.assignees.length === 0 && t.createdBy === me)));
+
+function todoLine(ctx: Ctx, t: Todo): string {
+  const bits: string[] = [];
+  if (t.due) bits.push(`fällig ${fmtDate(t.due)}${!t.done && t.due < ctx.today ? ' – ÜBERFÄLLIG' : ''}`);
+  bits.push(t.assignees.length ? `für ${t.assignees.map((x) => personName(ctx, x)).join(', ')}` : t.private ? 'privat' : 'offen für alle');
+  if (t.choreId) bits.push('Ämtli');
+  if (t.done) bits.push(`erledigt${t.doneBy ? ' von ' + personName(ctx, t.doneBy) : ''}`);
+  const note = t.note?.trim() ? `\n    Notiz: ${t.note.trim().slice(0, 300).replace(/\n/g, ' ')}` : '';
+  return `- ${t.done ? '[x]' : '[ ]'} ${t.title} (${bits.join(', ')}) [id: ${t.id}]${note}`;
+}
+
+async function toolTodos(ctx: Ctx, a: any): Promise<string> {
+  const view = ['meine', 'alle', 'erledigt'].includes(a?.ansicht) ? a.ansicht : 'meine';
+  const all = (await loadRecords<Todo>(ctx, 'todos')).filter((t) => !t.cleared && t.title);
+  let list: Todo[];
+  if (view === 'erledigt') list = all.filter((t) => t.done).sort((x, y) => (y.doneAt ?? 0) - (x.doneAt ?? 0)).slice(0, 30);
+  else {
+    list = all.filter((t) => !t.done && (view === 'alle' || isMine(t, ctx.me)));
+    // Ämtli: nur bis eine Woche voraus
+    const limit = dateKey(addDays(parseKey(ctx.today), 7));
+    list = list.filter((t) => !t.choreId || !t.due || t.due <= limit);
+    list.sort((x, y) => {
+      const dx = x.due ?? '9999', dy = y.due ?? '9999';
+      return dx !== dy ? (dx < dy ? -1 : 1) : x.createdAt - y.createdAt;
+    });
+  }
+  const label = view === 'meine' ? `Meine offenen ToDos (${personName(ctx, ctx.me)})` : view === 'alle' ? 'Alle offenen ToDos der Familie' : 'Zuletzt erledigte ToDos';
+  if (!list.length) return `${label}: keine.`;
+  return `${label}, heute ist ${fmtDate(ctx.today)}:\n${list.map((t) => todoLine(ctx, t)).join('\n')}`;
+}
+
+function cleanDue(v: unknown): string | null {
+  if (v == null || v === '') return null;
+  if (!isDateKey(v)) throw new HttpError(400, 'Datum bitte als JJJJ-MM-TT.');
+  return v;
+}
+
+async function toolTodoCreate(ctx: Ctx, a: any): Promise<string> {
+  const title = String(a?.titel ?? '').trim().slice(0, 200);
+  if (!title) throw new HttpError(400, 'Titel fehlt.');
+  const priv = a?.privat === true;
+  const assignees = priv ? [] : personIds(ctx, a?.fuer);
+  const now = Date.now();
+  const t: Todo = {
+    id: newId(),
+    title,
+    note: String(a?.notiz ?? '').slice(0, 4000),
+    due: cleanDue(a?.faellig),
+    assignees,
+    private: priv,
+    createdBy: ctx.me,
+    createdAt: now,
+    done: false,
+    doneAt: null,
+    doneBy: null,
+    updatedAt: now,
+    deleted: false,
+  };
+  await saveRecord(ctx, 'todos', t, priv ? ctx.uid : undefined);
+  return `ToDo erfasst: ${todoLine(ctx, t).slice(2)}`;
+}
+
+async function toolTodoUpdate(ctx: Ctx, a: any): Promise<string> {
+  const id = String(a?.id ?? '');
+  if (!id) throw new HttpError(400, 'id fehlt (aus todos_anzeigen).');
+  const t = (await loadRecords<Todo>(ctx, 'todos', `&id=eq.${encodeURIComponent(id)}`))[0];
+  if (!t) throw new HttpError(404, 'Dieses ToDo gibt es nicht (mehr).');
+  const changes: string[] = [];
+  if (a?.titel !== undefined) {
+    const title = String(a.titel).trim().slice(0, 200);
+    if (!title) throw new HttpError(400, 'Titel darf nicht leer sein.');
+    t.title = title;
+    changes.push('Titel');
+  }
+  if (a?.notiz !== undefined) {
+    t.note = String(a.notiz ?? '').slice(0, 4000);
+    changes.push('Notiz');
+  }
+  if (a?.faellig !== undefined) {
+    t.due = cleanDue(a.faellig);
+    changes.push('Fälligkeit');
+  }
+  if (a?.fuer !== undefined && !t.private) {
+    t.assignees = personIds(ctx, a.fuer);
+    changes.push('Zuteilung');
+  }
+  if (typeof a?.erledigt === 'boolean' && a.erledigt !== t.done) {
+    t.done = a.erledigt;
+    t.doneAt = a.erledigt ? Date.now() : null;
+    t.doneBy = a.erledigt ? ctx.me : null;
+    changes.push(a.erledigt ? 'erledigt' : 'wieder offen');
+  }
+  if (!changes.length) return 'Nichts geändert.';
+  t.updatedAt = Math.max(Date.now(), (t.updatedAt ?? 0) + 1);
+  await saveRecord(ctx, 'todos', t, t.private ? ctx.uid : undefined);
+  return `ToDo geändert (${changes.join(', ')}): ${todoLine(ctx, t).slice(2)}`;
+}
+
+// ---------- Kalender (über die Funktion «google-kalender») ----------
+interface CalInfo {
+  id: string;
+  name: string;
+  kind: 'own' | 'family';
+  personId: string | null;
+  mine: boolean;
+  writable: boolean;
+  email: string | null;
+}
+interface CalEvent {
+  id: string;
+  calendarId: string;
+  recurringEventId: string | null;
+  title: string;
+  allDay: boolean;
+  start: string;
+  end: string;
+  location: string | null;
+  description: string | null;
+  uid?: string | null;
+  invitedBy?: string | null;
+  guests?: Array<{ email: string; status: string }>;
+}
+async function calCall<T>(ctx: Ctx, action: string, body: object): Promise<T> {
+  const res = await fetch(`${sbUrl()}/functions/v1/google-kalender`, {
+    method: 'POST',
+    headers: { apikey: anonKey(), Authorization: `Bearer ${ctx.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...body }),
+  }).catch(() => null);
+  if (!res) throw new HttpError(502, 'Die Kalender-Funktion ist nicht erreichbar.');
+  const b = await res.json().catch(() => ({}));
+  if (!res.ok) throw new HttpError(res.status === 409 ? 409 : 502, b?.error || `Kalender-Fehler (${res.status}).`);
+  return b as T;
+}
+
+/** Zeitverschiebung von Zürich an einem Tag, z.B. «+01:00». */
+export function zurichOffset(day: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Zurich', timeZoneName: 'shortOffset' }).formatToParts(new Date(day + 'T12:00:00Z'));
+    const m = (parts.find((p) => p.type === 'timeZoneName')?.value ?? '').match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+    if (m) return `${m[1]}${m[2].padStart(2, '0')}:${m[3] ?? '00'}`;
+  } catch {}
+  return '+01:00';
+}
+const dayStartIso = (day: string) => new Date(`${day}T00:00:00${zurichOffset(day)}`).toISOString();
+
+async function loadEvents(ctx: Ctx, from: string, toExcl: string) {
+  return calCall<{ calendars: CalInfo[]; events: CalEvent[]; errors: string[] }>(ctx, 'events', {
+    household: ctx.household,
+    from: dayStartIso(from),
+    to: dayStartIso(toExcl),
+  });
+}
+
+/** «[Thadea] Zahnarzt» / «(Kilian) Training» → Titel und Personen (wie in der App). */
+export function parseTitle(title: string, persons: Array<{ id: string; name: string }>): { title: string; personIds: string[]; only: boolean } {
+  const m = title.match(/^\s*(?:\[([^\]]+)\]|\(([^)]+)\))\s*(.*)$/);
+  if (!m) return { title, personIds: [], only: false };
+  const ids: string[] = [];
+  for (const raw of (m[1] ?? m[2]).split(/[,;+&]/)) {
+    const n = raw.trim().toLowerCase();
+    const p = persons.find((x) => x.name.trim().toLowerCase() === n);
+    if (!p) return { title, personIds: [], only: false };
+    if (!ids.includes(p.id)) ids.push(p.id);
+  }
+  return { title: m[3] || title, personIds: ids, only: m[2] !== undefined };
+}
+export function buildTitle(title: string, ids: string[], persons: Array<{ id: string; name: string }>, only = false): string {
+  const names = persons.filter((p) => ids.includes(p.id)).map((p) => p.name);
+  const clean = title.trim();
+  if (!names.length) return clean;
+  return only ? `(${names.join(', ')}) ${clean}` : `[${names.join(', ')}] ${clean}`;
+}
+function eventPersons(ctx: Ctx, e: CalEvent, cal: CalInfo | undefined, calendars: CalInfo[]): string[] {
+  const { personIds: ids, only } = parseTitle(e.title, ctx.persons);
+  let owner: string | null = null;
+  if (e.invitedBy) owner = personByEmail(ctx, e.invitedBy, calendars);
+  else if (cal?.kind === 'own') owner = cal.personId;
+  if (owner && !only) return [owner, ...ids.filter((x) => x !== owner)];
+  if (e.invitedBy && cal?.kind === 'own' && cal.personId && !ids.length) return [cal.personId];
+  return ids;
+}
+function personEmail(ctx: Ctx, personId: string, calendars: CalInfo[]): string | null {
+  const own = ctx.persons.find((p) => p.id === personId)?.email?.trim();
+  if (own) return own.toLowerCase();
+  const c = calendars.find((x) => x.kind === 'own' && x.personId === personId && x.email);
+  return c?.email ? c.email.toLowerCase() : null;
+}
+function personByEmail(ctx: Ctx, email: string, calendars: CalInfo[]): string | null {
+  const e = email.toLowerCase();
+  return ctx.persons.find((p) => personEmail(ctx, p.id, calendars) === e)?.id ?? null;
+}
+
+const hhmm = (iso: string) => iso.slice(11, 16);
+function eventLine(ctx: Ctx, e: CalEvent, calendars: CalInfo[]): string {
+  const cal = calendars.find((c) => c.id === e.calendarId);
+  const who = eventPersons(ctx, e, cal, calendars);
+  const clean = parseTitle(e.title, ctx.persons).title;
+  let when: string;
+  if (e.allDay) {
+    const last = dateKey(addDays(parseKey(e.end), -1));
+    when = last > e.start ? `ganztägig bis ${fmtDate(last)}` : 'ganztägig';
+  } else {
+    const endDay = e.end.slice(0, 10);
+    when = `${hhmm(e.start)}–${endDay !== e.start.slice(0, 10) ? fmtDate(endDay) + ' ' : ''}${hhmm(e.end)}`;
+  }
+  const bits = [who.length ? `wer: ${who.map((x) => personName(ctx, x)).join(', ')}` : 'ganze Familie', `Kalender: ${cal?.name ?? '?'}`];
+  if (e.location) bits.push(`Ort: ${e.location}`);
+  if (e.recurringEventId) bits.push('Serie');
+  const desc = e.description?.trim() ? `\n    Notiz: ${e.description.trim().slice(0, 300).replace(/\n/g, ' ')}` : '';
+  return `- ${when} ${clean} (${bits.join(', ')}) [kalender_id: ${e.calendarId}, termin_id: ${e.id}]${desc}`;
+}
+
+async function toolEvents(ctx: Ctx, a: any): Promise<string> {
+  const from = isDateKey(a?.von) ? a.von : ctx.today;
+  const to = isDateKey(a?.bis) ? a.bis : dateKey(addDays(parseKey(from), 6));
+  if (to < from) throw new HttpError(400, '«bis» liegt vor «von».');
+  if ((+parseKey(to) - +parseKey(from)) / 86400000 > 62) throw new HttpError(400, 'Höchstens 2 Monate auf einmal.');
+  const r = await loadEvents(ctx, from, dateKey(addDays(parseKey(to), 1)));
+  // Einladungen erscheinen in mehreren Kalendern: nur einmal zeigen (die Fassung der einladenden Person)
+  const seen = new Map<string, CalEvent>();
+  const evs: CalEvent[] = [];
+  for (const e of r.events) {
+    const key = e.uid ? `${e.uid}|${e.start}` : null;
+    if (key && seen.has(key)) {
+      if (!e.invitedBy && seen.get(key)!.invitedBy) evs[evs.indexOf(seen.get(key)!)] = e;
+      continue;
+    }
+    if (key) seen.set(key, e);
+    evs.push(e);
+  }
+  const out = [`Termine ${fmtDate(from)} bis ${fmtDate(to)} (heute: ${fmtDate(ctx.today)}):`];
+  if (!r.calendars.length) out.push('Noch kein Google-Kalender verbunden (in der App: Kalender → mit Google verbinden).');
+  for (let d = parseKey(from); dateKey(d) <= to; d = addDays(d, 1)) {
+    const k = dateKey(d);
+    const day = evs
+      .filter((e) => (e.allDay ? e.start <= k && e.end > k : e.start.slice(0, 10) <= k && e.end.slice(0, 10) >= k && !(e.end.slice(0, 10) === k && e.end.slice(11, 16) === '00:00' && e.start.slice(0, 10) < k)))
+      .sort((x, y) => (x.allDay !== y.allDay ? (x.allDay ? -1 : 1) : x.start < y.start ? -1 : 1));
+    if (!day.length) continue;
+    out.push(`\n${fmtDate(k)}:`);
+    for (const e of day) out.push(eventLine(ctx, e, r.calendars));
+  }
+  if (out.length === 1 || (out.length === 2 && !r.calendars.length)) out.push('Keine Termine.');
+  if (r.errors?.length) out.push(`\nHinweis: ${r.errors.join(' ')}`);
+  const writable = r.calendars.filter((c) => c.writable).map((c) => c.name);
+  if (writable.length) out.push(`\nKalender, in die ${personName(ctx, ctx.me)} schreiben kann: ${writable.join(', ')}.`);
+  return out.join('\n');
+}
+
+function pickCalendar(ctx: Ctx, calendars: CalInfo[], wish: unknown): CalInfo {
+  const w = String(wish ?? '').trim().toLowerCase();
+  const writable = calendars.filter((c) => c.writable);
+  if (!writable.length) throw new HttpError(409, 'Du hast keinen Kalender, in den du schreiben kannst. In der App: Kalender → mit Google verbinden.');
+  let c: CalInfo | undefined;
+  if (!w || w === 'mein' || w === 'eigener') c = writable.find((x) => x.kind === 'own') ?? writable[0];
+  else if (w === 'familie' || w === 'family') c = writable.find((x) => x.kind === 'family');
+  else c = writable.find((x) => x.id.toLowerCase() === w || x.name.toLowerCase() === w) ?? writable.find((x) => x.name.toLowerCase().includes(w));
+  if (!c) throw new HttpError(400, `Kalender «${wish}» nicht gefunden. Möglich: ${writable.map((x) => x.name).join(', ')}.`);
+  return c;
+}
+
+const FREQS = ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'];
+function addMinutes(day: string, time: string, min: number): [string, string] {
+  const [h, m] = time.split(':').map(Number);
+  const d = parseKey(day);
+  d.setMinutes(h * 60 + m + min);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return [dateKey(d), `${p(d.getHours())}:${p(d.getMinutes())}`];
+}
+
+/** Titel, Gäste und Kalender-Angaben wie im Termin-Formular der App. */
+function whoParts(ctx: Ctx, cal: CalInfo, calendars: CalInfo[], title: string, names: unknown) {
+  const owner = cal.kind === 'own' ? cal.personId : null;
+  const chosen = names === undefined ? null : personIds(ctx, names);
+  const who = chosen ?? (owner ? [owner] : []);
+  const ownerIn = !owner || chosen === null || who.includes(owner) || who.length === 0;
+  const titleWho = who.filter((x) => x !== owner);
+  const only = !!owner && !ownerIn;
+  const full = buildTitle(title, !only && titleWho.length === ctx.persons.length ? [] : titleWho, ctx.persons, only);
+  const ownEmail = cal.kind === 'own' ? (cal.email ?? cal.id).toLowerCase() : null;
+  const invite = owner ? titleWho.map((id) => personEmail(ctx, id, calendars)).filter((x): x is string => !!x && x !== ownEmail) : [];
+  const inviteKnown = ctx.persons.map((p) => personEmail(ctx, p.id, calendars)).filter((x): x is string => !!x && x !== ownEmail);
+  return { full, invite: owner ? invite : undefined, inviteKnown: owner ? inviteKnown : undefined };
+}
+
+async function toolEventCreate(ctx: Ctx, a: any): Promise<string> {
+  const title = String(a?.titel ?? '').trim();
+  if (!title) throw new HttpError(400, 'Titel fehlt.');
+  if (!isDateKey(a?.datum)) throw new HttpError(400, 'Datum bitte als JJJJ-MM-TT.');
+  const startDate: string = a.datum;
+  const allDay = !isTime(a?.start);
+  let endDate: string = isDateKey(a?.bis_datum) ? a.bis_datum : startDate;
+  let startTime: string | undefined, endTime: string | undefined;
+  if (!allDay) {
+    startTime = a.start;
+    if (isTime(a?.ende)) {
+      endTime = a.ende;
+      if (!isDateKey(a?.bis_datum) && endTime! <= startTime!) endDate = dateKey(addDays(parseKey(startDate), 1));
+    } else [endDate, endTime] = addMinutes(startDate, startTime!, 60);
+  }
+  const r = await loadEvents(ctx, startDate, dateKey(addDays(parseKey(startDate), 1)));
+  const cal = pickCalendar(ctx, r.calendars, a?.kalender);
+  const who = whoParts(ctx, cal, r.calendars, title, a?.personen);
+  const repeat = FREQS.includes(a?.wiederholung) ? { freq: a.wiederholung, until: isDateKey(a?.wiederholen_bis) ? a.wiederholen_bis : null } : null;
+  const event = { title: who.full, allDay, startDate, endDate, startTime, endTime, location: String(a?.ort ?? ''), description: String(a?.notiz ?? ''), repeat };
+  await calCall(ctx, 'create', { calendarId: cal.id, event, ...(who.invite ? { invite: who.invite, inviteKnown: who.inviteKnown } : {}) });
+  const when = allDay ? (endDate > startDate ? `${fmtDate(startDate)} bis ${fmtDate(endDate)}, ganztägig` : `${fmtDate(startDate)}, ganztägig`) : `${fmtDate(startDate)} ${startTime}–${endTime}`;
+  const inv = who.invite?.length ? ` Einladung an ${who.invite.join(', ')} verschickt.` : '';
+  return `Termin erfasst im Kalender «${cal.name}»: ${who.full}, ${when}${repeat ? `, Wiederholung ${repeat.freq}` : ''}.${inv}`;
+}
+
+async function toolEventUpdate(ctx: Ctx, a: any): Promise<string> {
+  const calId = String(a?.kalender_id ?? '');
+  const id = String(a?.termin_id ?? '');
+  const day = a?.tag;
+  if (!calId || !id || !isDateKey(day)) throw new HttpError(400, 'kalender_id, termin_id und tag (JJJJ-MM-TT, aus termine_anzeigen) angeben.');
+  const r = await loadEvents(ctx, dateKey(addDays(parseKey(day), -1)), dateKey(addDays(parseKey(day), 2)));
+  const e = r.events.find((x) => x.id === id && x.calendarId === calId);
+  if (!e) throw new HttpError(404, 'Termin nicht gefunden. Bitte zuerst termine_anzeigen für diesen Tag.');
+  const cal = r.calendars.find((c) => c.id === calId);
+  if (!cal?.writable) throw new HttpError(403, 'Diesen Termin kann nur die Person ändern, die ihn erfasst hat (fremder Kalender).');
+  if (e.invitedBy) throw new HttpError(403, 'Das ist eine Einladung. Ändern kann sie nur, wer eingeladen hat.');
+
+  const oldStartDate = e.allDay ? e.start : e.start.slice(0, 10);
+  const oldEndDate = e.allDay ? dateKey(addDays(parseKey(e.end), -1)) : e.end.slice(0, 10);
+  let startDate = isDateKey(a?.datum) ? a.datum : oldStartDate;
+  const shift = Math.round((+parseKey(startDate) - +parseKey(oldStartDate)) / 86400000);
+  let endDate = isDateKey(a?.bis_datum) ? a.bis_datum : dateKey(addDays(parseKey(oldEndDate), shift));
+  let allDay = e.allDay;
+  let startTime = e.allDay ? undefined : hhmm(e.start);
+  let endTime = e.allDay ? undefined : hhmm(e.end);
+  if (a?.ganztaegig === true) {
+    allDay = true;
+    startTime = endTime = undefined;
+  } else if (isTime(a?.start)) {
+    const dur = e.allDay ? 60 : Math.max(15, Math.round((+new Date(e.end) - +new Date(e.start)) / 60000));
+    allDay = false;
+    startTime = a.start;
+    if (isTime(a?.ende)) {
+      endTime = a.ende;
+      if (!isDateKey(a?.bis_datum)) endDate = endTime! <= startTime! ? dateKey(addDays(parseKey(startDate), 1)) : startDate;
+    } else [endDate, endTime] = addMinutes(startDate, startTime!, dur);
+  } else if (isTime(a?.ende) && !allDay) {
+    endTime = a.ende;
+  }
+  const parsed = parseTitle(e.title, ctx.persons);
+  const newTitle = a?.titel !== undefined ? String(a.titel).trim() : parsed.title;
+  if (!newTitle) throw new HttpError(400, 'Titel darf nicht leer sein.');
+  let full = e.title;
+  let inv: { invite?: string[]; inviteKnown?: string[] } = {};
+  if (a?.personen !== undefined) {
+    const who = whoParts(ctx, cal, r.calendars, newTitle, a.personen);
+    full = who.full;
+    if (who.invite) inv = { invite: who.invite, inviteKnown: who.inviteKnown };
+  } else if (a?.titel !== undefined) {
+    full = buildTitle(newTitle, parsed.personIds, ctx.persons, parsed.only);
+  }
+  const event = {
+    title: full,
+    allDay,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    location: a?.ort !== undefined ? String(a.ort ?? '') : e.location ?? '',
+    description: a?.notiz !== undefined ? String(a.notiz ?? '') : e.description ?? '',
+  };
+  await calCall(ctx, 'update', { calendarId: calId, eventId: id, recurringEventId: e.recurringEventId, scope: 'one', event, ...inv });
+  return `Termin geändert: ${full}, ${allDay ? fmtDate(startDate) + ' ganztägig' : `${fmtDate(startDate)} ${startTime}–${endTime}`}${e.recurringEventId ? ' (nur dieser eine Termin der Serie)' : ''}.`;
+}
+
+// ---------- Familie ----------
+async function toolFamily(ctx: Ctx): Promise<string> {
+  const list = [...ctx.persons].sort((a, b) => a.sort - b.sort).map((p) => `- ${p.name}${p.id === ctx.me ? ' (das bin ich, angemeldet)' : ''}`);
+  return `Familie in myFam.:\n${list.join('\n')}\nHeute ist ${fmtDate(ctx.today)}.`;
+}
+
+// ---------- Werkzeuge (MCP) ----------
+const WOCHE = { type: 'string', description: '«diese» (Standard), «naechste», «letzte» oder ein Datum JJJJ-MM-TT in der gewünschten Woche (Wochen beginnen am Montag).' };
+const PERSONEN = { type: 'array', items: { type: 'string' }, description: 'Vornamen aus der Familie (siehe familie_anzeigen), «ich» = angemeldete Person.' };
+export const TOOLS = [
+  {
+    name: 'familie_anzeigen',
+    title: 'Familie anzeigen',
+    description: 'Zeigt die Personen der Familie in myFam., wer angemeldet ist und das heutige Datum.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: 'einkaufsliste_anzeigen',
+    title: 'Einkaufsliste anzeigen',
+    description:
+      'Zeigt die gemeinsame Einkaufsliste einer Woche: Zutaten aus dem Wochenplan, von Hand erfasste und wiederkehrende Artikel, mit Menge und Zustand (offen, abgehakt, zu Hause vorhanden).',
+    inputSchema: { type: 'object', properties: { woche: WOCHE }, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: 'einkauf_hinzufuegen',
+    title: 'Auf die Einkaufsliste setzen',
+    description: 'Setzt einen oder mehrere Artikel auf die Einkaufsliste der Woche (erscheint sofort auf allen Handys).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        artikel: {
+          type: 'array',
+          minItems: 1,
+          items: {
+            type: 'object',
+            properties: {
+              produkt: { type: 'string', description: 'z.B. «Milch»' },
+              menge: { type: 'number', description: 'Menge (leer = nach Bedarf)' },
+              einheit: { type: 'string', description: 'g, kg, ml, l, Stk., Pck., Dose, Bund, EL, TL, Prise' },
+              kategorie: { type: 'string', enum: ['lebensmittel', 'anderes'], description: 'Standard: lebensmittel. «anderes» z.B. für Putzmittel, Drogerie.' },
+            },
+            required: ['produkt'],
+            additionalProperties: false,
+          },
+        },
+        woche: WOCHE,
+      },
+      required: ['artikel'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  },
+  {
+    name: 'einkauf_abhaken',
+    title: 'Einkauf abhaken',
+    description: 'Hakt Artikel auf der Einkaufsliste ab (gekauft) oder macht sie wieder offen.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        produkte: { type: 'array', items: { type: 'string' }, minItems: 1, description: 'Namen der Artikel wie auf der Liste' },
+        abgehakt: { type: 'boolean', description: 'true = abhaken (Standard), false = wieder offen' },
+        woche: WOCHE,
+      },
+      required: ['produkte'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  },
+  {
+    name: 'todos_anzeigen',
+    title: 'ToDos anzeigen',
+    description:
+      'Zeigt ToDos aus myFam. «meine» = der angemeldeten Person zugeteilt, eigene private und selbst erfasste ohne Zuteilung; «alle» = alle offenen der Familie; «erledigt» = zuletzt erledigte. Jedes ToDo hat eine id zum Ändern.',
+    inputSchema: { type: 'object', properties: { ansicht: { type: 'string', enum: ['meine', 'alle', 'erledigt'] } }, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: 'todo_erfassen',
+    title: 'ToDo erfassen',
+    description: 'Erfasst ein neues ToDo. Ohne «fuer» ist es offen für alle (wer Zeit hat). «privat» = nur für die angemeldete Person sichtbar.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        titel: { type: 'string' },
+        notiz: { type: 'string' },
+        faellig: { type: 'string', description: 'Fälligkeitsdatum JJJJ-MM-TT (optional)' },
+        fuer: PERSONEN,
+        privat: { type: 'boolean' },
+      },
+      required: ['titel'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  },
+  {
+    name: 'todo_aendern',
+    title: 'ToDo ändern oder erledigen',
+    description: 'Ändert ein bestehendes ToDo (id aus todos_anzeigen) oder hakt es als erledigt ab. Nur angegebene Felder werden geändert. Löschen ist nicht möglich.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        titel: { type: 'string' },
+        notiz: { type: 'string' },
+        faellig: { type: ['string', 'null'], description: 'JJJJ-MM-TT oder null = ohne Datum' },
+        fuer: PERSONEN,
+        erledigt: { type: 'boolean' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  },
+  {
+    name: 'termine_anzeigen',
+    title: 'Termine anzeigen',
+    description: 'Zeigt die Termine der Familie aus den verbundenen Google-Kalendern (Standard: heute und die nächsten 6 Tage, höchstens 2 Monate). Jeder Termin hat kalender_id und termin_id zum Ändern.',
+    inputSchema: {
+      type: 'object',
+      properties: { von: { type: 'string', description: 'JJJJ-MM-TT, Standard heute' }, bis: { type: 'string', description: 'JJJJ-MM-TT (inklusive)' } },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: 'termin_erfassen',
+    title: 'Termin erfassen',
+    description:
+      'Erfasst einen Termin im Google-Kalender (Standard: eigener Kalender der angemeldeten Person). Ohne «start» ganztägig. Ohne «ende» dauert er 1 Stunde. Personen mit Gmail-Adresse werden wie in der App eingeladen.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        titel: { type: 'string' },
+        datum: { type: 'string', description: 'JJJJ-MM-TT' },
+        start: { type: 'string', description: 'HH:MM (leer = ganztägig)' },
+        ende: { type: 'string', description: 'HH:MM' },
+        bis_datum: { type: 'string', description: 'letzter Tag JJJJ-MM-TT, bei mehrtägigen Terminen' },
+        ort: { type: 'string' },
+        notiz: { type: 'string' },
+        personen: { ...PERSONEN, description: 'Wen betrifft der Termin? Vornamen; ohne Angabe = die Person, der der Kalender gehört (bzw. ganze Familie im Familienkalender).' },
+        kalender: { type: 'string', description: '«mein» (Standard), «familie» oder Name eines Kalenders' },
+        wiederholung: { type: 'string', enum: ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'] },
+        wiederholen_bis: { type: 'string', description: 'JJJJ-MM-TT' },
+      },
+      required: ['titel', 'datum'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  },
+  {
+    name: 'termin_aendern',
+    title: 'Termin ändern',
+    description:
+      'Ändert einen Termin (kalender_id, termin_id und tag aus termine_anzeigen). Nur angegebene Felder ändern sich; bei Serien nur dieser eine Termin. Neues Datum ohne Zeiten verschiebt den Termin mit gleicher Uhrzeit. Löschen ist nicht möglich.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kalender_id: { type: 'string' },
+        termin_id: { type: 'string' },
+        tag: { type: 'string', description: 'JJJJ-MM-TT, an dem der Termin heute stattfindet' },
+        titel: { type: 'string' },
+        datum: { type: 'string', description: 'neues Datum JJJJ-MM-TT' },
+        start: { type: 'string', description: 'HH:MM' },
+        ende: { type: 'string', description: 'HH:MM' },
+        bis_datum: { type: 'string' },
+        ganztaegig: { type: 'boolean' },
+        ort: { type: 'string' },
+        notiz: { type: 'string' },
+        personen: PERSONEN,
+      },
+      required: ['kalender_id', 'termin_id', 'tag'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  },
+];
+
+const HANDLERS: Record<string, (ctx: Ctx, a: any) => Promise<string>> = {
+  familie_anzeigen: toolFamily,
+  einkaufsliste_anzeigen: toolShoppingList,
+  einkauf_hinzufuegen: toolShoppingAdd,
+  einkauf_abhaken: toolShoppingCheck,
+  todos_anzeigen: toolTodos,
+  todo_erfassen: toolTodoCreate,
+  todo_aendern: toolTodoUpdate,
+  termine_anzeigen: toolEvents,
+  termin_erfassen: toolEventCreate,
+  termin_aendern: toolEventUpdate,
+};
+
+const INSTRUCTIONS =
+  'myFam. ist die Familien-App von Tobias und Thadea (Schweiz, Deutsch mit «ss» statt «ß», metrische Einheiten). ' +
+  'Über diese Werkzeuge siehst und bearbeitest du die gemeinsame Einkaufsliste, die ToDos und die Termine der Familie, im Namen der angemeldeten Person. ' +
+  'Änderungen erscheinen sofort auf allen Handys. Löschen ist bewusst nicht möglich (das geht nur in der App). ' +
+  'Bei Personen immer die Vornamen aus familie_anzeigen verwenden. Daten im Format JJJJ-MM-TT, Zeiten HH:MM (Zürcher Zeit).';
+
+const PROTOCOLS = ['2025-11-25', '2025-06-18', '2025-03-26'];
+
+async function makeCtx(c: Connection, token: string): Promise<Ctx> {
+  const [mem, persons] = await Promise.all([
+    userRest(token, `members?select=household_id,person_id&user_id=eq.${c.user_id}&household_id=eq.${c.household_id}`),
+    userRest(token, `records?select=data&household_id=eq.${c.household_id}&store=eq.persons&deleted=is.false`),
+  ]);
+  if (!mem?.length) throw new HttpError(403, 'Dieses Konto gehört nicht mehr zur Familie.');
+  return {
+    token,
+    uid: c.user_id,
+    household: c.household_id,
+    me: mem[0].person_id ?? null,
+    persons: (persons ?? []).map((r: any) => r.data).filter((p: any) => p && !p.deleted),
+    today: zurichToday(),
+  };
+}
+
+const unauthorized = (desc: string) =>
+  json({ error: 'invalid_token', error_description: desc }, 401, {
+    'WWW-Authenticate': `Bearer realm="myFam.", resource_metadata="${BASE()}/.well-known/oauth-protected-resource", error="invalid_token", error_description="${desc}"`,
+  });
+
+async function actMcp(req: Request): Promise<Response> {
+  if (req.method === 'GET') return json({ error: 'Nur POST (kein Ereignis-Strom).' }, 405, { Allow: 'POST' });
+  if (req.method !== 'POST') return json({ error: 'Nicht erlaubt.' }, 405, { Allow: 'POST' });
+  const auth = req.headers.get('authorization') ?? '';
+  const tok = auth.startsWith('Bearer ') ? await unsign<{ k: string; s: string; e: number }>(auth.slice(7)) : null;
+  if (!tok || tok.k !== 'a') return unauthorized('Bitte mit myFam. verbinden.');
+  if (tok.e < Date.now()) return unauthorized('Zugang abgelaufen.');
+  const conn: Connection | undefined = (await adminDb(`claude_connections?id=eq.${tok.s}&select=*`))?.[0];
+  if (!conn || !conn.refresh_hash) return unauthorized('Verbindung getrennt. Bitte neu verbinden.');
+
+  const msg = await req.json().catch(() => null);
+  if (!msg) return json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Ungültiges JSON.' } }, 400);
+  const batch = Array.isArray(msg);
+  const msgs: any[] = batch ? msg : [msg];
+  let ctx: Ctx | null = null;
+  const getCtx = async () => {
+    if (ctx) return ctx;
+    const token = await sbAccess(conn);
+    if (!token) {
+      await adminDb(`claude_connections?id=eq.${conn.id}`, { method: 'DELETE' });
+      throw new HttpError(401, 'Die Anmeldung bei myFam. ist abgelaufen. Bitte den Connector neu verbinden.');
+    }
+    ctx = await makeCtx(conn, token);
+    return ctx;
+  };
+
+  const replies: any[] = [];
+  for (const m of msgs) {
+    if (!m || m.jsonrpc !== '2.0' || typeof m.method !== 'string') {
+      if (m && m.id !== undefined && (m.result !== undefined || m.error !== undefined)) continue; // Antwort an uns: ignorieren
+      replies.push({ jsonrpc: '2.0', id: m?.id ?? null, error: { code: -32600, message: 'Ungültige Anfrage.' } });
+      continue;
+    }
+    const isNote = m.id === undefined || m.id === null;
+    const ok = (result: unknown) => !isNote && replies.push({ jsonrpc: '2.0', id: m.id, result });
+    const err = (code: number, message: string) => !isNote && replies.push({ jsonrpc: '2.0', id: m.id, error: { code, message } });
+    try {
+      switch (m.method) {
+        case 'initialize': {
+          const want = String(m.params?.protocolVersion ?? '');
+          ok({
+            protocolVersion: PROTOCOLS.includes(want) ? want : PROTOCOLS[1],
+            capabilities: { tools: { listChanged: false } },
+            serverInfo: { name: 'myfam', title: 'myFam.', version: VERSION },
+            instructions: INSTRUCTIONS,
+          });
+          break;
+        }
+        case 'ping':
+          ok({});
+          break;
+        case 'tools/list':
+          ok({ tools: TOOLS });
+          break;
+        case 'tools/call': {
+          const name = String(m.params?.name ?? '');
+          const h = HANDLERS[name];
+          if (!h) {
+            err(-32602, `Unbekanntes Werkzeug: ${name}`);
+            break;
+          }
+          try {
+            const text = await h(await getCtx(), m.params?.arguments ?? {});
+            ok({ content: [{ type: 'text', text }], isError: false });
+          } catch (e) {
+            if (e instanceof HttpError && e.status === 401) return unauthorized(e.message);
+            const text = e instanceof HttpError ? e.message : 'Unerwarteter Fehler im myFam.-Connector.';
+            if (!(e instanceof HttpError)) console.error(e);
+            ok({ content: [{ type: 'text', text }], isError: true });
+          }
+          break;
+        }
+        default:
+          if (m.method.startsWith('notifications/')) break;
+          err(-32601, `Unbekannte Methode: ${m.method}`);
+      }
+    } catch (e) {
+      err(-32603, e instanceof HttpError ? e.message : 'Interner Fehler.');
+    }
+  }
+  if (!replies.length) return new Response(null, { status: 202, headers: CORS });
+  return json(batch ? replies : replies[0]);
+}
+
+/** Pfad innerhalb der Funktion, z.B. «/token» oder «/.well-known/…». */
+export function subPath(pathname: string): string {
+  const i = pathname.indexOf('/' + FN);
+  let p = i >= 0 ? pathname.slice(i + FN.length + 1) : pathname;
+  p = p.replace(/\/+$/, '');
+  return p || '/';
+}
+
+export async function handler(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  const url = new URL(req.url);
+  const p = subPath(url.pathname);
+  try {
+    if (p.startsWith('/.well-known/oauth-protected-resource')) return json(resourceMetadata());
+    if (p.startsWith('/.well-known/oauth-authorization-server') || p.startsWith('/.well-known/openid-configuration')) return json(serverMetadata());
+    if (p === '/register' && req.method === 'POST') return await actRegister(req);
+    if (p === '/authorize' && req.method === 'GET') return await actAuthorize(url);
+    if (p === '/approve' && req.method === 'POST') return await actApprove(req);
+    if (p === '/token' && req.method === 'POST') return await actToken(req);
+    if (p === '/' || p === '/mcp') return await actMcp(req);
+    return json({ error: 'Nicht gefunden.' }, 404);
+  } catch (e) {
+    if (e instanceof HttpError) return json({ error: e.message }, e.status);
+    console.error(e);
+    return json({ error: 'Unerwarteter Fehler im myFam.-Connector.' }, 500);
+  }
+}
+
+if (typeof Deno !== 'undefined') Deno.serve(handler);

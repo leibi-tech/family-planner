@@ -586,3 +586,33 @@ Deine offenen ToDos und die für alle direkt auf dem Startbildschirm. Nur zum An
 - Überfällige stehen zuoberst (rot), dann nach Datum, ohne Datum am Schluss. «alle» = niemandem zugeteilt. «G ·» = Google-ToDo.
 - Ein ToDo antippen → es öffnet sich in der App (dort abhaken). Oben auf «ToDos» → ToDo-Seite.
 - Das Widget zeigt den Stand vom letzten Öffnen der App (oben rechts «Stand 13:30»). Neue ToDos von Thadea erscheinen, sobald du die App wieder öffnest.
+
+## AL) Claude-Connector (ab Version 0.37.0, einmalig einrichten)
+Damit kann Claude (claude.ai und Claude-App auf dem Handy) eure Einkaufsliste, ToDos und Termine ansehen und Neues erfassen, z.B. «Setz Milch auf die Einkaufsliste» oder «Was steht diese Woche an?». Löschen kann Claude nichts. Am PC ist das Einrichten einfacher, geht aber auch im Handy-Browser.
+
+**1. Datenbank ergänzen**
+1. supabase.com → Projekt öffnen → links **SQL Editor**.
+2. Inhalt von `supabase/update-0.37.sql` (im Repository auf GitHub) hineinkopieren → **Run**. Es muss «Success» erscheinen.
+
+**2. Neue Funktion anlegen**
+1. Links **Edge Functions** → **Deploy a new function** → **Via Editor**.
+2. Name genau: `claude-connector`.
+3. Den ganzen Inhalt von `supabase/functions/claude-connector/index-zum-kopieren.txt` einfügen (alles Vorhandene ersetzen) → **Deploy function**.
+4. Bei der Funktion → **Details** (bzw. Settings) → **Verify JWT** (oder «Enforce JWT verification») **ausschalten** → speichern.
+5. Oben steht die Adresse der Funktion, sie lautet: `https://hkakelobqtbyliszrils.supabase.co/functions/v1/claude-connector`
+
+**3. Pull Request mergen** (wie immer), 1–2 Minuten warten.
+
+**4. In Claude hinzufügen**
+1. claude.ai (am PC oder im Handy-Browser) → **Einstellungen** → **Connectors** → **Eigenen Connector hinzufügen** (bzw. «Add custom connector»).
+2. Name: `myFam.` · Adresse: `https://hkakelobqtbyliszrils.supabase.co/functions/v1/claude-connector` → **Hinzufügen**.
+3. Beim Connector auf **Verbinden** tippen. Es öffnet sich die Seite «myFam. mit Claude verbinden»: mit deinem myFam.-Konto (E-Mail, Passwort) anmelden → **Anmelden und erlauben**.
+4. Du landest wieder in Claude, der Connector steht auf «verbunden».
+5. Ausprobieren: neuer Chat → «Was steht auf unserer Einkaufsliste?»
+
+**Gut zu wissen**
+- Claude handelt in deinem Namen: ToDos sind von dir erfasst, private Einträge von Thadea sieht Claude nicht. Thadea kann den Connector in ihrem eigenen Claude genauso verbinden.
+- Änderungen erscheinen auf den Handys beim nächsten Abgleich (App öffnen).
+- Trennen: in Claude unter Einstellungen → Connectors → myFam. → Trennen bzw. Entfernen. Änderst du dein myFam.-Passwort, ist die Verbindung ebenfalls weg (neu verbinden).
+- **Klappt Schritt 4 nicht** (Fehlermeldung beim Hinzufügen oder Verbinden): mir die Meldung genau schicken (Bildschirmfoto). Ob Claude die Anmeldung unter dieser Adresse findet, liess sich vorher nicht ausprobieren.
+

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>myFam. mit Claude verbinden</title>
+<style>
+  :root { --bg: #f6f3fb; --card: #fff; --text: #241b33; --muted: #6b6280; --accent: #7c3aed; --line: #e4dcf2; --err: #b42318; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15111c; --card: #211a2c; --text: #f1ecf8; --muted: #a89fba; --line: #372c47; --accent: #a78bfa; --err: #f97066; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 420px; margin: 0 auto; padding: 32px 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .brand { color: var(--accent); font-weight: 800; }
+  p { margin: 0 0 14px; color: var(--muted); }
+  ul { margin: 0 0 16px; padding-left: 20px; }
+  li { margin: 3px 0; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 4px; }
+  input { width: 100%; font: inherit; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  button { width: 100%; font: inherit; font-weight: 700; padding: 13px; border-radius: 12px; border: 0; margin-top: 16px; cursor: pointer; }
+  .primary { background: var(--accent); color: #fff; }
+  .secondary { background: transparent; color: var(--muted); border: 1px solid var(--line); margin-top: 10px; }
+  button:disabled { opacity: .6; }
+  .err { color: var(--err); margin-top: 12px; min-height: 1em; }
+  .hint { font-size: 13px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card" id="card">
+    <h1><span class="brand">myFam.</span> mit Claude verbinden</h1>
+    <p id="intro"><b id="app">Claude</b> möchte auf eure Familien-App zugreifen. Claude darf dann:</p>
+    <ul>
+      <li>Einkaufsliste ansehen, Artikel dazufügen und abhaken</li>
+      <li>ToDos ansehen, erfassen, ändern und erledigen</li>
+      <li>Termine ansehen, erfassen und ändern</li>
+    </ul>
+    <p>Löschen kann Claude nichts. Melde dich mit deinem myFam.-Konto an:</p>
+    <form id="form">
+      <label for="email">E-Mail</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="pw">Passwort</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button class="primary" id="ok" type="submit">Anmelden und erlauben</button>
+      <button class="secondary" id="no" type="button">Ablehnen</button>
+      <div class="err" id="err" role="alert"></div>
+    </form>
+    <p class="hint">Die Verbindung kannst du jederzeit in Claude unter Einstellungen → Connectors wieder trennen.</p>
+  </div>
+</main>
+<script>
+(() => {
+  const SB = 'https://hkakelobqtbyliszrils.supabase.co';
+  const KEY = 'sb_publishable_QK644i7NFGRpi_ZIVs0uaQ_D-7-IbKD';
+  const FN = SB + '/functions/v1/claude-connector/approve';
+  const params = new URLSearchParams(location.hash.slice(1));
+  const req = params.get('req');
+  const $ = (id) => document.getElementById(id);
+  if (params.get('app')) $('app').textContent = params.get('app').slice(0, 60);
+  const fail = (msg) => { $('err').textContent = msg; $('ok').disabled = false; $('no').disabled = false; };
+  if (!req) {
+    $('card').innerHTML = '<h1><span class="brand">myFam.</span> mit Claude verbinden</h1><p>Diese Seite öffnet sich, wenn du in Claude den myFam.-Connector verbindest. Bitte dort auf «Verbinden» tippen.</p>';
+    return;
+  }
+  const approve = async (body) => {
+    const res = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: JSON.stringify({ req, ...body }) });
+    const b = await res.json().catch(() => ({}));
+    if (!res.ok || !b.redirect) throw new Error(b.error || 'Verbinden hat nicht geklappt (' + res.status + ').');
+    location.replace(b.redirect);
+  };
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('ok').disabled = true; $('no').disabled = true; $('err').textContent = '';
+    try {
+      const res = await fetch(SB + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: KEY },
+        body: JSON.stringify({ email: $('email').value.trim(), password: $('pw').value }),
+      });
+      const s = await res.json().catch(() => ({}));
+      if (!res.ok || !s.access_token) return fail(res.status === 400 ? 'E-Mail oder Passwort falsch.' : 'Anmeldung nicht möglich (' + res.status + ').');
+      $('ok').textContent = 'Verbinde …';
+      await approve({ access_token: s.access_token, refresh_token: s.refresh_token });
+    } catch (err) {
+      fail(err && err.message ? err.message : 'Keine Verbindung. Bitte nochmals versuchen.');
+    }
+  });
+  $('no').addEventListener('click', async () => {
+    $('ok').disabled = true; $('no').disabled = true;
+    try { await approve({ deny: true }); } catch (err) { fail(err.message); }
+  });
+})();
+</script>
+</body>
+</html>

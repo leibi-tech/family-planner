@@ -50,6 +50,12 @@ writeFileSync(join(out, 'index.html'), html);
 
 for (const f of readdirSync(pub)) {
   if (f === 'index.html' || f === 'sw.template.js') continue;
+  if (f === 'claude.html') {
+    // Anmeldeseite für den Claude-Connector (v0.37): braucht die Supabase-Adresse
+    const page = readFileSync(join(pub, f), 'utf8').replaceAll('%SUPABASE_URL%', SUPABASE_URL).replaceAll('%SUPABASE_KEY%', SUPABASE_KEY);
+    writeFileSync(join(out, f), page);
+    continue;
+  }
   cpSync(join(pub, f), join(out, f));
 }
 writeFileSync(join(out, '.nojekyll'), '');
@@ -68,5 +74,26 @@ const sw = readFileSync(join(pub, 'sw.template.js'), 'utf8')
   .replaceAll('%VERSION%', hash)
   .replaceAll('%ASSETS%', JSON.stringify(assets));
 writeFileSync(join(out, 'sw.js'), sw);
+
+// Claude-Connector (Supabase-Funktion) als eine Datei zum Einspielen bündeln (nutzt Code der App)
+if (outDir === 'docs') {
+  const fnDir = join(root, 'supabase/functions/claude-connector');
+  const r = await build({
+    entryPoints: [join(fnDir, 'index.ts')],
+    bundle: true,
+    format: 'esm',
+    platform: 'neutral',
+    target: 'es2022',
+    write: false,
+    define: { __FP_VERSION__: JSON.stringify(pkg.version), __FP_ANON_KEY__: JSON.stringify(SUPABASE_KEY) },
+    legalComments: 'none',
+    logLevel: 'warning',
+  });
+  const head =
+    '// Supabase Edge Function «claude-connector» – GEBÜNDELTE FASSUNG, nicht von Hand ändern.\n' +
+    '// Quelle: supabase/functions/claude-connector/index.ts (entsteht bei node scripts/build.mjs).\n' +
+    '// In Supabase: Edge Functions → claude-connector → Code → alles ersetzen durch diesen Inhalt → Deploy.\n';
+  writeFileSync(join(fnDir, 'index-zum-kopieren.txt'), head + r.outputFiles[0].text);
+}
 
 console.log(`Fertig: docs/  ·  Version ${version}  ·  ${files.join(', ')}`);

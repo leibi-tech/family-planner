@@ -275,6 +275,15 @@ Beim Abhaken merkt sich die App die gekaufte Menge. Braucht der Plan später meh
 - Das Fenster erscheint nur, solange keine Person erfasst und das Handy mit keiner Familie verbunden ist, und nur einmal (Merker im Browser). Bestehende Installationen merken nichts.
 - **Tests:** Die Testversion legt die alten Startwerte weiter an (Schalter `__TEST_SEED__` im Build), damit die bestehenden Tests gleich bleiben. `tests/welcome.mjs` prüft den ersten Start ohne Startwerte.
 
+## E59 – Claude-Connector (v0.37.0, 24.11.2026)
+- **Idee Tobias:** «Können wir einen Claude-Connector für die App bauen?» Entscheid: 2a + b (Einkaufsliste, ToDos, Kalender), Claude darf **lesen und erfassen/ändern/abhaken, aber nichts löschen**.
+- **Was:** Eigene Supabase-Funktion `claude-connector` = MCP-Server (Model Context Protocol, Streamable HTTP, nur JSON-Antworten). In claude.ai unter Einstellungen → Connectors als «eigener Connector» hinzufügen, gilt danach auch in der Claude-App auf dem Handy.
+- **Werkzeuge (10):** familie_anzeigen, einkaufsliste_anzeigen, einkauf_hinzufuegen, einkauf_abhaken, todos_anzeigen, todo_erfassen, todo_aendern (inkl. erledigt), termine_anzeigen, termin_erfassen, termin_aendern (bei Serien nur der eine Termin). Kein Löschen.
+- **Anmeldung:** Claude verlangt OAuth. Die Funktion ist selbst die Anmelde-Stelle (Metadaten, Registrierung ohne Datenbank per Signatur, PKCE S256, Codes und Erneuerungs-Schlüssel nur als Hash gespeichert). Rücksprung nur zu claude.ai / claude.com (und localhost für Claude Code). Die Anmeldeseite liegt in der App (`claude.html` auf GitHub Pages), weil Supabase-Funktionen keine HTML-Seiten ausliefern. Dort meldet man sich mit dem myFam.-Konto an; die Funktion speichert diese Supabase-Anmeldung (Tabelle `claude_connections`, nur mit Server-Schlüssel lesbar) und greift damit **als dieses Konto** zu. Darum gelten alle Datenbank-Regeln (Haushalt, private Einträge). Termine über die bestehende Funktion `google-kalender` (keine Änderung dort).
+- **Supabase-Anleitung OAuth-Server:** Supabase hat einen eigenen OAuth-Server (Beta), die Doku war aus der Cloud nicht erreichbar. Die eigene Lösung braucht keine Einstellung in Supabase und lässt sich vollständig testen.
+- **Ungewiss:** ob Claude die Anmelde-Adressen unter dem Funktions-Pfad findet (`…/functions/v1/claude-connector/.well-known/…`). Die Funktion liefert alle üblichen Varianten. Erst der echte Versuch zeigt es (ANLEITUNG AL).
+- **Neuigkeiten-Eintrag:** erst, wenn die Verbindung bei Tobias klappt (sonst sähe Thadea eine Neuerung, die noch nicht geht).
+
 ## E58 – Widget «ToDos» (v0.36.0, APK 1.6, 16.11.2026)
 - **Entscheid Tobias:** 1c (meine ToDos und die ohne Zuteilung), 3a (wie auf der Startseite: überfällige rot zuerst, dann nach Datum, ohne Datum am Schluss, mit Datum und Farbe pro Person). **Nur anzeigen, kein Abhaken im Widget.**
 - **Warum kein Abhaken (vorerst):** Die APK ist eine Hülle um die Web-App. Anmeldung und Abgleich mit Supabase laufen nur in der offenen App. Abhaken im Widget hiesse: Android-Code redet selbst mit Supabase und Google (Anmeldung übergeben, eigener Hintergrund-Abgleich). Machbar, aber aufwendig; zurückgestellt.
