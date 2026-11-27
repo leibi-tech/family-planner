@@ -615,4 +615,4 @@ Damit kann Claude (claude.ai und Claude-App auf dem Handy) eure Einkaufsliste, T
 - Änderungen erscheinen auf den Handys beim nächsten Abgleich (App öffnen).
 - Trennen: in Claude unter Einstellungen → Connectors → myFam. → Trennen bzw. Entfernen. Änderst du dein myFam.-Passwort, ist die Verbindung ebenfalls weg (neu verbinden).
 - **Klappt Schritt 4 nicht** (Fehlermeldung beim Hinzufügen oder Verbinden): mir die Meldung genau schicken (Bildschirmfoto). Ob Claude die Anmeldung unter dieser Adresse findet, liess sich vorher nicht ausprobieren.
-
+- **Update v0.37.1 (freiwillig):** Der Hinweis an Claude ist genauer: Neues erscheint auf den Handys erst beim Öffnen der App. Dafür in Supabase → Edge Functions → claude-connector → Code den Inhalt von `supabase/functions/claude-connector/index-zum-kopieren.txt` neu einfügen → Deploy. Sonst ändert sich nichts.

@@ -122,7 +122,7 @@ var itemKey = (product, unit) => norm(product) + "|" + unit;
 // supabase/functions/claude-connector/index.ts
 var env = (k) => typeof Deno !== "undefined" ? Deno.env.get(k) : globalThis.process?.env?.[k];
 var FN = "claude-connector";
-var VERSION = true ? "0.37.0" : "dev";
+var VERSION = true ? "0.37.1" : "dev";
 var sbUrl = () => (env("SUPABASE_URL") ?? "").replace(/\/$/, "");
 var BASE = () => `${sbUrl()}/functions/v1/${FN}`;
 var APP_URL = () => env("FP_APP_URL") || "https://leibi-tech.github.io/family-planner/";
@@ -978,7 +978,7 @@ var TOOLS = [
   {
     name: "einkauf_hinzufuegen",
     title: "Auf die Einkaufsliste setzen",
-    description: "Setzt einen oder mehrere Artikel auf die Einkaufsliste der Woche (erscheint sofort auf allen Handys).",
+    description: "Setzt einen oder mehrere Artikel auf die Einkaufsliste der Woche (auf den Handys sichtbar, sobald die App ge\xF6ffnet wird).",
     inputSchema: {
       type: "object",
       properties: {
@@ -1137,7 +1137,7 @@ var HANDLERS = {
   termin_erfassen: toolEventCreate,
   termin_aendern: toolEventUpdate
 };
-var INSTRUCTIONS = "myFam. ist die Familien-App von Tobias und Thadea (Schweiz, Deutsch mit \xABss\xBB statt \xAB\xDF\xBB, metrische Einheiten). \xDCber diese Werkzeuge siehst und bearbeitest du die gemeinsame Einkaufsliste, die ToDos und die Termine der Familie, im Namen der angemeldeten Person. \xC4nderungen erscheinen sofort auf allen Handys. L\xF6schen ist bewusst nicht m\xF6glich (das geht nur in der App). Bei Personen immer die Vornamen aus familie_anzeigen verwenden. Daten im Format JJJJ-MM-TT, Zeiten HH:MM (Z\xFCrcher Zeit).";
+var INSTRUCTIONS = "myFam. ist die Familien-App von Tobias und Thadea (Schweiz, Deutsch mit \xABss\xBB statt \xAB\xDF\xBB, metrische Einheiten). \xDCber diese Werkzeuge siehst und bearbeitest du die gemeinsame Einkaufsliste, die ToDos und die Termine der Familie, im Namen der angemeldeten Person. \xC4nderungen sind sofort in der gemeinsamen Datenbank; auf den Handys erscheinen sie, sobald dort die App ge\xF6ffnet wird (Widgets ebenfalls erst dann). L\xF6schen ist bewusst nicht m\xF6glich (das geht nur in der App). Bei Personen immer die Vornamen aus familie_anzeigen verwenden. Daten im Format JJJJ-MM-TT, Zeiten HH:MM (Z\xFCrcher Zeit).";
 var PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26"];
 async function makeCtx(c, token) {
   const [mem, persons] = await Promise.all([

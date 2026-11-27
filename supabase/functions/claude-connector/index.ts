@@ -1027,7 +1027,7 @@ export const TOOLS = [
   {
     name: 'einkauf_hinzufuegen',
     title: 'Auf die Einkaufsliste setzen',
-    description: 'Setzt einen oder mehrere Artikel auf die Einkaufsliste der Woche (erscheint sofort auf allen Handys).',
+    description: 'Setzt einen oder mehrere Artikel auf die Einkaufsliste der Woche (auf den Handys sichtbar, sobald die App geöffnet wird).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1194,7 +1194,7 @@ const HANDLERS: Record<string, (ctx: Ctx, a: any) => Promise<string>> = {
 const INSTRUCTIONS =
   'myFam. ist die Familien-App von Tobias und Thadea (Schweiz, Deutsch mit «ss» statt «ß», metrische Einheiten). ' +
   'Über diese Werkzeuge siehst und bearbeitest du die gemeinsame Einkaufsliste, die ToDos und die Termine der Familie, im Namen der angemeldeten Person. ' +
-  'Änderungen erscheinen sofort auf allen Handys. Löschen ist bewusst nicht möglich (das geht nur in der App). ' +
+  'Änderungen sind sofort in der gemeinsamen Datenbank; auf den Handys erscheinen sie, sobald dort die App geöffnet wird (Widgets ebenfalls erst dann). Löschen ist bewusst nicht möglich (das geht nur in der App). ' +
   'Bei Personen immer die Vornamen aus familie_anzeigen verwenden. Daten im Format JJJJ-MM-TT, Zeiten HH:MM (Zürcher Zeit).';
 
 const PROTOCOLS = ['2025-11-25', '2025-06-18', '2025-03-26'];
